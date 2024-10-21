@@ -12,6 +12,10 @@ val lib = sourceSets.create("lib")
 val backend = sourceSets.create("backend")
 val stubs = sourceSets.create("stubs")
 val main = sourceSets.getByName("main")
+val testmod = sourceSets.create("testmod") {
+    compileClasspath += main.compileClasspath
+    runtimeClasspath += main.runtimeClasspath
+}
 
 transitiveSourceSets {
     compileClasspath = main.compileClasspath

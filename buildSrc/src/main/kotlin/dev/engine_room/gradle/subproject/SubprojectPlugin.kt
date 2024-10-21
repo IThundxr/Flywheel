@@ -4,6 +4,7 @@ import dev.engine_room.gradle.jarset.JarSetExtension
 import dev.engine_room.gradle.nullability.PackageInfosExtension
 import dev.engine_room.gradle.transitive.TransitiveSourceSetsExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
+import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -11,6 +12,7 @@ import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -18,6 +20,7 @@ import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
+import java.io.File
 
 class SubprojectPlugin: Plugin<Project> {
     override fun apply(project: Project) {
@@ -32,6 +35,9 @@ class SubprojectPlugin: Plugin<Project> {
         setupDependencies(project)
         configureTasks(project)
         setupPublishing(project)
+
+        if (project.path != ":common")
+            setupTestMod(project)
     }
 
     private fun setBaseProperties(project: Project) {
@@ -163,6 +169,26 @@ class SubprojectPlugin: Plugin<Project> {
                 maven(project.rootProject.file(project.property("mavendir") as String))
             }
         }
+    }
+
+    private fun setupTestMod(project: Project) {
+        val sourceSets = project.extensions.getByName("sourceSets") as SourceSetContainer
+
+        val testmodJar = project.tasks.register<Jar>("testmodJar") {
+            from (sourceSets["testmod"].output)
+            val file = File(project.layout.buildDirectory.asFile.get(), "devlibs");
+            destinationDirectory.set(file)
+            archiveClassifier = "testmod"
+        }
+
+        val remapTestmodJar = project.tasks.register<RemapJarTask>("remapTestmodJar") {
+            dependsOn(testmodJar)
+            inputFile.set(testmodJar.get().archiveFile)
+            archiveClassifier = "testmod"
+            addNestedDependencies = false
+            classpath.from(sourceSets["testmod"].compileClasspath)
+        }
+        project.tasks["build"].dependsOn(remapTestmodJar)
     }
 }
 
