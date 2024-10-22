@@ -12,10 +12,7 @@ val lib = sourceSets.create("lib")
 val backend = sourceSets.create("backend")
 val stubs = sourceSets.create("stubs")
 val main = sourceSets.getByName("main")
-val testmod = sourceSets.create("testmod") {
-    compileClasspath += main.compileClasspath
-    runtimeClasspath += main.runtimeClasspath
-}
+val testMod = sourceSets.create("testMod")
 
 transitiveSourceSets {
     compileClasspath = main.compileClasspath
@@ -39,6 +36,9 @@ transitiveSourceSets {
         compile(stubs)
         implementation(api, lib, backend)
     }
+    sourceSet(testMod) {
+        rootCompile()
+    }
 
     createCompileConfigurations()
 }
@@ -49,6 +49,7 @@ platform {
     setupLoomMod(api, lib, backend, main)
     setupLoomRuns()
     setupFatJar(api, lib, backend, main)
+    setupTestMod(testMod)
 }
 
 jarSets {
