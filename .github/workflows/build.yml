@@ -5,14 +5,12 @@ on: [ workflow_dispatch, pull_request, push ]
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      JAVA_VERSION: 17
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java
-        run: echo "JAVA_HOME=$JAVA_HOME_${{ env.JAVA_VERSION }}_X64" >> "$GITHUB_ENV"
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
 
       - name: Loom Cache
         uses: actions/cache@v4
@@ -82,5 +80,5 @@ jobs:
           modloader: ${{ matrix.loader }}
           regex: .*${{ matrix.loader }}.*
           mc-runtime-test: none
-          java: ${{ env.JAVA_VERSION }}
+          java: 17
           fabric-api: ${{ matrix.loader == 'fabric' && env.FABRIC_API_VERSION || 'none' }}
