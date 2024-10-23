@@ -1,5 +1,9 @@
 package dev.engine_room.flywheel;
 
+import net.minecraftforge.common.MinecraftForge;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
 import net.minecraft.client.Minecraft;
@@ -10,22 +14,23 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod("flywheel_testmod")
 public class FlywheelTestModClient {
+	private static final Logger LOGGER = LoggerFactory.getLogger("Flywheel Test Mod");
+
 	private int ticks = 0;
 
 	public FlywheelTestModClient() {
-		if (Boolean.parseBoolean(System.getProperty("FLYWHEEL_AUTO_TEST"))) {
+		MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent e) -> {
+			if (e.phase == TickEvent.Phase.END) {
+				LOGGER.info("Tick Count: {}", ticks);
 
-			IEventBus modEventBus = FMLJavaModLoadingContext.get()
-					.getModEventBus();
+				if (++ticks == 50) {
+					LOGGER.info("Running mixin audit");
+					MixinEnvironment.getCurrentEnvironment().audit();
 
-			modEventBus.addListener((TickEvent.ClientTickEvent e) -> {
-				if (e.phase == TickEvent.Phase.END) {
-					if (++ticks == 50) {
-						MixinEnvironment.getCurrentEnvironment().audit();
-						Minecraft.getInstance().stop();
-					}
+					LOGGER.info("Ran mixin audit, stopping client.");
+					Minecraft.getInstance().stop();
 				}
-			});
-		}
+			}
+		});
 	}
 }
