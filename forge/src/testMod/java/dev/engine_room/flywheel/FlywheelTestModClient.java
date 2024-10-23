@@ -8,7 +8,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-@Mod("flywheel-testmod")
+@Mod("flywheel_testmod")
 public class FlywheelTestModClient {
 	private int ticks = 0;
 
