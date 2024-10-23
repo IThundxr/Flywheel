@@ -10,7 +10,7 @@ public class FlywheelTestModClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		if (Boolean.getBoolean("flywheel.autoTest")) {
+		if (Boolean.parseBoolean(System.getProperty("FLYWHEEL_AUTO_TEST"))) {
 			ClientTickEvents.END_CLIENT_TICK.register(client -> {
 				if (++ticks == 50) {
 					MixinEnvironment.getCurrentEnvironment().audit();
