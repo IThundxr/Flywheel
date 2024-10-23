@@ -2,6 +2,8 @@ package dev.engine_room.flywheel;
 
 import net.minecraftforge.common.MinecraftForge;
 
+import net.minecraftforge.fml.loading.FMLLoader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.MixinEnvironment;
@@ -19,6 +21,8 @@ public class FlywheelTestModClient {
 	private int ticks = 0;
 
 	public FlywheelTestModClient() {
+		LOGGER.info("Starting Test Mod, on Dist: {}", FMLLoader.getDist());
+
 		MinecraftForge.EVENT_BUS.addListener((TickEvent.ClientTickEvent e) -> {
 			if (e.phase == TickEvent.Phase.END) {
 				LOGGER.info("Tick Count: {}", ticks);

@@ -1,5 +1,7 @@
 package dev.engine_room.flywheel;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.MixinEnvironment;
@@ -14,7 +16,7 @@ public class FlywheelTestModClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		LOGGER.info("Starting Test Mod");
+		LOGGER.info("Starting Test Mod, on Env: {}", FabricLoader.getInstance().getEnvironmentType());
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			LOGGER.info("Tick Count: {}", ticks);
