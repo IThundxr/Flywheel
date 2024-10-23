@@ -13,17 +13,17 @@ public class FlywheelTestModClient {
 	private int ticks = 0;
 
 	public FlywheelTestModClient() {
-		log("Loading test mod")
+		log("Loading test mod");
 
 		if (Boolean.getBoolean("flywheel.autoTest")) {
-			log("running autotest")
+			log("running autotest");
 
 			IEventBus modEventBus = FMLJavaModLoadingContext.get()
 					.getModEventBus();
 
 			modEventBus.addListener((TickEvent.ClientTickEvent e) -> {
 				if (e.phase == TickEvent.Phase.END) {
-					log("current ticks" + ticks)
+					log("current ticks" + ticks);
 					if (++ticks == 50) {
 						MixinEnvironment.getCurrentEnvironment().audit();
 						Minecraft.getInstance().stop();
@@ -34,6 +34,6 @@ public class FlywheelTestModClient {
 	}
 
 	public static void log(String s) {
-		System.out.println("[Flywheel Test Mod] " + s)
+		System.out.println("[Flywheel Test Mod] " + s);
 	}
 }
