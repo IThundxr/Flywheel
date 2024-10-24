@@ -40,9 +40,7 @@ jobs:
           path: |
             common/build/libs/
             fabric/build/libs/
-            fabric/build/devlibs/
             forge/build/libs/
-            forge/build/devlibs/
 
   test:
     strategy:
@@ -70,7 +68,7 @@ jobs:
         run: |
           mkdir -p run/mods
           cp ${{ matrix.loader }}/build/libs/flywheel-${{ matrix.loader }}-${{ env.MINECRAFT_VERSION }}-${{ env.MOD_VERSION }}.jar run/mods
-          cp ${{ matrix.loader }}/build/devlibs/flywheel-${{ matrix.loader }}-${{ env.MINECRAFT_VERSION }}-${{ env.MOD_VERSION }}-testmod.jar run/mods
+          cp ${{ matrix.loader }}/build/libs/flywheel-${{ matrix.loader }}-${{ env.MINECRAFT_VERSION }}-${{ env.MOD_VERSION }}-testmod.jar run/mods
 
       # Lock to a specific commit, it would be bad if the tag is re-pushed with unwanted changes
       - name: Run the MC client
