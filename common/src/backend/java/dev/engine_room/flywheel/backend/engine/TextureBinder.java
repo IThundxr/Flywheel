@@ -57,7 +57,6 @@ public class TextureBinder {
 				target.getDepthTexture()
 		);
 		GL32.glBindFramebuffer(GL33C.GL_FRAMEBUFFER, i);
-		//GlStateManager._viewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));
 	}
 
 	/**
