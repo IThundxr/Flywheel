@@ -1,7 +1,3 @@
-import net.fabricmc.loom.task.DownloadTask
-import net.fabricmc.loom.task.RenderDocRunTask
-import net.fabricmc.loom.util.LoomVersions
-
 plugins {
     idea
     java
@@ -78,45 +74,6 @@ loom {
 
 repositories {
     maven("https://maven.caffeinemc.net/releases/")
-}
-
-tasks.named("extractRenderDoc").configure {
-    enabled = false
-}
-
-
-val extractRenderDocLikeUpstream = tasks.register<Sync>("extractRenderDocLikeUpstream") {
-    group = "fabric"
-
-    val downloadRenderDoc = tasks.named<DownloadTask>("downloadRenderDoc")
-
-    from(
-        downloadRenderDoc
-            .flatMap { it.output }
-            .map { tarTree(it) }
-    )
-
-    into(layout.buildDirectory.dir("renderdoc"))
-}
-val renderDocVersion: String = LoomVersions.RENDERDOC.version()
-val renderDocBaseName = "renderdoc_$renderDocVersion"
-
-val fixedRenderDocCmd: Provider<RegularFile> = extractRenderDocLikeUpstream.flatMap {
-    layout.buildDirectory
-        .dir("renderdoc")
-        .map {
-            it.dir(renderDocBaseName)
-                .dir("bin")
-                .file("renderdoccmd")
-        }
-}
-
-tasks.withType<RenderDocRunTask>().configureEach {
-    dependsOn(extractRenderDocLikeUpstream)
-
-    renderDocExecutable.fileProvider(
-        fixedRenderDocCmd.map { it.asFile }
-    )
 }
 
 dependencies {
