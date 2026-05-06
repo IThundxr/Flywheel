@@ -22,7 +22,6 @@ import it.unimi.dsi.fastutil.floats.Float2FloatFunction;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.blockentity.ChestRenderer;
 import net.minecraft.client.resources.model.sprite.SpriteId;
@@ -199,8 +198,8 @@ public class ChestVisual<T extends BlockEntity & LidBlockEntity> extends Abstrac
 	private class BrightnessCombiner implements DoubleBlockCombiner.Combiner<BlockEntity, Integer> {
 		@Override
 		public Integer acceptDouble(BlockEntity first, BlockEntity second) {
-			int firstLight = LevelRenderer.getLightCoords(first.getLevel(), first.getBlockPos());
-			int secondLight = LevelRenderer.getLightCoords(second.getLevel(), second.getBlockPos());
+			int firstLight = LightCoordsUtil.getLightCoords(first.getLevel(), first.getBlockPos());
+			int secondLight = LightCoordsUtil.getLightCoords(second.getLevel(), second.getBlockPos());
 			int firstBlockLight = LightCoordsUtil.block(firstLight);
 			int secondBlockLight = LightCoordsUtil.block(secondLight);
 			int firstSkyLight = LightCoordsUtil.sky(firstLight);
@@ -210,12 +209,12 @@ public class ChestVisual<T extends BlockEntity & LidBlockEntity> extends Abstrac
 
 		@Override
 		public Integer acceptSingle(BlockEntity single) {
-			return LevelRenderer.getLightCoords(single.getLevel(), single.getBlockPos());
+			return LightCoordsUtil.getLightCoords(single.getLevel(), single.getBlockPos());
 		}
 
 		@Override
 		public Integer acceptNone() {
-			return LevelRenderer.getLightCoords(level, pos);
+			return LightCoordsUtil.getLightCoords(level, pos);
 		}
 	}
 }

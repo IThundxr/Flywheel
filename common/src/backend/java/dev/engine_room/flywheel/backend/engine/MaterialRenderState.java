@@ -6,9 +6,7 @@ import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -73,7 +71,7 @@ public final class MaterialRenderState {
 
 	private static void setupPolygonOffset(boolean polygonOffset) {
 		if (polygonOffset) {
-			GlStateManager._polygonOffset(-1.0F, -10.0F);
+			GlStateManager._polygonOffset(0.1F, 1.0F);
 			GlStateManager._enablePolygonOffset();
 		} else {
 			GlStateManager._polygonOffset(0.0F, 0.0F);
@@ -124,26 +122,26 @@ public final class MaterialRenderState {
 	private static void setupTransparency(Transparency transparency) {
 		switch (transparency) {
 		case OPAQUE -> {
-			GlStateManager._disableBlend();
+			GlStateManager._disableBlend(0);
 		}
 		case ADDITIVE -> {
-			GlStateManager._enableBlend();
+			GlStateManager._enableBlend(0);
 			GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		}
 		case LIGHTNING -> {
-			GlStateManager._enableBlend();
+			GlStateManager._enableBlend(0);
 			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_SRC_ALPHA, GlConst.GL_ONE);
 		}
 		case GLINT -> {
-			GlStateManager._enableBlend();
+			GlStateManager._enableBlend(0);
 			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_COLOR, GlConst.GL_ONE, GlConst.GL_ZERO, GlConst.GL_ONE);
 		}
 		case CRUMBLING -> {
-			GlStateManager._enableBlend();
+			GlStateManager._enableBlend(0);
 			GlStateManager._blendFuncSeparate(GlConst.GL_DST_COLOR, GlConst.GL_SRC_COLOR, GlConst.GL_ONE, GlConst.GL_ZERO);
 		}
 		case TRANSLUCENT -> {
-			GlStateManager._enableBlend();
+			GlStateManager._enableBlend(0);
 			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
 		}
 		}
