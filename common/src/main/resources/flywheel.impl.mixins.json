@@ -11,13 +11,14 @@
     "GameRendererMixin",
     "LevelMixin",
     "LevelRendererMixin",
+    "LevelExtractorMixin",
     "MinecraftMixin",
     "ModelPartAccessor",
     "PoseStackMixin",
     "fix.FixFabulousDepthMixin",
     "visualmanage.BlockEntityMixin",
     "visualmanage.LevelChunkMixin",
-    "visualmanage.LevelRendererMixin",
+    "visualmanage.LevelExactorMixin",
     "visualmanage.SectionCompilerMixin"
   ],
   "injectors": {

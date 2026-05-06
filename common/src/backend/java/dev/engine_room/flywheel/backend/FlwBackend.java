@@ -20,6 +20,7 @@ public final class FlwBackend {
 
 	public static void init(BackendConfig config) {
 		FlwBackend.config = config;
+		NoiseTextures.init();
 		Backends.init();
 	}
 }

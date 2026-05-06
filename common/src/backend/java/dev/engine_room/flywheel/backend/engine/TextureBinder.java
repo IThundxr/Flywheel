@@ -61,9 +61,12 @@ public class TextureBinder {
 
 	public static void bindRenderTarget(RenderTarget target) {
 		GlTexture colorTexture = (GlTexture) target.getColorTexture();
-		int i = colorTexture.getFbo(
-				GlUtil.getGlDevice().directStateAccess(),
-				target.getDepthTexture()
+		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
+		GlDevice device = GlUtil.getGlDevice();
+		int i = device.frameBufferCache().getFbo(
+				device.directStateAccess(),
+				Collections.singletonList(colorTexture),
+				depthTexture
 		);
 		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
 	}

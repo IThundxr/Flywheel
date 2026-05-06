@@ -8,8 +8,8 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL32;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.InternalVertex;
@@ -128,8 +128,8 @@ public class MeshPool {
 
 	public void bind(GlVertexArray vertexArray) {
 		indexPool.bind(vertexArray);
-		vertexArray.bindVertexBuffer(0, vbo.handle(), 0, InternalVertex.STRIDE);
-		vertexArray.bindAttributes(0, 0, InternalVertex.ATTRIBUTES);
+		vertexArray.bindVertexBuffer(0, vbo.handle(), 0, InternalVertex.FORMAT.getVertexSize());
+		vertexArray.bindAttributes(0, 0, InternalVertex.FORMAT);
 	}
 
 	public void delete() {
@@ -158,7 +158,7 @@ public class MeshPool {
 		}
 
 		public int byteSize() {
-			return mesh.vertexCount() * InternalVertex.STRIDE;
+			return mesh.vertexCount() * InternalVertex.FORMAT.getVertexSize();
 		}
 
 		public int indexCount() {
@@ -184,9 +184,9 @@ public class MeshPool {
 		public void draw(int instanceCount) {
 			if (instanceCount > 1) {
 
-				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(VertexFormat.Mode.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
+				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
 			} else {
-				GL32.glDrawElementsBaseVertex(GlConst.toGl(VertexFormat.Mode.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
+				GL32.glDrawElementsBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
 			}
 		}
 
