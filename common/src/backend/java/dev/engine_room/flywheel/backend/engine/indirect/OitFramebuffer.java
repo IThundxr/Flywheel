@@ -1,5 +1,7 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
+import java.util.Collections;
+
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL46;
 
@@ -12,11 +14,14 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.OitPrograms;
+import dev.engine_room.flywheel.backend.engine.TextureBinder;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.GlUtil;
 import net.minecraft.client.Minecraft;
 
+// TODO 26.2: Check if this works with Reverse-Z Depth
+// TODO 26.2: Make this use B3D as much as possible
 public class OitFramebuffer {
 	public static final float[] CLEAR_TO_ZERO = {0, 0, 0, 0};
 	public static final int[] DEPTH_RANGE_DRAW_BUFFERS = {GlConst.GL_COLOR_ATTACHMENT0};
@@ -50,14 +55,12 @@ public class OitFramebuffer {
 	public void prepare() {
 		RenderTarget renderTarget;
 
-		if (Minecraft.useShaderTransparency()) {
-			renderTarget = Minecraft.getInstance().levelRenderer.getItemEntityTarget();
+		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
+			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
 
-			renderTarget.copyDepthFrom(Minecraft.getInstance()
-					.getMainRenderTarget());
+			renderTarget.copyDepthFrom(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 		} else {
-			renderTarget = Minecraft.getInstance()
-					.getMainRenderTarget();
+			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		}
 
 		maybeResizeFBO(renderTarget.width, renderTarget.height);
@@ -70,8 +73,7 @@ public class OitFramebuffer {
 		Samplers.DEPTH_RANGE.makeActive();
 		GlStateManager._bindTexture(depthBounds);
 
-		Samplers.NOISE.makeActive();
-		GlStateManager._bindTexture(((GlTexture) NoiseTextures.BLUE_NOISE.getTexture()).glId());
+		TextureBinder.bind(Samplers.NOISE.number, NoiseTextures.BLUE_NOISE.getGpuTextureView(), null);
 
 		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
 		GlTexture depthTexture = (GlTexture) renderTarget.getDepthTexture();
@@ -85,11 +87,11 @@ public class OitFramebuffer {
 		// No depth writes, but we'll still use the depth test.
 		GlStateManager._depthMask(false);
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend();
+		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL32.glBlendEquation(GlConst.GL_MAX);
 
-		float far = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.depthFar;
+		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
 
 		if (GlCompat.SUPPORTS_DSA) {
 			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_RANGE_DRAW_BUFFERS);
@@ -108,7 +110,7 @@ public class OitFramebuffer {
 		// No depth writes, but we'll still use the depth test
 		GlStateManager._depthMask(false);
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend();
+		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
 
@@ -134,7 +136,7 @@ public class OitFramebuffer {
 		// Only write to depth, not color.
 		GlStateManager._depthMask(true);
 		GlStateManager._colorMask(ColorTargetState.WRITE_NONE);
-		GlStateManager._disableBlend();
+		GlStateManager._disableBlend(0);
 		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
 
 		if (GlCompat.SUPPORTS_DSA) {
@@ -143,8 +145,7 @@ public class OitFramebuffer {
 			GL32.glDrawBuffers(DEPTH_ONLY_DRAW_BUFFERS);
 		}
 
-		programs.getOitDepthProgram()
-				.bind();
+		programs.getOitDepthProgram().bind();
 
 		drawFullscreenQuad();
 	}
@@ -156,7 +157,7 @@ public class OitFramebuffer {
 		// No depth writes, but we'll still use the depth test
 		GlStateManager._depthMask(false);
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend();
+		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
 
@@ -175,10 +176,10 @@ public class OitFramebuffer {
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
-		if (Minecraft.useShaderTransparency()) {
-			bindRenderTarget(Minecraft.getInstance().levelRenderer.getItemEntityTarget());
+		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
+			bindRenderTarget(Minecraft.getInstance().levelRenderer.itemEntityTarget());
 		} else {
-			bindRenderTarget(Minecraft.getInstance().getMainRenderTarget());
+			bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 		}
 
 		// The composite shader writes out the closest depth to gl_FragDepth.
@@ -187,7 +188,7 @@ public class OitFramebuffer {
 		// If Neo gets wavelet OIT we can use their hooks to be correct with everything.
 		GlStateManager._depthMask(true);
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend();
+		GlStateManager._enableBlend(0);
 
 		// We rely on the blend func to achieve:
 		// final color = (1 - transmittance_total) * sum(color_f * alpha_f * transmittance_f) / sum(alpha_f * transmittance_f)
@@ -202,19 +203,20 @@ public class OitFramebuffer {
 		GlTextureUnit.T0.makeActive();
 		GlStateManager._bindTexture(accumulate);
 
-		programs.getOitCompositeProgram()
-				.bind();
+		programs.getOitCompositeProgram().bind();
 
 		drawFullscreenQuad();
 
-		bindRenderTarget(Minecraft.getInstance().getMainRenderTarget());
+		bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 	}
 
 	private static void bindRenderTarget(RenderTarget target) {
 		GlTexture colorTexture = (GlTexture) target.getColorTexture();
-		int i = colorTexture.getFbo(
+		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
+		int i = GlUtil.getGlDevice().frameBufferCache().getFbo(
 				GlUtil.getGlDevice().directStateAccess(),
-				target.getDepthTexture()
+				Collections.singletonList(colorTexture),
+				depthTexture
 		);
 		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
 		GlStateManager._viewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));

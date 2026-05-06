@@ -2,9 +2,9 @@ package dev.engine_room.flywheel.lib.visual;
 
 import java.util.Iterator;
 
-import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 import org.joml.FrustumIntersection;
+import org.jspecify.annotations.Nullable;
 
 import dev.engine_room.flywheel.api.visual.BlockEntityVisual;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
@@ -16,9 +16,9 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.lib.instance.FlatLit;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -100,11 +100,11 @@ public abstract class AbstractBlockEntityVisual<T extends BlockEntity> extends A
 	}
 
 	protected int computePackedLight() {
-		return LevelRenderer.getLightCoords(level, pos);
+		return LightCoordsUtil.getLightCoords(level, pos);
 	}
 
 	protected void relight(BlockPos pos, @Nullable FlatLit... instances) {
-		FlatLit.relight(LevelRenderer.getLightCoords(level, pos), instances);
+		FlatLit.relight(LightCoordsUtil.getLightCoords(level, pos), instances);
 	}
 
 	protected void relight(@Nullable FlatLit... instances) {
@@ -112,7 +112,7 @@ public abstract class AbstractBlockEntityVisual<T extends BlockEntity> extends A
 	}
 
 	protected void relight(BlockPos pos, Iterator<@Nullable FlatLit> instances) {
-		FlatLit.relight(LevelRenderer.getLightCoords(level, pos), instances);
+		FlatLit.relight(LightCoordsUtil.getLightCoords(level, pos), instances);
 	}
 
 	protected void relight(Iterator<@Nullable FlatLit> instances) {
@@ -120,7 +120,7 @@ public abstract class AbstractBlockEntityVisual<T extends BlockEntity> extends A
 	}
 
 	protected void relight(BlockPos pos, Iterable<@Nullable FlatLit> instances) {
-		FlatLit.relight(LevelRenderer.getLightCoords(level, pos), instances);
+		FlatLit.relight(LightCoordsUtil.getLightCoords(level, pos), instances);
 	}
 
 	protected void relight(Iterable<@Nullable FlatLit> instances) {

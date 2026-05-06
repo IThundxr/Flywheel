@@ -2,7 +2,6 @@ package dev.engine_room.flywheel.impl.visualization;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
 
 import org.jetbrains.annotations.Contract;
 import org.joml.FrustumIntersection;
@@ -40,18 +39,19 @@ import dev.engine_room.flywheel.lib.task.MapContextPlan;
 import dev.engine_room.flywheel.lib.task.NestedPlan;
 import dev.engine_room.flywheel.lib.task.SimplePlan;
 import dev.engine_room.flywheel.lib.util.LevelAttached;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.state.level.BlockBreakingRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.BlockDestructionProgress;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * A manager class for a single level where visualization is supported.
@@ -275,44 +275,41 @@ public class VisualizationManagerImpl implements VisualizationManager {
 		lateInit().engine.render(context);
 	}
 
-	private void renderCrumbling(RenderContext context, Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress) {
-		if (destructionProgress.isEmpty()) {
+	private void renderCrumbling(RenderContext context, List<BlockBreakingRenderState> blockBreakingRenderStates) {
+		if (blockBreakingRenderStates.isEmpty()) {
 			return;
 		}
 
 		List<Engine.CrumblingBlock> crumblingBlocks = new ArrayList<>();
 
-		for (var entry : destructionProgress.long2ObjectEntrySet()) {
-			var set = entry.getValue();
-			if (set == null || set.isEmpty()) {
-				// Nothing to do if there's no crumbling.
-				continue;
-			}
+		for (BlockBreakingRenderState renderState : blockBreakingRenderStates) {
+			BlockState state = renderState.blockState();
 
-			var visual = blockEntities.getStorage()
-					.visualAtPos(entry.getLongKey());
+			if (state.getRenderShape() == RenderShape.MODEL) {
+				BlockPos pos = renderState.blockPos();
 
-			if (visual == null) {
-				// The block doesn't have a visual, this is probably the common case.
-				continue;
-			}
+				var visual = blockEntities.getStorage().visualAtPos(pos.asLong());
 
-			List<Instance> instances = new ArrayList<>();
-
-			visual.collectCrumblingInstances(instance -> {
-				if (instance != null) {
-					instances.add(instance);
+				if (visual == null) {
+					// The block doesn't have a visual, this is probably the common case.
+					continue;
 				}
-			});
 
-			if (instances.isEmpty()) {
-				// The visual doesn't want to render anything crumbling.
-				continue;
+				List<Instance> instances = new ArrayList<>();
+
+				visual.collectCrumblingInstances(instance -> {
+					if (instance != null) {
+						instances.add(instance);
+					}
+				});
+
+				if (instances.isEmpty()) {
+					// The visual doesn't want to render anything crumbling.
+					continue;
+				}
+
+				crumblingBlocks.add(new CrumblingBlockImpl(pos, renderState.progress(), instances));
 			}
-
-			var maxDestruction = set.last();
-
-			crumblingBlocks.add(new CrumblingBlockImpl(maxDestruction.getPos(), maxDestruction.getProgress(), instances));
 		}
 
 		if (!crumblingBlocks.isEmpty()) {
@@ -372,8 +369,8 @@ public class VisualizationManagerImpl implements VisualizationManager {
 		}
 
 		@Override
-		public void beforeCrumbling(RenderContext ctx, Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress) {
-			renderCrumbling(ctx, destructionProgress);
+		public void beforeCrumbling(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates) {
+			renderCrumbling(ctx, blockBreakingRenderStates);
 		}
 	}
 

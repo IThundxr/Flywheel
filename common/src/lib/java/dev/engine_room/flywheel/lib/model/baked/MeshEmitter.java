@@ -6,10 +6,10 @@ import org.jetbrains.annotations.UnknownNullability;
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.model.Mesh;
@@ -92,7 +92,7 @@ abstract class MeshEmitter implements VertexConsumer {
 		}
 
 		ByteBufferBuilder byteBufferBuilder = byteBufferBuilderStack.nextOrCreate();
-		BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, Mode.QUADS, FlywheelVertexFormats.BLOCK_VERTEX_FORMAT);
+		BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, FlywheelVertexFormats.BLOCK_VERTEX_FORMAT);
 
 		// currentIndex == numBufferBuildersPopulated here.
 		materials[currentIndex] = material;
