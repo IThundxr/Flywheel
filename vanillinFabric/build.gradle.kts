@@ -8,7 +8,8 @@ plugins {
 }
 
 val common = ":common"
-val platform = ":fabric"
+// TODO - Change this back to ":fabric" when frapi is ported
+val platform = ":fabricWithoutFrapi"
 
 subproject.init("vanillin-fabric", "vanillin_group", "vanillin_version")
 

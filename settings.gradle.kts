@@ -18,9 +18,10 @@ plugins {
 rootProject.name = "Flywheel"
 
 include("common")
-// TODO - Re-enable when FRAPI is real
+include("fabricWithoutFrapi")
+// TODO - Re-enable when FRAPI is ported
 //include("fabric")
-//include("vanillinFabric")
 // TODO - Re-enable neoforge when they finally decide to port to 26.2
 //include("neoforge")
 //include("vanillinNeoForge")
+include("vanillinFabric")
