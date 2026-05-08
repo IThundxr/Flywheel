@@ -47,7 +47,6 @@ public final class GlCompat {
 
 	public static final boolean SUPPORTS_DSA = ALLOW_DSA && isDsaSupported();
 
-	public static final boolean SUPPORTS_INSTANCING = isInstancingSupported();
 	public static final boolean SUPPORTS_INDIRECT = isIndirectSupported();
 
 	private GlCompat() {
@@ -139,16 +138,6 @@ public final class GlCompat {
 		return DRIVER == Driver.AMD || DRIVER == Driver.MESA ? 64 : 32;
 	}
 
-	private static boolean isInstancingSupported() {
-		if (CAPABILITIES == null) {
-			return false;
-		}
-		if (CAPABILITIES.OpenGL33) {
-			return true;
-		}
-		return CAPABILITIES.GL_ARB_shader_bit_encoding;
-	}
-
 	private static boolean isIndirectSupported() {
 		if (CAPABILITIES == null) {
 			return false;
@@ -163,7 +152,10 @@ public final class GlCompat {
 				&& CAPABILITIES.GL_ARB_multi_draw_indirect
 				&& CAPABILITIES.GL_ARB_shader_draw_parameters
 				&& CAPABILITIES.GL_ARB_shader_storage_buffer_object
-				&& CAPABILITIES.GL_ARB_shading_language_420pack && CAPABILITIES.GL_ARB_vertex_attrib_binding && CAPABILITIES.GL_ARB_shader_image_load_store && CAPABILITIES.GL_ARB_shader_image_size;
+				&& CAPABILITIES.GL_ARB_shading_language_420pack
+				&& CAPABILITIES.GL_ARB_vertex_attrib_binding
+				&& CAPABILITIES.GL_ARB_shader_image_load_store
+				&& CAPABILITIES.GL_ARB_shader_image_size;
 	}
 
 	private static boolean isDsaSupported() {

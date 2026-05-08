@@ -1,10 +1,12 @@
 package dev.engine_room.flywheel.backend.engine.embed;
 
-import org.jspecify.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix3fc;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
+import org.jspecify.annotations.Nullable;
+
+import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;
@@ -12,9 +14,10 @@ import dev.engine_room.flywheel.api.instance.Instancer;
 import dev.engine_room.flywheel.api.instance.InstancerProvider;
 import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.api.visualization.VisualEmbedding;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.Mat3;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.Mat4;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.engine.EngineImpl;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.lib.util.ExtraMemoryOps;
 import net.minecraft.core.Vec3i;
 
@@ -82,9 +85,9 @@ public class EmbeddedEnvironment implements VisualEmbedding, Environment {
 	}
 
 	@Override
-	public void setupDraw(GlProgram program) {
-		program.setMat4(EmbeddingUniforms.MODEL_MATRIX, poseComposed);
-		program.setMat3(EmbeddingUniforms.NORMAL_MATRIX, normalComposed);
+	public void setupDraw(RenderPass renderPass) {
+		new Mat4(EmbeddingUniforms.MODEL_MATRIX, poseComposed).set(renderPass);
+		new Mat3(EmbeddingUniforms.NORMAL_MATRIX, normalComposed).set(renderPass);
 	}
 
 	@Override

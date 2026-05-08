@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.LightShader;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.MaterialShaders;
 import dev.engine_room.flywheel.backend.BackendConfig;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.InternalVertex;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
 import dev.engine_room.flywheel.backend.Samplers;
@@ -19,7 +22,6 @@ import dev.engine_room.flywheel.backend.compile.component.UberShaderComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
 import dev.engine_room.flywheel.backend.engine.uniform.FrameUniforms;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
@@ -50,6 +52,27 @@ public final class PipelineCompiler {
 		ALL.add(this);
 	}
 
+	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
+		var light = material.light();
+		var cutout = material.cutout();
+		var shaders = material.shaders();
+		var fog = material.fog();
+
+		// Tell fogSources to index the fog shader if we haven't seen it before.
+		// If it is new, this will trigger a deletion of all programs.
+		MaterialShaderIndices.fogSources()
+				.index(fog.source());
+
+		// Same thing for cutout.
+		// Add OFF to the index here anyway to ensure MaterialEncoder doesn't deleteAll at an inappropriate time.
+		MaterialShaderIndices.cutoutSources()
+				.index(cutout.source());
+
+		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader);
+		return harness.getPipeline(pipelineSnippet, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
+	}
+
+	@Deprecated(forRemoval = true)
 	public GlProgram get(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
 		var light = material.light();
 		var cutout = material.cutout();
@@ -66,7 +89,7 @@ public final class PipelineCompiler {
 		MaterialShaderIndices.cutoutSources()
 				.index(cutout.source());
 
-		return harness.get(new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.debugOn(), oit));
+		return harness.get(new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
 	public void delete() {
@@ -174,17 +197,9 @@ public final class PipelineCompiler {
 								.source())
 						.with((key, fetcher) -> (key.useCutout() ? CUTOUT : fetcher.get(CutoutShaders.OFF.source())))
 						.withResource(pipeline.fragmentMain()))
-				.preLink((key, program) -> {
-					program.bindAttribLocation("_flw_aPos", 0);
-					program.bindAttribLocation("_flw_aColor", 1);
-					program.bindAttribLocation("_flw_aTexCoord", 2);
-					program.bindAttribLocation("_flw_aOverlay", 3);
-					program.bindAttribLocation("_flw_aLight", 4);
-					program.bindAttribLocation("_flw_aNormal", 5);
-				})
 				.postLink((key, program) -> {
-					Uniforms.setUniformBlockBindings(program);
 
+					// TODO b3d-ification
 					program.bind();
 
 					program.setSamplerBinding("flw_diffuseTex", Samplers.DIFFUSE);
@@ -193,13 +208,10 @@ public final class PipelineCompiler {
 					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
 					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
 					program.setSamplerBinding("_flw_blueNoise", Samplers.NOISE);
-					pipeline.onLink()
-							.accept(program);
-					key.contextShader()
-							.onLink(program);
 
 					GlProgram.unbind();
 				})
+				.snippet(pipeline.snippet())
 				.harness(pipeline.compilerMarker(), sources);
 
 		return new PipelineCompiler(harness);

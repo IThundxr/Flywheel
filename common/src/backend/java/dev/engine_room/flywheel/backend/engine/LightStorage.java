@@ -12,7 +12,6 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.backend.BackendDebugFlags;
 import dev.engine_room.flywheel.backend.engine.indirect.StagingBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
 import dev.engine_room.flywheel.lib.instance.InstanceTypes;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.math.MoreMath;
@@ -242,12 +241,12 @@ public class LightStorage implements Effect {
 		changed.clear();
 	}
 
-	public void upload(GlBuffer buffer) {
+	public void upload(DynamicGpuBuffer buffer) {
 		if (changed.isEmpty()) {
 			return;
 		}
 
-		buffer.upload(arena.indexToPointer(0), arena.capacity() * SECTION_SIZE_BYTES);
+		buffer.write(arena.asBuffer());
 		changed.clear();
 	}
 

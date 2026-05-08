@@ -2,6 +2,9 @@ package dev.engine_room.flywheel.api.material;
 
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+
 import net.minecraft.resources.Identifier;
 
 public interface Material {
@@ -31,15 +34,23 @@ public interface Material {
 	 */
 	boolean backfaceCulling();
 
-	boolean polygonOffset();
+	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
+	@Nullable
+	DepthStencilState depthStencilState();
 
-	DepthTest depthTest();
-
-	Transparency transparency();
-
-	WriteMask writeMask();
+	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
+	// TODO: RenderPipeline supports up to 8, do we want to do the same?
+	@Nullable
+	ColorTargetState colorTargetState();
 
 	boolean useOverlay();
+
+	/**
+	 * Should this material be rendered with Order-Independent Translucency?
+	 *
+	 * @return {@code true} if this material should be rendered with Order-Independent Translucency.
+	 */
+	boolean useOit();
 
 	/**
 	 * Should this material be rendered with block/sky lighting?
@@ -83,12 +94,11 @@ public interface Material {
 		return this.blur() == other.blur()
 				&& this.mipmap() == other.mipmap()
 				&& this.backfaceCulling() == other.backfaceCulling()
-				&& this.polygonOffset() == other.polygonOffset()
-				&& this.depthTest() == other.depthTest()
-				&& this.transparency() == other.transparency()
-				&& this.writeMask() == other.writeMask()
+				&& this.depthStencilState() == other.depthStencilState()
+				&& this.colorTargetState() == other.colorTargetState()
 				&& this.useOverlay() == other.useOverlay()
 				&& this.useLight() == other.useLight()
+				&& this.useOit() == other.useOit()
 				&& this.cardinalLightingMode() == other.cardinalLightingMode()
 				&& this.ambientOcclusion() == other.ambientOcclusion()
 				&& this.shaders().fragmentSource().equals(other.shaders().fragmentSource())

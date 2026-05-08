@@ -2,18 +2,13 @@ package dev.engine_room.gradle.platform
 
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RenderDocRunTask
-import net.fabricmc.loom.task.RenderDocRunUITask
+import net.fabricmc.loom.task.RunGameTask
 import net.neoforged.moddevgradle.dsl.ModDevExtension
-import net.neoforged.moddevgradle.dsl.RunModel
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.SourceSet
 import org.gradle.jvm.tasks.Jar
-import org.gradle.kotlin.dsl.assign
-import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.the
-import org.gradle.kotlin.dsl.withType
+import org.gradle.kotlin.dsl.*
 import java.io.File
 
 open class PlatformExtension(val project: Project) {
@@ -30,7 +25,8 @@ open class PlatformExtension(val project: Project) {
     }
 
     fun setupLoomRuns() {
-        project.the<LoomGradleExtensionAPI>().runs.apply {
+        val loom = project.the<LoomGradleExtensionAPI>();
+        loom.runs.apply {
             named("client") {
                 isIdeConfigGenerated = true
 
@@ -42,27 +38,29 @@ open class PlatformExtension(val project: Project) {
                 property("mixin.debug.export", "true")
                 property("mixin.debug.verbose", "true")
 
-                programArgs("--renderDebugLabels")
-
                 // 720p baby!
                 programArgs("--width", "1280", "--height", "720")
+
+                // Helpful when debugging issues
+                programArguments.addAll("--renderDebugLabels", "--vulkanValidation")
             }
 
             // We're a client mod, but we need to make sure we correctly render when playing on a server.
             named("server") {
                 isIdeConfigGenerated = true
-                programArgs("--nogui")
             }
         }
 
-
-        if (System.getProperty("os.name") == "Linux") {
-            project.tasks.withType<RenderDocRunTask> {
-                renderDocExecutable.set(File("/usr/bin/renderdoccmd"))
+        if (System.getProperty("os.name").equals("Linux")) {
+            project.tasks.register("runClientTracy", RunGameTask::class.java, loom.runConfigs["client"]).configure {
+                tracy {
+                    tracyCapture.set(File("/usr/bin/tracy-capture"))
+                    output.set(project.file("profile.tracy"))
+                }
             }
 
-            project.tasks.withType<RenderDocRunUITask> {
-                renderDocExecutable.set(File("/usr/bin/qrenderdoc"))
+            project.tasks.withType<RenderDocRunTask> {
+                renderDocExecutable.set(File("/usr/bin/renderdoccmd"))
             }
         }
     }

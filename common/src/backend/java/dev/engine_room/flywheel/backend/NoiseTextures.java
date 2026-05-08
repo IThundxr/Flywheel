@@ -1,13 +1,15 @@
 package dev.engine_room.flywheel.backend;
 
+import org.jetbrains.annotations.ApiStatus.Internal;
+
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.ReloadableTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 
 public enum NoiseTextures {
@@ -18,7 +20,6 @@ public enum NoiseTextures {
 	NoiseTextures(String texturePath) {
 		Identifier textureId = IdentifierUtil.id(texturePath);
 		this.reloadableTexture = new SimpleTexture(textureId);
-		Minecraft.getInstance().getTextureManager().registerAndLoad(textureId, this.reloadableTexture);
 	}
 
 	public GpuTexture getGpuTexture() {
@@ -33,6 +34,8 @@ public enum NoiseTextures {
 		return reloadableTexture.getSampler();
 	}
 
-	// Just so the class gets loaded
-	static void init() {}
+	@Internal
+	public void register(TextureManager textureManager) {
+		textureManager.register(reloadableTexture.resourceId(), reloadableTexture);
+	}
 }

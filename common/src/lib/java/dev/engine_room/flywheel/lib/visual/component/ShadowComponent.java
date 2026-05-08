@@ -4,9 +4,12 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.platform.CompareOp;
+
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.api.material.Transparency;
-import dev.engine_room.flywheel.api.material.WriteMask;
 import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.api.vertex.MutableVertexList;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
@@ -47,9 +50,9 @@ public final class ShadowComponent implements EntityComponent {
 	private static final Material SHADOW_MATERIAL = SimpleMaterial.builder()
 			.texture(SHADOW_TEXTURE)
 			.mipmap(false)
-			.polygonOffset(true) // vanilla shadows use "view offset" but this seems to work fine
-			.transparency(Transparency.TRANSLUCENT)
-			.writeMask(WriteMask.COLOR)
+			// vanilla shadows use "view offset" but this seems to work fine
+			.depthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false, 1.0F, 10.0F))
+			.colorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
 			.build();
 	private static final Model SHADOW_MODEL = new SingleMeshModel(ShadowMesh.INSTANCE, SHADOW_MATERIAL);
 
