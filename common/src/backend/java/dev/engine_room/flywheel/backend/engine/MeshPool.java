@@ -5,18 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mojang.blaze3d.systems.RenderPass;
-
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.opengl.GL32;
 
-import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.InternalVertex;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.backend.util.ReferenceCounted;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
@@ -130,12 +125,6 @@ public class MeshPool implements AutoCloseable {
 		vertexBlock.free();
 	}
 
-	public void bind(GlVertexArray vertexArray) {
-		indexPool.bind(vertexArray);
-		vertexArray.bindVertexBuffer(0, vbo.handle(), 0, InternalVertex.FORMAT.getVertexSize());
-		vertexArray.bindAttributes(0, 0, InternalVertex.FORMAT);
-	}
-
 	public void bindToRenderPass(RenderPass renderPass) {
 		renderPass.setVertexBuffer(0, vbo.getCurrentBuffer().slice());
 		indexPool.bindToRenderPass(renderPass);
@@ -183,20 +172,17 @@ public class MeshPool implements AutoCloseable {
 			return MeshPool.this.indexPool.firstIndex(mesh.indexSequence());
 		}
 
-		public long firstIndexByteOffset() {
-			return (long) firstIndex() * Integer.BYTES;
+		public int firstIndexByteOffset() {
+			return firstIndex() * Integer.BYTES;
 		}
 
 		public boolean isInvalid() {
 			return mesh.vertexCount() == 0 || baseVertex == INVALID_BASE_VERTEX || isDeleted();
 		}
 
-		public void draw(int instanceCount) {
-			if (instanceCount > 1) {
-				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
-			} else {
-				GL32.glDrawElementsBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
-			}
+		// TODO b3d-ification: We should probably submit RenderPass.Draw calls instead of doing these one by one
+		public void submitDraw(RenderPass renderPass, int instanceCount) {
+			renderPass.drawIndexed(baseVertex, firstIndexByteOffset(), mesh.indexCount(), instanceCount);
 		}
 
 		@Override

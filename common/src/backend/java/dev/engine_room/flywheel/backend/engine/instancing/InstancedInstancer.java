@@ -5,22 +5,25 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
+
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceWriter;
 import dev.engine_room.flywheel.backend.engine.BaseInstancer;
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
+	public static final String TEXEL_BUFFER_BINDING = "InstanceTexelBuffer";
+
 	private final int instanceStride;
 
 	private final InstanceWriter<I> writer;
 	@Nullable
-	private GlBuffer vbo;
+	private DynamicGpuBuffer vbo;
 
 	private final List<InstancedDraw> draws = new ArrayList<>();
 
@@ -41,7 +44,12 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 			return;
 		}
 
-		vbo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
+		// TODO b3d-ification: check if we need a bigger buffer
+		vbo = new DynamicGpuBuffer(
+				"Flywheel InstancedInstancer Vertex Buffer",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
+				1024 * 4 // 4 MB
+		);
 	}
 
 	public void updateBuffer() {
@@ -56,8 +64,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 
 			writeAll(temp.ptr());
 
-			vbo.upload(temp);
-
+			vbo.write(temp.asBuffer());
 			temp.free();
 		} else {
 			writeChanged();
@@ -80,8 +87,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 				ptr += instanceStride;
 			}
 
-			vbo.uploadSpan((long) startInclusive * instanceStride, temp);
-
+			vbo.writeSpan(startInclusive * instanceStride, temp.asBuffer());
 			temp.free();
 		});
 	}
@@ -97,7 +103,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		return Math.max(capacity + (long) instanceStride * 16, (long) (capacity * 1.6));
 	}
 
-	public boolean needsToGrow(long capacity) {
+	public boolean needsToGrow(int capacity) {
 		if (capacity < 0) {
 			throw new IllegalArgumentException("Size " + capacity + " < 0");
 		}
@@ -106,7 +112,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 			return false;
 		}
 
-        return capacity > vbo.size();
+        return capacity > vbo.currentCapacity();
     }
 
 	public void parallelUpdate() {
@@ -167,7 +173,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		if (vbo == null) {
 			return;
 		}
-		vbo.delete();
+		vbo.close();
 		vbo = null;
 
 		for (InstancedDraw instancedDraw : draws) {
@@ -179,11 +185,11 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		draws.add(instancedDraw);
 	}
 
-	public void bind(TextureBuffer buffer) {
+	public void bindToRenderPass(RenderPass renderPass) {
 		if (vbo == null) {
 			return;
 		}
 
-		buffer.bind(vbo.handle());
+		renderPass.setUniform(TEXEL_BUFFER_BINDING, vbo.getCurrentBuffer());
 	}
 }
