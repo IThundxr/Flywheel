@@ -3,31 +3,42 @@ package dev.engine_room.flywheel.backend.engine.instancing;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.system.MemoryUtil;
 
-import dev.engine_room.flywheel.backend.Samplers;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
+
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
 import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedLight implements AutoCloseable {
-	private final GlBuffer lut;
-	private final GlBuffer sections;
+	public static final String LUT_BINDING = "Flw_Lut";
+	public static final String SECTIONS_BINDING = "Flw_Sections";
+
+	private final DynamicGpuBuffer lut;
+	private final DynamicGpuBuffer sections;
 	private final TextureBuffer lutTexture;
 	private final TextureBuffer sectionsTexture;
 
+	// TODO b3d-ification: Check if the default sizes should be higher
 	public InstancedLight() {
-		lut = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
-		sections = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
+		lut = new DynamicGpuBuffer(
+				"Flywheel Instanced Light LUT",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
+				1024 * 4 // 4 MB
+		);
+		sections = new DynamicGpuBuffer(
+				"Flywheel Instanced Light Sections",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
+				1024 * 4 // 4 MB
+		);
 		lutTexture = new TextureBuffer(GL32.GL_R32UI);
 		sectionsTexture = new TextureBuffer(GL32.GL_R32UI);
 	}
 
-	public void bind() {
-		Samplers.LIGHT_LUT.makeActive();
-		lutTexture.bind(lut.handle());
-		Samplers.LIGHT_SECTIONS.makeActive();
-		sectionsTexture.bind(sections.handle());
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setUniform(LUT_BINDING, lut.getCurrentBuffer());
+		renderPass.setUniform(SECTIONS_BINDING, sections.getCurrentBuffer());
 	}
 
 	public void flush(LightStorage light) {
@@ -40,24 +51,22 @@ public class InstancedLight implements AutoCloseable {
 		if (light.checkNeedsLutRebuildAndClear()) {
 			var lut = light.createLut();
 
-			var up = MemoryBlock.malloc((long) lut.size() * Integer.BYTES);
-
-			long ptr = up.ptr();
+			var memoryBlock = MemoryBlock.malloc((long) lut.size() * Integer.BYTES);
+			long ptr = memoryBlock.ptr();
 
 			for (int i = 0; i < lut.size(); i++) {
 				MemoryUtil.memPutInt(ptr + (long) Integer.BYTES * i, lut.getInt(i));
 			}
 
-			this.lut.upload(up);
-
-			up.free();
+			this.lut.write(memoryBlock.asBuffer());
+			memoryBlock.free();
 		}
 	}
 
 	@Override
 	public void close() {
-		lut.delete();
-		sections.delete();
+		lut.close();
+		sections.close();
 		lutTexture.delete();
 		sectionsTexture.delete();
 	}

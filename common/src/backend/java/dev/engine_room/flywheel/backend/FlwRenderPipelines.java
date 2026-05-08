@@ -6,6 +6,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 public class FlwRenderPipelines {
 	private static RenderPipeline.Snippet FLYWHEEL_RENDER_PIPELINE_SNIPPET = RenderPipeline.builder()
 			.withVertexBinding(0, InternalVertex.FORMAT)
+			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCED_LIGHT)
 			.buildSnippet();
 
 	public static RenderPipeline FLYWHEEL_RENDER_PIPELINE = RenderPipeline.builder(FLYWHEEL_RENDER_PIPELINE_SNIPPET)
