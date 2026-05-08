@@ -25,6 +25,11 @@ open class SubprojectExtension(val project: Project) {
         addRepositories()
         configureTasks()
         setupPublishing()
+
+        // FIXME b3d-ification: Disable everything indirect rendering related
+        project.tasks.withType<JavaCompile>().configureEach {
+            exclude("**/IndirectDrawManager.java")
+        }
     }
 
     val buildNumber: String? by lazy {

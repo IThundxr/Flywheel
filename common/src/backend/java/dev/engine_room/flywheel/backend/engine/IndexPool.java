@@ -2,11 +2,9 @@ package dev.engine_room.flywheel.backend.engine;
 
 import com.mojang.blaze3d.IndexType;
 import com.mojang.blaze3d.buffers.GpuBuffer;
-
 import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.IndexSequence;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -84,10 +82,6 @@ public class IndexPool implements AutoCloseable {
 
 		ebo.write(indexBlock.asBuffer());
 		indexBlock.free();
-	}
-
-	public void bind(GlVertexArray vertexArray) {
-		vertexArray.setElementBuffer(ebo.handle());
 	}
 
 	public void bindToRenderPass(RenderPass renderPass) {

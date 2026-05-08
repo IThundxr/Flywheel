@@ -1,6 +1,5 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
-import org.lwjgl.opengl.GL32;
 import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
@@ -8,7 +7,6 @@ import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedLight implements AutoCloseable {
@@ -17,8 +15,6 @@ public class InstancedLight implements AutoCloseable {
 
 	private final DynamicGpuBuffer lut;
 	private final DynamicGpuBuffer sections;
-	private final TextureBuffer lutTexture;
-	private final TextureBuffer sectionsTexture;
 
 	// TODO b3d-ification: Check if the default sizes should be higher
 	public InstancedLight() {
@@ -32,8 +28,6 @@ public class InstancedLight implements AutoCloseable {
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
 				1024 * 4 // 4 MB
 		);
-		lutTexture = new TextureBuffer(GL32.GL_R32UI);
-		sectionsTexture = new TextureBuffer(GL32.GL_R32UI);
 	}
 
 	public void bindToRenderPass(RenderPass renderPass) {
@@ -67,7 +61,5 @@ public class InstancedLight implements AutoCloseable {
 	public void close() {
 		lut.close();
 		sections.close();
-		lutTexture.delete();
-		sectionsTexture.delete();
 	}
 }

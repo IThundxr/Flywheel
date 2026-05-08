@@ -19,8 +19,6 @@ import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.Transparency;
-import dev.engine_room.flywheel.backend.FlwRenderPipelines;
-import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
@@ -32,9 +30,7 @@ import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
-import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -55,21 +51,20 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	 * A map of vertex types to their mesh pools.
 	 */
 	private final MeshPool meshPool;
-	private final TextureBuffer instanceTexture;
 	private final InstancedLight light;
 
-	private final OitFramebuffer oitFramebuffer;
+	// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
+	//private final OitFramebuffer oitFramebuffer;
 
 	public InstancedDrawManager(InstancingPrograms programs) {
 		programs.acquire();
 		this.programs = programs;
 
 		meshPool = new MeshPool();
-		instanceTexture = new TextureBuffer();
 		light = new InstancedLight();
 
-		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
-
+		// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
+		//oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 	}
 
 	@Override
@@ -125,7 +120,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
-			renderPass.setPipeline(FlwRenderPipelines.FLYWHEEL_RENDER_PIPELINE);
+			// FIXME b3d-ification: This pipeline does not work
+			//renderPass.setPipeline(FlwRenderPipelines.FLYWHEEL_RENDER_PIPELINE);
 			Uniforms.bindToRenderPass(renderPass);
 			meshPool.bindToRenderPass(renderPass);
 
@@ -135,9 +131,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			light.bindToRenderPass(renderPass);
 
-			submitDraws();
+			submitDraws(renderPass);
 
-			// TODO b3d-ification: OIT draws need to be handled
+			// FIXME b3d-ification: OIT draws need to be handled
 //			if (!oitDraws.isEmpty()) {
 //				oitFramebuffer.prepare();
 //
@@ -163,12 +159,13 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		}
 	}
 
-	private void submitDraws() {
+	private void submitDraws(RenderPass renderPass) {
 		for (var drawCall : draws) {
 			var material = drawCall.material();
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
 
+			// TODO b3d-ification: Instead of this, we need to get a render pipeline with the shader we need
 			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
 			program.bind();
 
@@ -176,40 +173,39 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			uploadMaterialUniform(program, material);
 
-			program.setUInt("_flw_baseVertex", drawCall.mesh()
-					.baseVertex());
+			program.setUInt("_flw_baseVertex", drawCall.mesh().baseVertex());
 
+			// FIXME b3d-ification: Handle this
 			MaterialRenderState.setup(material);
 
-			Samplers.INSTANCE_BUFFER.makeActive();
-
-			drawCall.render(instanceTexture);
+			drawCall.render(renderPass);
 		}
 	}
 
-	private void submitOitDraws(PipelineCompiler.OitMode mode) {
-		for (var drawCall : oitDraws) {
-			var material = drawCall.material();
-			var groupKey = drawCall.groupKey;
-			var environment = groupKey.environment();
-
-			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, mode);
-			program.bind();
-
-			environment.setupDraw(program);
-
-			uploadMaterialUniform(program, material);
-
-			program.setUInt("_flw_baseVertex", drawCall.mesh()
-					.baseVertex());
-
-			MaterialRenderState.setupOit(material);
-
-			Samplers.INSTANCE_BUFFER.makeActive();
-
-			drawCall.render(instanceTexture);
-		}
-	}
+	// FIXME b3d-ification: Handle OIT through RenderPass
+//	private void submitOitDraws(PipelineCompiler.OitMode mode) {
+//		for (var drawCall : oitDraws) {
+//			var material = drawCall.material();
+//			var groupKey = drawCall.groupKey;
+//			var environment = groupKey.environment();
+//
+//			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, mode);
+//			program.bind();
+//
+//			environment.setupDraw(program);
+//
+//			uploadMaterialUniform(program, material);
+//
+//			program.setUInt("_flw_baseVertex", drawCall.mesh()
+//					.baseVertex());
+//
+//			MaterialRenderState.setupOit(material);
+//
+//			Samplers.INSTANCE_BUFFER.makeActive();
+//
+//			drawCall.render(renderPass, instanceTexture);
+//		}
+//	}
 
 	@Override
 	public void delete() {
@@ -222,12 +218,12 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		oitDraws.clear();
 
 		meshPool.close();
-		instanceTexture.delete();
 		programs.release();
 
 		light.close();
 
-		oitFramebuffer.delete();
+		// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
+		//oitFramebuffer.delete();
 
 		super.delete();
 	}
@@ -273,7 +269,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
-		// TODO b3d-ification: Reimplement with RenderPass
+		// FIXME b3d-ification: Reimplement with RenderPass
 //		var crumblingMaterial = SimpleMaterial.builder();
 //
 //		Uniforms.bindAll();
