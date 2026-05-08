@@ -87,7 +87,6 @@ abstract class LevelRendererMixin {
 			VisualizationManager manager = VisualizationManager.get(Minecraft.getInstance().level);
 			if (manager != null) {
 				manager.renderDispatcher().afterEntities(flywheel$renderContext);
-				manager.renderDispatcher().beforeCrumbling(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
 			}
 		}
 	}
@@ -97,7 +96,7 @@ abstract class LevelRendererMixin {
 		if (flywheel$renderContext != null) {
 			VisualizationManager manager = VisualizationManager.get(Minecraft.getInstance().level);
 			if (manager != null) {
-				//manager.renderDispatcher().beforeCrumbling(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
+				manager.renderDispatcher().beforeCrumbling(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
 			}
 		}
 	}

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.mixin.GpuDeviceAccessor;
 
+@Deprecated(forRemoval = true)
 public class GlUtil {
 	// TODO: This is bad, really bad for when vulkan comes around
 	@Deprecated(forRemoval = true)

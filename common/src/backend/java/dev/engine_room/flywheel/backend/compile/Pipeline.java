@@ -1,18 +1,18 @@
 package dev.engine_room.flywheel.backend.compile;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 import net.minecraft.resources.Identifier;
 
 public record Pipeline(Identifier vertexMain, Identifier fragmentMain,
-					   InstanceAssembler assembler, String compilerMarker, Consumer<GlProgram> onLink) {
+                       InstanceAssembler assembler, RenderPipeline.@Nullable Snippet snippet, String compilerMarker) {
 
 	@FunctionalInterface
 	public interface InstanceAssembler {
@@ -35,10 +35,9 @@ public record Pipeline(Identifier vertexMain, Identifier fragmentMain,
 		private Identifier fragmentMain;
 		@Nullable
 		private InstanceAssembler assembler;
+		private RenderPipeline.@Nullable Snippet snippet;
 		@Nullable
 		private String compilerMarker;
-		@Nullable
-		private Consumer<GlProgram> onLink;
 
 		public Builder vertexMain(Identifier shader) {
 			this.vertexMain = shader;
@@ -55,13 +54,13 @@ public record Pipeline(Identifier vertexMain, Identifier fragmentMain,
 			return this;
 		}
 
-		public Builder compilerMarker(String compilerMarker) {
-			this.compilerMarker = compilerMarker;
+		public Builder snippet(RenderPipeline.Snippet snippet) {
+			this.snippet = snippet;
 			return this;
 		}
 
-		public Builder onLink(Consumer<GlProgram> onLink) {
-			this.onLink = onLink;
+		public Builder compilerMarker(String compilerMarker) {
+			this.compilerMarker = compilerMarker;
 			return this;
 		}
 
@@ -70,8 +69,7 @@ public record Pipeline(Identifier vertexMain, Identifier fragmentMain,
 			Objects.requireNonNull(fragmentMain);
 			Objects.requireNonNull(assembler);
 			Objects.requireNonNull(compilerMarker);
-			Objects.requireNonNull(onLink);
-			return new Pipeline(vertexMain, fragmentMain, assembler, compilerMarker, onLink);
+			return new Pipeline(vertexMain, fragmentMain, assembler, snippet, compilerMarker);
 		}
 	}
 }

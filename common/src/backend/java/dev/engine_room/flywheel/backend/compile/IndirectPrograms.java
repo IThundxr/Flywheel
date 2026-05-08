@@ -12,7 +12,6 @@ import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponen
 import dev.engine_room.flywheel.backend.compile.component.SsboInstanceComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
@@ -111,7 +110,6 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 						.withResource(InstanceType::cullShader)
 						.withComponent(SsboInstanceComponent::new)
 						.withResource(CULL_SHADER_MAIN))
-				.postLink((key, program) -> Uniforms.setUniformBlockBindings(program))
 				.harness("culling", sources);
 	}
 

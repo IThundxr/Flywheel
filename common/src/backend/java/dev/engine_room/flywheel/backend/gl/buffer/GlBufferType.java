@@ -12,6 +12,7 @@ import com.mojang.blaze3d.opengl.GlConst;
 
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 
+@Deprecated(forRemoval = true)
 public enum GlBufferType {
 	ARRAY_BUFFER(GlConst.GL_ARRAY_BUFFER, GL15C.GL_ARRAY_BUFFER_BINDING),
 	ELEMENT_ARRAY_BUFFER(GlConst.GL_ELEMENT_ARRAY_BUFFER, GL15C.GL_ELEMENT_ARRAY_BUFFER_BINDING),

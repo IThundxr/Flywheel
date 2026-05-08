@@ -1,9 +1,9 @@
 {
-  "required" : true,
-  "minVersion" : "0.8",
-  "package" : "dev.engine_room.flywheel.backend.mixin",
-  "compatibilityLevel" : "JAVA_25",
-  "client" : [
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.engine_room.flywheel.backend.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
     "AbstractClientPlayerAccessor",
     "CameraAccessor",
     "CameraMixin",
@@ -13,14 +13,20 @@
     "GlStateManagerMixin",
     "GpuDeviceAccessor",
     "LightingMixin",
+    "MinecraftMixin",
     "OptionsMixin",
     "RenderSystemMixin",
+    "b3d.GlVulkanRenderPassMixin",
+    "b3d.RenderPassBackendMixin",
+    "b3d.RenderPassMixin",
+    "b3d.opengl.GlCommandEncoderMixin",
+    "b3d.vulkan.VulkanCommandEncoderMixin",
     "light.LayerLightSectionStorageAccessor",
     "light.LightEngineAccessor",
     "light.SkyDataLayerStorageMapAccessor",
     "light.SkyLightSectionStorageMixin"
   ],
-  "injectors" : {
-    "defaultRequire" : 1
+  "injectors": {
+    "defaultRequire": 1
   }
 }

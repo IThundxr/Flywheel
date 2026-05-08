@@ -4,7 +4,7 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 
-// TODO: Waiting for mojang to impl compute shaders, once that is done this can be replaced with GlShaderModule
+// TODO: Waiting for mojang to add an enum for compute shaders, once that is done this can be replaced with GlShaderModule
 @Deprecated(forRemoval = true)
 public class GlShader extends GlObject {
 

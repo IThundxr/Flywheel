@@ -13,14 +13,17 @@ import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 
 public class ShaderCache {
-	private final Map<ShaderKey, ShaderResult> inner = new HashMap<>();
+	@Deprecated(forRemoval = true)
+	private final Map<ShaderKey, ShaderResult> innerOlder = new HashMap<>();
+	private final Map<ShaderKey, String> inner = new HashMap<>();
 
 	public ShaderCache() {
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlShader compile(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
 		var key = new ShaderKey(glslVersion, shaderType, name);
-		var cached = inner.get(key);
+		var cached = innerOlder.get(key);
 		if (cached != null) {
 			return cached.unwrap();
 		}
@@ -34,16 +37,31 @@ public class ShaderCache {
 		expand(sourceComponents, ctx::appendComponent);
 
 		ShaderResult out = ctx.compile(shaderType, name);
-		inner.put(key, out);
+		innerOlder.put(key, out);
 		return out.unwrap();
 	}
 
+	public String getSource(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
+		return inner.computeIfAbsent(new ShaderKey(glslVersion, shaderType, name), _ -> {
+			Compilation ctx = new Compilation();
+			ctx.version(glslVersion);
+			ctx.define(shaderType.define);
+
+			callback.accept(ctx);
+
+			expand(sourceComponents, ctx::appendComponent);
+
+			return ctx.getSource();
+		});
+	}
+
 	public void delete() {
-		inner.values()
+		innerOlder.values()
 				.stream()
 				.filter(r -> r instanceof ShaderResult.Success)
 				.map(ShaderResult::unwrap)
 				.forEach(GlShader::delete);
+		innerOlder.clear();
 		inner.clear();
 	}
 
