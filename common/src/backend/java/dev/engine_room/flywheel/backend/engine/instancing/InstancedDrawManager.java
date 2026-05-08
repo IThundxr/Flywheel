@@ -125,7 +125,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 
-
 		submitDraws();
 
 		if (!oitDraws.isEmpty()) {
@@ -210,7 +209,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		draws.clear();
 		oitDraws.clear();
 
-		meshPool.delete();
+		meshPool.close();
 		instanceTexture.delete();
 		programs.release();
 		vao.delete();
