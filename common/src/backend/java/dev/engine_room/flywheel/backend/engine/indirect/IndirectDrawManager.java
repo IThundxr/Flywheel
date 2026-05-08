@@ -16,9 +16,6 @@ import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 
 import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -45,7 +42,6 @@ import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.resources.Identifier;
 
 public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 	private final IndirectPrograms programs;
@@ -210,7 +206,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 		stagingBuffer.delete();
 
-		meshPool.delete();
+		meshPool.close();
 
 		crumblingDrawBuffer.delete();
 

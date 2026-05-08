@@ -1,15 +1,18 @@
 package dev.engine_room.flywheel.backend.engine;
 
+import com.mojang.blaze3d.IndexType;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+
+import com.mojang.blaze3d.systems.RenderPass;
+
 import dev.engine_room.flywheel.api.model.IndexSequence;
 import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
-public class IndexPool {
-	private final GlBuffer ebo;
+public class IndexPool implements AutoCloseable {
+	private final DynamicGpuBuffer ebo;
 
 	private final Reference2IntMap<IndexSequence> indexCounts;
 	private final Reference2IntMap<IndexSequence> firstIndices;
@@ -17,7 +20,12 @@ public class IndexPool {
 	private boolean dirty;
 
     public IndexPool() {
-		ebo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
+		// TODO b3d-ification: check if we need a bigger buffer
+		ebo = new DynamicGpuBuffer(
+				"Flywheel IndexPool Element Buffer",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
+				1024 * 4 // 4 MB
+		);
 
 		indexCounts = new Reference2IntOpenHashMap<>();
 		firstIndices = new Reference2IntOpenHashMap<>();
@@ -74,7 +82,7 @@ public class IndexPool {
 			firstIndex += indexCount;
 		}
 
-		ebo.upload(indexBlock);
+		ebo.write(indexBlock.asBuffer());
 		indexBlock.free();
 	}
 
@@ -82,7 +90,12 @@ public class IndexPool {
 		vertexArray.setElementBuffer(ebo.handle());
 	}
 
-	public void delete() {
-		ebo.delete();
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setIndexBuffer(ebo.getCurrentBuffer(), IndexType.INT);
+	}
+
+	@Override
+	public void close() {
+		ebo.close();
 	}
 }
