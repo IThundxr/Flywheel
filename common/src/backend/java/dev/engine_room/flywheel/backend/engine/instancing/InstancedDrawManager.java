@@ -3,15 +3,24 @@ package dev.engine_room.flywheel.backend.engine.instancing;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.SamplerCache;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
+
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.Transparency;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
@@ -30,10 +39,10 @@ import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 
@@ -53,7 +62,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	 * A map of vertex types to their mesh pools.
 	 */
 	private final MeshPool meshPool;
-	private final GlVertexArray vao;
 	private final TextureBuffer instanceTexture;
 	private final InstancedLight light;
 
@@ -64,11 +72,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		this.programs = programs;
 
 		meshPool = new MeshPool();
-		vao = GlVertexArray.create();
 		instanceTexture = new TextureBuffer();
 		light = new InstancedLight();
-
-		meshPool.bind(vao);
 
 		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 
@@ -118,36 +123,50 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
-		Uniforms.bindAll();
-		vao.bindForDraw();
-		TextureBinder.bindLightAndOverlay();
-		light.bind();
+		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+		SamplerCache samplers = RenderSystem.getSamplerCache();
 
-		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
+		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+		RenderTarget mainRenderTarget = gameRenderer.mainRenderTarget();
 
-		submitDraws();
+		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
+		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw",colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+			renderPass.setPipeline(FlwRenderPipelines.FLYWHEEL_RENDER_PIPELINE);
+			Uniforms.bindToRenderPass(renderPass);
+			meshPool.bindToRenderPass(renderPass);
 
-		if (!oitDraws.isEmpty()) {
-			oitFramebuffer.prepare();
+			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
+			renderPass.bindTexture("Sampler1", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+			renderPass.bindTexture("Sampler2", gameRenderer.lightmap(), clampToEdgeLinear);
 
-			oitFramebuffer.depthRange();
 
-			submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE);
+			light.bind();
 
-			oitFramebuffer.renderTransmittance();
+			submitDraws();
 
-			submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS);
+			if (!oitDraws.isEmpty()) {
+				oitFramebuffer.prepare();
 
-			oitFramebuffer.renderDepthFromTransmittance();
+				oitFramebuffer.depthRange();
 
-			// Need to bind this again because we just drew a full screen quad for OIT.
-			vao.bindForDraw();
+				submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE);
 
-			oitFramebuffer.accumulate();
+				oitFramebuffer.renderTransmittance();
 
-			submitOitDraws(PipelineCompiler.OitMode.EVALUATE);
+				submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS);
 
-			oitFramebuffer.composite();
+				oitFramebuffer.renderDepthFromTransmittance();
+
+				// Need to bind this again because we just drew a full screen quad for OIT.
+				vao.bindForDraw();
+
+				oitFramebuffer.accumulate();
+
+				submitOitDraws(PipelineCompiler.OitMode.EVALUATE);
+
+				oitFramebuffer.composite();
+			}
 		}
 	}
 
@@ -212,9 +231,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool.close();
 		instanceTexture.delete();
 		programs.release();
-		vao.delete();
 
-		light.delete();
+		light.close();
 
 		oitFramebuffer.delete();
 

@@ -2,6 +2,8 @@ package dev.engine_room.flywheel.backend.engine.uniform;
 
 import org.joml.Vector4fc;
 
+// Replaced by vanilla fog uniform
+@Deprecated(forRemoval = true)
 public final class FogUniforms extends UniformWriter {
 	private static final int SIZE = 4 * 10;
 	static final UniformBuffer BUFFER = new UniformBuffer(Uniforms.FOG_INDEX, SIZE);

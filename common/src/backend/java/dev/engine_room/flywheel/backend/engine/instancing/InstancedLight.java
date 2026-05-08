@@ -10,7 +10,7 @@ import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
-public class InstancedLight {
+public class InstancedLight implements AutoCloseable {
 	private final GlBuffer lut;
 	private final GlBuffer sections;
 	private final TextureBuffer lutTexture;
@@ -54,7 +54,8 @@ public class InstancedLight {
 		}
 	}
 
-	public void delete() {
+	@Override
+	public void close() {
 		lut.delete();
 		sections.delete();
 		lutTexture.delete();

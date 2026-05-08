@@ -1,5 +1,10 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.systems.RenderPass;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import dev.engine_room.flywheel.api.backend.RenderContext;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 
@@ -31,6 +36,15 @@ public final class Uniforms {
 		for (UniformBuffer buffer : ALL_BUFFERS) {
 			buffer.bind();
 		}
+	}
+
+	// We'll likely need something like BindGroupLayouts for this to work aswell
+	public static void bindToRenderPass(RenderPass renderPass) {
+		GpuBufferSlice fog = RenderSystem.getShaderFog();
+		if (fog != null) {
+			renderPass.setUniform(FOG_BLOCK_NAME, fog);
+		}
+		throw new UnsupportedOperationException("Not fully implemented yet");
 	}
 
 	private static void deleteAll() {
