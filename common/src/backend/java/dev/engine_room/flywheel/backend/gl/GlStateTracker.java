@@ -9,6 +9,7 @@ import dev.engine_room.flywheel.backend.mixin.GlStateManagerAccessor;
 /**
  * Tracks bound buffers/vbos because GlStateManager doesn't do that for us.
  */
+@Deprecated(forRemoval = true)
 public class GlStateTracker {
 	private static final int[] BUFFERS = new int[GlBufferType.values().length];
 	private static int vao;

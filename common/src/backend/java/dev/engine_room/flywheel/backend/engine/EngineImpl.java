@@ -87,6 +87,7 @@ public class EngineImpl implements Engine {
 
 	@Override
 	public void render(RenderContext context) {
+		// TODO B3D-ification: GlStateTracker#getRestoreState should no longer be needed considering RenderPass handles everything
 		try (var state = GlStateTracker.getRestoreState()) {
 			Uniforms.update(context);
 			environmentStorage.flush();
@@ -99,6 +100,7 @@ public class EngineImpl implements Engine {
 
 	@Override
 	public void renderCrumbling(RenderContext context, List<CrumblingBlock> crumblingBlocks) {
+		// TODO B3D-ification: GlStateTracker#getRestoreState should no longer be needed considering RenderPass handles everything
 		try (var state = GlStateTracker.getRestoreState()) {
 			drawManager.renderCrumbling(crumblingBlocks);
 		} catch (Exception e) {
