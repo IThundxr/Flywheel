@@ -4,7 +4,7 @@ import org.lwjgl.opengl.GL43;
 
 import com.mojang.blaze3d.opengl.GlConst;
 
-// TODO: Waiting for mojang to impl compute shaders
+// TODO: Waiting for mojang to impl a enum for compute shaders
 @Deprecated(forRemoval = true)
 public enum ShaderType {
 	VERTEX("vertex", "VERTEX_SHADER", "vert", GlConst.GL_VERTEX_SHADER),
