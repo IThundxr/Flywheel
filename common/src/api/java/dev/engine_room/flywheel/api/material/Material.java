@@ -1,6 +1,11 @@
 package dev.engine_room.flywheel.api.material;
 
+import java.util.Optional;
+
 import org.jspecify.annotations.Nullable;
+
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 
 import net.minecraft.resources.Identifier;
 
@@ -31,15 +36,19 @@ public interface Material {
 	 */
 	boolean backfaceCulling();
 
-	boolean polygonOffset();
+	Optional<DepthStencilState> depthStencilState();
 
-	DepthTest depthTest();
-
-	Transparency transparency();
-
-	WriteMask writeMask();
+	// TODO: RenderPipeline supports up to 8, do we want to do the same?
+	Optional<ColorTargetState> colorTargetState();
 
 	boolean useOverlay();
+
+	/**
+	 * Should this material be rendered with Order-Independent Translucency?
+	 *
+	 * @return {@code true} if this material should be rendered with Order-Independent Translucency.
+	 */
+	boolean useOit();
 
 	/**
 	 * Should this material be rendered with block/sky lighting?
@@ -83,12 +92,11 @@ public interface Material {
 		return this.blur() == other.blur()
 				&& this.mipmap() == other.mipmap()
 				&& this.backfaceCulling() == other.backfaceCulling()
-				&& this.polygonOffset() == other.polygonOffset()
-				&& this.depthTest() == other.depthTest()
-				&& this.transparency() == other.transparency()
-				&& this.writeMask() == other.writeMask()
+				&& this.depthStencilState().orElse(null) == other.depthStencilState().orElse(null)
+				&& this.colorTargetState().orElse(null) == other.colorTargetState().orElse(null)
 				&& this.useOverlay() == other.useOverlay()
 				&& this.useLight() == other.useLight()
+				&& this.useOit() == other.useOit()
 				&& this.cardinalLightingMode() == other.cardinalLightingMode()
 				&& this.ambientOcclusion() == other.ambientOcclusion()
 				&& this.shaders().fragmentSource().equals(other.shaders().fragmentSource())

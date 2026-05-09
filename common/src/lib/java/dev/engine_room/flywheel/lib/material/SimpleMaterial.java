@@ -1,14 +1,16 @@
 package dev.engine_room.flywheel.lib.material;
 
+import java.util.Optional;
+
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+
 import dev.engine_room.flywheel.api.material.CardinalLightingMode;
 import dev.engine_room.flywheel.api.material.CutoutShader;
-import dev.engine_room.flywheel.api.material.DepthTest;
 import dev.engine_room.flywheel.api.material.FogShader;
 import dev.engine_room.flywheel.api.material.LightShader;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.MaterialShaders;
-import dev.engine_room.flywheel.api.material.Transparency;
-import dev.engine_room.flywheel.api.material.WriteMask;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.Identifier;
 
@@ -23,12 +25,11 @@ public class SimpleMaterial implements Material {
 	protected final boolean mipmap;
 
 	protected final boolean backfaceCulling;
-	protected final boolean polygonOffset;
-	protected final DepthTest depthTest;
-	protected final Transparency transparency;
-	protected final WriteMask writeMask;
+	protected final Optional<DepthStencilState> depthStencilState;
+	protected final Optional<ColorTargetState> colorTargetState;
 
 	protected final boolean useOverlay;
+	protected final boolean useOit;
 	protected final boolean useLight;
 	protected final CardinalLightingMode cardinalLightingMode;
 
@@ -43,11 +44,10 @@ public class SimpleMaterial implements Material {
 		blur = builder.blur();
 		mipmap = builder.mipmap();
 		backfaceCulling = builder.backfaceCulling();
-		polygonOffset = builder.polygonOffset();
-		depthTest = builder.depthTest();
-		transparency = builder.transparency();
-		writeMask = builder.writeMask();
+		depthStencilState = builder.depthStencilState();
+		colorTargetState = builder.colorTargetState();
 		useOverlay = builder.useOverlay();
+		useOit = builder.useOit();
 		useLight = builder.useLight();
 		cardinalLightingMode = builder.cardinalLightingMode();
 		ambientOcclusion = builder.ambientOcclusion();
@@ -102,23 +102,13 @@ public class SimpleMaterial implements Material {
 	}
 
 	@Override
-	public boolean polygonOffset() {
-		return polygonOffset;
+	public Optional<DepthStencilState> depthStencilState() {
+		return depthStencilState;
 	}
 
 	@Override
-	public DepthTest depthTest() {
-		return depthTest;
-	}
-
-	@Override
-	public Transparency transparency() {
-		return transparency;
-	}
-
-	@Override
-	public WriteMask writeMask() {
-		return writeMask;
+	public Optional<ColorTargetState> colorTargetState() {
+		return colorTargetState;
 	}
 
 	@Override
@@ -152,12 +142,11 @@ public class SimpleMaterial implements Material {
 		protected boolean mipmap;
 
 		protected boolean backfaceCulling;
-		protected boolean polygonOffset;
-		protected DepthTest depthTest;
-		protected Transparency transparency;
-		protected WriteMask writeMask;
+		protected Optional<DepthStencilState> depthStencilState;
+		protected Optional<ColorTargetState> colorTargetState;
 
 		protected boolean useOverlay;
+		protected boolean useOit;
 		protected boolean useLight;
 		protected CardinalLightingMode cardinalLightingMode;
 
@@ -172,11 +161,10 @@ public class SimpleMaterial implements Material {
 			blur = false;
 			mipmap = true;
 			backfaceCulling = true;
-			polygonOffset = false;
-			depthTest = DepthTest.GEQUAL;
-			transparency = Transparency.OPAQUE;
-			writeMask = WriteMask.COLOR_DEPTH;
+			depthStencilState = Optional.empty();
+			colorTargetState = Optional.empty();
 			useOverlay = true;
+			useOit = false;
 			useLight = true;
 			cardinalLightingMode = CardinalLightingMode.ENTITY;
 			ambientOcclusion = true;
@@ -195,11 +183,10 @@ public class SimpleMaterial implements Material {
 			blur = material.blur();
 			mipmap = material.mipmap();
 			backfaceCulling = material.backfaceCulling();
-			polygonOffset = material.polygonOffset();
-			depthTest = material.depthTest();
-			transparency = material.transparency();
-			writeMask = material.writeMask();
+			depthStencilState = material.depthStencilState();
+			colorTargetState = material.colorTargetState();
 			useOverlay = material.useOverlay();
+			useOit = material.useOit();
 			useLight = material.useLight();
 			cardinalLightingMode = material.cardinalLightingMode();
 			ambientOcclusion = material.ambientOcclusion();
@@ -246,28 +233,23 @@ public class SimpleMaterial implements Material {
 			return this;
 		}
 
-		public Builder polygonOffset(boolean value) {
-			this.polygonOffset = value;
+		public Builder depthStencilState(DepthStencilState value) {
+			this.depthStencilState = Optional.of(value);
 			return this;
 		}
 
-		public Builder depthTest(DepthTest value) {
-			this.depthTest = value;
-			return this;
-		}
-
-		public Builder transparency(Transparency value) {
-			this.transparency = value;
-			return this;
-		}
-
-		public Builder writeMask(WriteMask value) {
-			this.writeMask = value;
+		public Builder colorTargetState(ColorTargetState value) {
+			this.colorTargetState = Optional.of(value);
 			return this;
 		}
 
 		public Builder useOverlay(boolean value) {
 			this.useOverlay = value;
+			return this;
+		}
+
+		public Builder useOit(boolean value) {
+			this.useOit = value;
 			return this;
 		}
 
@@ -335,28 +317,23 @@ public class SimpleMaterial implements Material {
 		}
 
 		@Override
-		public boolean polygonOffset() {
-			return polygonOffset;
+		public Optional<DepthStencilState> depthStencilState() {
+			return depthStencilState;
 		}
 
 		@Override
-		public DepthTest depthTest() {
-			return depthTest;
-		}
-
-		@Override
-		public Transparency transparency() {
-			return transparency;
-		}
-
-		@Override
-		public WriteMask writeMask() {
-			return writeMask;
+		public Optional<ColorTargetState> colorTargetState() {
+			return colorTargetState;
 		}
 
 		@Override
 		public boolean useOverlay() {
 			return useOverlay;
+		}
+
+		@Override
+		public boolean useOit() {
+			return useOit;
 		}
 
 		@Override

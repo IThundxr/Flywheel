@@ -10,6 +10,9 @@ import dev.engine_room.flywheel.backend.engine.instancing.InstancedLight;
 // TODO b3d-ification: Are the names here actually used in shaders or can they be anything?
 public class FlwBindGroupLayouts {
 	public static final BindGroupLayout INSTANCED_LIGHT = BindGroupLayout.builder()
+			.withSampler("Sampler0")
+			.withSampler("Sampler1")
+			.withSampler("Sampler2")
 			.withUniform(InstancedLight.LUT_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.withUniform(InstancedLight.SECTIONS_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)

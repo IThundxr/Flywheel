@@ -137,8 +137,7 @@ public class IndirectCullingGroup<I extends Instance> {
 
 			// if the next draw call has a different VisualType or Material, start a new MultiDraw
 			if (i == indirectDraws.size() - 1 || incompatibleDraws(draw1, indirectDraws.get(i + 1))) {
-				var dst = draw1.material()
-						.transparency() == Transparency.ORDER_INDEPENDENT ? oitDraws : multiDraws;
+				var dst = draw1.material().useOit() ? oitDraws : multiDraws;
 				dst.add(new MultiDraw(draw1.material(), draw1.isEmbedded(), start, i + 1));
 				start = i + 1;
 			}
