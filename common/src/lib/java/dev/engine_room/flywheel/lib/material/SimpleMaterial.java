@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.lib.material;
 
-import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
@@ -25,8 +25,10 @@ public class SimpleMaterial implements Material {
 	protected final boolean mipmap;
 
 	protected final boolean backfaceCulling;
-	protected final Optional<DepthStencilState> depthStencilState;
-	protected final Optional<ColorTargetState> colorTargetState;
+	@Nullable
+	protected final DepthStencilState depthStencilState;
+	@Nullable
+	protected final ColorTargetState colorTargetState;
 
 	protected final boolean useOverlay;
 	protected final boolean useOit;
@@ -101,13 +103,15 @@ public class SimpleMaterial implements Material {
 		return backfaceCulling;
 	}
 
+	@Nullable
 	@Override
-	public Optional<DepthStencilState> depthStencilState() {
+	public DepthStencilState depthStencilState() {
 		return depthStencilState;
 	}
 
+	@Nullable
 	@Override
-	public Optional<ColorTargetState> colorTargetState() {
+	public ColorTargetState colorTargetState() {
 		return colorTargetState;
 	}
 
@@ -147,8 +151,10 @@ public class SimpleMaterial implements Material {
 		protected boolean mipmap;
 
 		protected boolean backfaceCulling;
-		protected Optional<DepthStencilState> depthStencilState;
-		protected Optional<ColorTargetState> colorTargetState;
+		@Nullable
+		protected DepthStencilState depthStencilState;
+		@Nullable
+		protected ColorTargetState colorTargetState;
 
 		protected boolean useOverlay;
 		protected boolean useOit;
@@ -166,8 +172,8 @@ public class SimpleMaterial implements Material {
 			blur = false;
 			mipmap = true;
 			backfaceCulling = true;
-			depthStencilState = Optional.empty();
-			colorTargetState = Optional.empty();
+			depthStencilState = DepthStencilState.DEFAULT;
+			colorTargetState = ColorTargetState.DEFAULT;
 			useOverlay = true;
 			useOit = false;
 			useLight = true;
@@ -238,13 +244,13 @@ public class SimpleMaterial implements Material {
 			return this;
 		}
 
-		public Builder depthStencilState(DepthStencilState value) {
-			this.depthStencilState = Optional.of(value);
+		public Builder depthStencilState(@Nullable DepthStencilState value) {
+			this.depthStencilState = value;
 			return this;
 		}
 
-		public Builder colorTargetState(ColorTargetState value) {
-			this.colorTargetState = Optional.of(value);
+		public Builder colorTargetState(@Nullable ColorTargetState value) {
+			this.colorTargetState = value;
 			return this;
 		}
 
@@ -322,12 +328,12 @@ public class SimpleMaterial implements Material {
 		}
 
 		@Override
-		public Optional<DepthStencilState> depthStencilState() {
+		public DepthStencilState depthStencilState() {
 			return depthStencilState;
 		}
 
 		@Override
-		public Optional<ColorTargetState> colorTargetState() {
+		public ColorTargetState colorTargetState() {
 			return colorTargetState;
 		}
 

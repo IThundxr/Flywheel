@@ -29,6 +29,7 @@ open class SubprojectExtension(val project: Project) {
         // FIXME b3d-ification: Disable everything indirect rendering related
         project.tasks.withType<JavaCompile>().configureEach {
             exclude("**/IndirectDrawManager.java")
+            exclude("**/IndirectCullingGroup.java")
         }
     }
 

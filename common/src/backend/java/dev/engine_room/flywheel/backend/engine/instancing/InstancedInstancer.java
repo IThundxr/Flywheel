@@ -17,13 +17,13 @@ import dev.engine_room.flywheel.lib.math.MoreMath;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
-	public static final String TEXEL_BUFFER_BINDING = "InstanceTexelBuffer";
+	public static final String TEXEL_BUFFER_BINDING = "_flw_instances";
 
 	private final int instanceStride;
 
 	private final InstanceWriter<I> writer;
 	@Nullable
-	private DynamicGpuBuffer vbo;
+	private DynamicGpuBuffer utb;
 
 	private final List<InstancedDraw> draws = new ArrayList<>();
 
@@ -39,32 +39,32 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		return draws;
 	}
 
-	public void init() {
-		if (vbo != null) {
-			return;
-		}
-
-		// TODO b3d-ification: check if we need a bigger buffer
-		vbo = new DynamicGpuBuffer(
-				"Flywheel InstancedInstancer Vertex Buffer",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
-				1024 * 4 // 4 MB
-		);
-	}
-
 	public void updateBuffer() {
-		if (changed.isEmpty() || vbo == null) {
+		if (changed.isEmpty()) {
 			return;
 		}
 
 		int byteSize = instanceStride * instances.size();
-		if (needsToGrow(byteSize)) {
-			// TODO: Should this memory block be persistent?
-			var temp = MemoryBlock.malloc(increaseSize(byteSize));
+
+		boolean needsFullWrite;
+		if (utb == null) {
+			needsFullWrite = true;
+			utb = new DynamicGpuBuffer(
+					"Flywheel InstancedInstancer UTB",
+					GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+					byteSize,
+					this::increaseSize
+			);
+		} else {
+			needsFullWrite = needsToGrow(byteSize);
+		}
+
+		if (needsFullWrite) {
+			var temp = MemoryBlock.malloc(byteSize);
 
 			writeAll(temp.ptr());
 
-			vbo.write(temp.asBuffer());
+			utb.write(temp.asBuffer());
 			temp.free();
 		} else {
 			writeChanged();
@@ -87,7 +87,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 				ptr += instanceStride;
 			}
 
-			vbo.writeSpan(startInclusive * instanceStride, temp.asBuffer());
+			utb.writeSpan(startInclusive * instanceStride, temp.asBuffer());
 			temp.free();
 		});
 	}
@@ -112,8 +112,8 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 			return false;
 		}
 
-        return capacity > vbo.currentCapacity();
-    }
+		return capacity > utb.currentCapacity();
+	}
 
 	public void parallelUpdate() {
 		if (deleted.isEmpty()) {
@@ -170,11 +170,11 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	public void delete() {
-		if (vbo == null) {
+		if (utb == null) {
 			return;
 		}
-		vbo.close();
-		vbo = null;
+		utb.close();
+		utb = null;
 
 		for (InstancedDraw instancedDraw : draws) {
 			instancedDraw.delete();
@@ -186,10 +186,10 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	public void bindToRenderPass(RenderPass renderPass) {
-		if (vbo == null) {
+		if (utb == null) {
 			return;
 		}
 
-		renderPass.setUniform(TEXEL_BUFFER_BINDING, vbo.getCurrentBuffer());
+		renderPass.setUniform(TEXEL_BUFFER_BINDING, utb.getCurrentBuffer());
 	}
 }

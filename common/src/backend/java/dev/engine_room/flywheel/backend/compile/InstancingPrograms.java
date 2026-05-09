@@ -5,11 +5,12 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;
@@ -39,7 +40,7 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 	}
 
 	static void reload(ShaderSources sources, List<SourceComponent> vertexComponents, List<SourceComponent> fragmentComponents) {
-		if (!GlCompat.SUPPORTS_INSTANCING) {
+		if (!DeviceFeatureCompat.INSTANCE.isInstancingSupported()) {
 			return;
 		}
 
@@ -73,8 +74,8 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 		setInstance(null);
 	}
 
-	public GlProgram get(InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode) {
-		return pipeline.get(instanceType, contextShader, material, mode);
+	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode) {
+		return pipeline.getPipeline(instanceType, contextShader, material, mode);
 	}
 
 	public OitPrograms oitPrograms() {

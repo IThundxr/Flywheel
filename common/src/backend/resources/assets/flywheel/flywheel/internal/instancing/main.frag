@@ -1,7 +1,10 @@
 #include "flywheel:internal/common.frag"
 #include "flywheel:internal/instancing/light.glsl"
 
-uniform uvec2 _flw_packedMaterial;
+uniform FlwInstancedDrawData {
+    uint _flw_baseVertex;
+    uvec2 _flw_packedMaterial;
+};
 
 void main() {
     _flw_unpackUint2x16(_flw_packedMaterial.x, _flw_uberFogIndex, _flw_uberCutoutIndex);

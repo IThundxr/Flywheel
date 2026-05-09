@@ -1,20 +1,22 @@
 package dev.engine_room.flywheel.backend.compile;
 
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
-public final class FlwProgramsReloader implements ResourceManagerReloadListener {
-	public static final Identifier ID = IdentifierUtil.id("programs");
+public final class FlwReloadListener implements ResourceManagerReloadListener {
+	public static final Identifier ID = IdentifierUtil.id("reload_listener");
 
-	public static final FlwProgramsReloader INSTANCE = new FlwProgramsReloader();
+	public static final FlwReloadListener INSTANCE = new FlwReloadListener();
 
-	private FlwProgramsReloader() {
+	private FlwReloadListener() {
 	}
 
 	@Override
 	public void onResourceManagerReload(ResourceManager manager) {
 		FlwPrograms.reload(manager);
+		FlwRenderPipelines.clearCache();
 	}
 }

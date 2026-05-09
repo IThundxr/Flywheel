@@ -51,7 +51,7 @@ public final class ShadowComponent implements EntityComponent {
 			.texture(SHADOW_TEXTURE)
 			.mipmap(false)
 			// vanilla shadows use "view offset" but this seems to work fine
-			.depthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true, 1.0F, 10.0F))
+			.depthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false, 1.0F, 10.0F))
 			.colorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
 			.build();
 	private static final Model SHADOW_MODEL = new SingleMeshModel(ShadowMesh.INSTANCE, SHADOW_MATERIAL);
