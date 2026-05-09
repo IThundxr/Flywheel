@@ -3,22 +3,14 @@ package dev.engine_room.flywheel.backend.engine;
 import java.util.Comparator;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
 
-import com.google.common.collect.Comparators;
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 
-import dev.engine_room.flywheel.api.material.DepthTest;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.api.material.Transparency;
-import dev.engine_room.flywheel.api.material.WriteMask;
 import dev.engine_room.flywheel.backend.Samplers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -71,7 +63,7 @@ public final class MaterialRenderState {
 		GpuSampler sampler = RenderSystem.getSamplerCache()
 				.getSampler(defaultSampler.getAddressModeU(), defaultSampler.getAddressModeV(), filterMode, filterMode, material.mipmap());
 
-		renderPass.bindTexture("Sampler0", texture.getTextureView(), sampler);
+		renderPass.bindTexture("flw_diffuseTex", texture.getTextureView(), sampler);
 	}
 
 	@Deprecated(forRemoval = true)
@@ -90,103 +82,6 @@ public final class MaterialRenderState {
 		TextureBinder.bind(Samplers.DIFFUSE.number, texture.getTextureView(), sampler);
 	}
 
-	@Deprecated(forRemoval = true)
-	private static void setupBackfaceCulling(boolean backfaceCulling) {
-		if (backfaceCulling) {
-			GlStateManager._enableCull();
-		} else {
-			GlStateManager._disableCull();
-		}
-	}
-
-	@Deprecated(forRemoval = true)
-	private static void setupPolygonOffset(boolean polygonOffset) {
-		if (polygonOffset) {
-			GlStateManager._polygonOffset(0.1F, 1.0F);
-			GlStateManager._enablePolygonOffset();
-		} else {
-			GlStateManager._polygonOffset(0.0F, 0.0F);
-			GlStateManager._disablePolygonOffset();
-		}
-	}
-
-	@Deprecated(forRemoval = true)
-	private static void setupDepthTest(DepthTest depthTest) {
-		switch (depthTest) {
-		case OFF -> {
-			GlStateManager._disableDepthTest();
-		}
-		case NEVER -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GL11.GL_NEVER);
-		}
-		case LESS -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_LESS);
-		}
-		case EQUAL -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_EQUAL);
-		}
-		case LEQUAL -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_LEQUAL);
-		}
-		case GREATER -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_GREATER);
-		}
-		case NOTEQUAL -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GL11.GL_NOTEQUAL);
-		}
-		case GEQUAL -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_GEQUAL);
-		}
-		case ALWAYS -> {
-			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GlConst.GL_ALWAYS);
-		}
-		}
-	}
-
-	@Deprecated(forRemoval = true)
-	private static void setupTransparency(Transparency transparency) {
-		switch (transparency) {
-		case OPAQUE -> {
-			GlStateManager._disableBlend(0);
-		}
-		case ADDITIVE -> {
-			GlStateManager._enableBlend(0);
-			GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		}
-		case LIGHTNING -> {
-			GlStateManager._enableBlend(0);
-			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_SRC_ALPHA, GlConst.GL_ONE);
-		}
-		case GLINT -> {
-			GlStateManager._enableBlend(0);
-			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_COLOR, GlConst.GL_ONE, GlConst.GL_ZERO, GlConst.GL_ONE);
-		}
-		case CRUMBLING -> {
-			GlStateManager._enableBlend(0);
-			GlStateManager._blendFuncSeparate(GlConst.GL_DST_COLOR, GlConst.GL_SRC_COLOR, GlConst.GL_ONE, GlConst.GL_ZERO);
-		}
-		case TRANSLUCENT -> {
-			GlStateManager._enableBlend(0);
-			GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
-		}
-		}
-	}
-
-	@Deprecated(forRemoval = true)
-	private static void setupWriteMask(WriteMask mask) {
-		GlStateManager._depthMask(mask.depth());
-		boolean writeColor = mask.color();
-		GlStateManager._colorMask(writeColor ? ColorTargetState.WRITE_ALL : ColorTargetState.WRITE_NONE);
-	}
-
 	public static boolean materialEquals(Material lhs, Material rhs) {
 		if (lhs == rhs) {
 			return true;
@@ -198,7 +93,8 @@ public final class MaterialRenderState {
 		return lhs.blur() == rhs.blur()
 				&& lhs.mipmap() == rhs.mipmap()
 				&& lhs.backfaceCulling() == rhs.backfaceCulling()
-				&& lhs.depthStencilState().orElse(null) == rhs.depthStencilState().orElse(null)
+				&& lhs.depthStencilState() == rhs.depthStencilState()
+				&& lhs.colorTargetState() == rhs.colorTargetState()
 				&& lhs.useOit() == rhs.useOit()
 				&& lhs.light().source().equals(rhs.light().source())
 				&& lhs.texture().equals(rhs.texture())
@@ -277,10 +173,10 @@ public final class MaterialRenderState {
 		if (cmp != 0) {
 			return cmp;
 		}
-		cmp = Comparators.emptiesFirst(Comparator.comparing(DepthStencilState::depthTest)
-					.thenComparing(DepthStencilState::writeDepth)
-					.thenComparing(DepthStencilState::depthBiasScaleFactor)
-					.thenComparing(DepthStencilState::depthBiasConstant))
+		cmp = Comparator.comparing(DepthStencilState::depthTest)
+				.thenComparing(DepthStencilState::writeDepth)
+				.thenComparing(DepthStencilState::depthBiasScaleFactor)
+				.thenComparing(DepthStencilState::depthBiasConstant)
 				.compare(lhs.depthStencilState(), rhs.depthStencilState());
 		if (cmp != 0) {
 			return cmp;

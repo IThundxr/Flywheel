@@ -10,8 +10,8 @@ import dev.engine_room.flywheel.backend.engine.LightStorage;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedLight implements AutoCloseable {
-	public static final String LUT_BINDING = "Flw_Lut";
-	public static final String SECTIONS_BINDING = "Flw_Sections";
+	public static final String LUT_BINDING = "_flw_lightLut";
+	public static final String SECTIONS_BINDING = "_flw_lightSections";
 
 	private final DynamicGpuBuffer lut;
 	private final DynamicGpuBuffer sections;
@@ -19,14 +19,14 @@ public class InstancedLight implements AutoCloseable {
 	// TODO b3d-ification: Check if the default sizes should be higher
 	public InstancedLight() {
 		lut = new DynamicGpuBuffer(
-				"Flywheel Instanced Light LUT",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
-				1024 * 4 // 4 MB
+				"Flywheel Instanced Light LUT UTB",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				1024 * 4 // 4 KB
 		);
 		sections = new DynamicGpuBuffer(
-				"Flywheel Instanced Light Sections",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST,
-				1024 * 4 // 4 MB
+				"Flywheel Instanced Light Sections UTB",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				1024 * 4 // 4 KB
 		);
 	}
 

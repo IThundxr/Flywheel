@@ -3,7 +3,6 @@ package dev.engine_room.flywheel.backend.compile;
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
@@ -42,7 +41,6 @@ public class OitPrograms {
 						.withResource(s -> s))
 				.postLink((key, program) -> {
 					program.bind();
-					Uniforms.setUniformBlockBindings(program);
 					program.setSamplerBinding("_flw_accumulate", GlTextureUnit.T0);
 					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
 					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);

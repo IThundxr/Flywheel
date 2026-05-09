@@ -1,43 +1,50 @@
 package dev.engine_room.flywheel.backend.engine;
 
 import java.nio.ByteBuffer;
+import java.util.function.Function;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
-import net.minecraft.util.Mth;
 
 // TODO b3d-ification: Document this a bit
 public class DynamicGpuBuffer implements AutoCloseable {
-	private GpuBuffer buffer;
 	private final String label;
 	@GpuBuffer.Usage
 	private final int usage;
-	private int capacity;
+	private final Function<Long, Long> sizeIncreaseFunc;
 
-	public DynamicGpuBuffer(String label, int usage, int initialCapacity) {
+	private GpuBuffer buffer;
+	private long capacity;
+
+	public DynamicGpuBuffer(String label, int usage, long initialCapacity) {
+		this(label, usage, initialCapacity, DynamicGpuBuffer::smallestEncompassingPowerOfTwo);
+	}
+
+	public DynamicGpuBuffer(String label, int usage, long initialCapacity, Function<Long, Long> sizeIncreaseFunc) {
 		this.label = label;
 		this.usage = usage;
-		this.capacity = Mth.smallestEncompassingPowerOfTwo(initialCapacity);
+		this.sizeIncreaseFunc = sizeIncreaseFunc;
+
+		this.capacity = this.sizeIncreaseFunc.apply(initialCapacity);
 		this.buffer = RenderSystem.getDevice().createBuffer(() -> this.label, this.usage, this.capacity);
 	}
 
-	private void resizeBuffers(int capacity) {
-		this.capacity = capacity;
-		RenderSystem.queueFencedTask(buffer::close);
-		this.buffer = RenderSystem.getDevice().createBuffer(() -> this.label, this.usage, this.capacity);
+	public void ensureCapacity(long neededSize) {
+		if (neededSize > capacity) {
+			long newCapacity = sizeIncreaseFunc.apply(neededSize);
+			FlwBackend.LOGGER.info("Resizing {}, capacity limit of {} reached during a single frame. New capacity will be {}.", this.label, this.capacity, newCapacity);
+
+			this.capacity = newCapacity;
+			RenderSystem.queueFencedTask(buffer::close);
+			this.buffer = RenderSystem.getDevice().createBuffer(() -> this.label, this.usage, this.capacity);
+		}
 	}
 
 	public void write(ByteBuffer byteBuffer) {
-		int neededSize = byteBuffer.position();
-		if (neededSize > capacity) {
-			int newCapacity = Mth.smallestEncompassingPowerOfTwo(neededSize);
-			FlwBackend.LOGGER.info("Resizing {}, capacity limit of {} reached during a single frame. New capacity will be {}.", this.label, this.capacity, newCapacity);
-			resizeBuffers(newCapacity);
-		}
-
+		ensureCapacity(byteBuffer.capacity());
 		RenderSystem.getDevice().createCommandEncoder().writeToBuffer(buffer.slice(), byteBuffer);
 	}
 
@@ -54,12 +61,22 @@ public class DynamicGpuBuffer implements AutoCloseable {
 		return buffer;
 	}
 
-	public int currentCapacity() {
+	public long currentCapacity() {
 		return capacity;
 	}
 
 	@Override
 	public void close() {
 		buffer.close();
+	}
+
+	private static long smallestEncompassingPowerOfTwo(final long input) {
+		long result = input - 1;
+		result |= result >> 1;
+		result |= result >> 2;
+		result |= result >> 4;
+		result |= result >> 8;
+		result |= result >> 16;
+		return result + 1;
 	}
 }

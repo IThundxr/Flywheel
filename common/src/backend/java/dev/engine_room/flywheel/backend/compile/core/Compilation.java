@@ -33,6 +33,7 @@ public class Compilation {
 	private final StringBuilder fullSource = new StringBuilder();
 	private int generatedLines = 0;
 
+	@Deprecated(forRemoval = true)
 	public ShaderResult compile(ShaderType shaderType, String name) {
 		int handle = GlStateManager.glCreateShader(shaderType.glEnum);
 		var source = fullSource.toString();
@@ -51,6 +52,10 @@ public class Compilation {
 
 		GlStateManager.glDeleteShader(handle);
 		return ShaderResult.failure(new FailedCompilation(shaderName, files, generatedSource.toString(), source, infoLog));
+	}
+
+	public String getSource() {
+		return fullSource.toString();
 	}
 
 	public void version(GlslVersion version) {
@@ -119,7 +124,7 @@ public class Compilation {
 		}
 	}
 
-	private static void dumpSource(String source, String fileName) {
+	public static void dumpSource(String source, String fileName) {
 		if (!DUMP_SHADER_SOURCE) {
 			return;
 		}

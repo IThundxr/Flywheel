@@ -1,7 +1,5 @@
 package dev.engine_room.flywheel.api.material;
 
-import java.util.Optional;
-
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -36,10 +34,14 @@ public interface Material {
 	 */
 	boolean backfaceCulling();
 
-	Optional<DepthStencilState> depthStencilState();
+	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
+	@Nullable
+	DepthStencilState depthStencilState();
 
+	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
 	// TODO: RenderPipeline supports up to 8, do we want to do the same?
-	Optional<ColorTargetState> colorTargetState();
+	@Nullable
+	ColorTargetState colorTargetState();
 
 	boolean useOverlay();
 
@@ -92,8 +94,8 @@ public interface Material {
 		return this.blur() == other.blur()
 				&& this.mipmap() == other.mipmap()
 				&& this.backfaceCulling() == other.backfaceCulling()
-				&& this.depthStencilState().orElse(null) == other.depthStencilState().orElse(null)
-				&& this.colorTargetState().orElse(null) == other.colorTargetState().orElse(null)
+				&& this.depthStencilState() == other.depthStencilState()
+				&& this.colorTargetState() == other.colorTargetState()
 				&& this.useOverlay() == other.useOverlay()
 				&& this.useLight() == other.useLight()
 				&& this.useOit() == other.useOit()

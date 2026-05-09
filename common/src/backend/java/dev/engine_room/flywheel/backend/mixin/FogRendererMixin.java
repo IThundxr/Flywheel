@@ -13,6 +13,6 @@ import net.minecraft.client.renderer.fog.FogRenderer;
 abstract class FogRendererMixin {
 	@Inject(method = "updateBuffer(Lnet/minecraft/client/renderer/fog/FogData;)V", at = @At("HEAD"))
 	private static void flywheel$onReturnSetupFog(FogData fog, CallbackInfo ci) {
-		FogUniforms.update(fog.color, fog.environmentalStart, fog.environmentalEnd, fog.renderDistanceStart, fog.renderDistanceEnd, fog.skyEnd, fog.cloudEnd);
+		FogUniforms.INSTANCE.update(fog.color, fog.environmentalStart, fog.environmentalEnd, fog.renderDistanceStart, fog.renderDistanceEnd, fog.skyEnd, fog.cloudEnd);
 	}
 }

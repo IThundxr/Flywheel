@@ -6,6 +6,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.GpuBufferSlice.MappedView;
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.buffers.Std140SizeCalculator;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -18,11 +24,11 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
@@ -30,9 +36,7 @@ import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
-import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 
@@ -40,6 +44,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private static final Comparator<InstancedDraw> DRAW_COMPARATOR = Comparator.comparingInt(InstancedDraw::bias)
 			.thenComparingInt(InstancedDraw::indexOfMeshInModel)
 			.thenComparing(InstancedDraw::material, MaterialRenderState.COMPARATOR);
+	private static final int DRAW_DATA_SIZE = new Std140SizeCalculator()
+			.putInt()
+			.putVec2()
+			.align(RenderSystem.getDevice().getDeviceInfo().limits().minUniformOffsetAlignment())
+			.get();
 
 	private final List<InstancedDraw> allDraws = new ArrayList<>();
 	private boolean needSort = false;
@@ -54,7 +63,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private final MeshPool meshPool;
 	private final InstancedLight light;
 
-	private final OitFramebuffer oitFramebuffer;
+	// TODO b3d-ification: Re-enable later
+	//private final OitFramebuffer oitFramebuffer;
+
+	// TODO - Maybe DynamicUniformStorage should be used instead?
+	private final DynamicGpuBuffer drawDataBuffer;
 
 	public InstancedDrawManager(InstancingPrograms programs) {
 		programs.acquire();
@@ -63,7 +76,15 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool = new MeshPool();
 		light = new InstancedLight();
 
-		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		// TODO b3d-ification: Re-enable later
+		//oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+
+		// TODO b3d-ification: Check if the default sizes should be higher
+		drawDataBuffer = new DynamicGpuBuffer(
+				"Flywheel Instanced Draw Data UBO",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
+				1024 * 4 // 4 KB
+		);
 	}
 
 	@Override
@@ -118,15 +139,14 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
-			Uniforms.bindAll();
-			//Uniforms.bindToRenderPass(renderPass);
+			Uniforms.bindToRenderPass(renderPass);
 			meshPool.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
-			renderPass.bindTexture("Sampler1", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
-			renderPass.bindTexture("Sampler2", gameRenderer.lightmap(), clampToEdgeLinear);
+			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
-			light.bindToRenderPass(renderPass);
+			//light.bindToRenderPass(renderPass);
 
 			submitDraws(renderPass);
 
@@ -157,25 +177,33 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	}
 
 	private void submitDraws(RenderPass renderPass) {
+		drawDataBuffer.ensureCapacity(DRAW_DATA_SIZE * draws.size());
+
+		long drawCount = 0;
 		for (var drawCall : draws) {
 			var material = drawCall.material();
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
 
-			// TODO b3d-ification: Instead of this, we need to get a render pipeline with the shader we need
-			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
-			program.bind();
+			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
+			renderPass.setPipeline(pipeline);
 
-			environment.setupDraw(program);
+			GpuBufferSlice slice = drawDataBuffer.getCurrentBuffer().slice(DRAW_DATA_SIZE * drawCount, DRAW_DATA_SIZE);
+			try (MappedView view = slice.map(false, true)) {
+				Std140Builder builder = Std140Builder.intoBuffer(view.data());
 
-			uploadMaterialUniform(program, material);
+				builder.putInt(drawCall.mesh().baseVertex());
+				uploadMaterialUniform(builder, material);
+				// environment.setupDraw(program);
+			}
 
-			program.setUInt("_flw_baseVertex", drawCall.mesh().baseVertex());
+			renderPass.setUniform("FlwInstancedDrawData", slice);
 
-			renderPass.setPipeline(FlwRenderPipelines.getForMaterial(material));
 			MaterialRenderState.setupForRenderPass(renderPass, material);
 
 			drawCall.render(renderPass);
+
+			drawCount++;
 		}
 	}
 
@@ -219,7 +247,10 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		light.close();
 
-		oitFramebuffer.delete();
+		// TODO b3d-ification: Re-enable later
+		//oitFramebuffer.delete();
+
+		drawDataBuffer.close();
 
 		super.delete();
 	}
@@ -231,8 +262,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 	@Override
 	protected <I extends Instance> void initialize(InstancerKey<I> key, InstancedInstancer<?> instancer) {
-		instancer.init();
-
 		var meshes = key.model()
 				.meshes();
 		for (int i = 0; i < meshes.size(); i++) {
@@ -317,9 +346,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		return meshPool;
 	}
 
-	public static void uploadMaterialUniform(GlProgram program, Material material) {
+	public static void uploadMaterialUniform(Std140Builder builder, Material material) {
 		int packedFogAndCutout = MaterialEncoder.packUberShader(material);
 		int packedMaterialProperties = MaterialEncoder.packProperties(material);
-		program.setUVec2("_flw_packedMaterial", packedFogAndCutout, packedMaterialProperties);
+		builder.putVec2(packedFogAndCutout, packedMaterialProperties);
 	}
 }

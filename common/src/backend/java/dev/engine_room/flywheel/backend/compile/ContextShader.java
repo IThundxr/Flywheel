@@ -5,28 +5,35 @@ import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
 
-import dev.engine_room.flywheel.backend.Samplers;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+
+import dev.engine_room.flywheel.backend.FlwBindGroupLayouts;
 import dev.engine_room.flywheel.backend.compile.core.Compilation;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 
 public enum ContextShader {
-	DEFAULT(null, $ -> {
-	}),
-	CRUMBLING("_FLW_CRUMBLING", program -> program.setSamplerBinding("_flw_crumblingTex", Samplers.CRUMBLING)),
-	EMBEDDED("FLW_EMBEDDED", $ -> {
-	});
+	DEFAULT,
+	CRUMBLING("_FLW_CRUMBLING", builder -> builder.withBindGroupLayout(FlwBindGroupLayouts.CRUMBLING_SAMPLER)),
+	EMBEDDED("FLW_EMBEDDED");
 
 	@Nullable
 	private final String define;
-	private final Consumer<GlProgram> onLink;
+	private final Consumer<RenderPipeline.Builder> onBuildPipeline;
 
-	ContextShader(@Nullable String define, Consumer<GlProgram> onLink) {
-		this.define = define;
-		this.onLink = onLink;
+	ContextShader() {
+		this(null);
 	}
 
-	public void onLink(GlProgram program) {
-		onLink.accept(program);
+	ContextShader(@Nullable String define) {
+		this(define, _ -> {});
+	}
+
+	ContextShader(@Nullable String define, Consumer<RenderPipeline.Builder> onBuildPipeline) {
+		this.define = define;
+		this.onBuildPipeline = onBuildPipeline;
+	}
+
+	public void onBuildPipeline(RenderPipeline.Builder builder) {
+		onBuildPipeline.accept(builder);
 	}
 
 	public void onCompile(Compilation comp) {
