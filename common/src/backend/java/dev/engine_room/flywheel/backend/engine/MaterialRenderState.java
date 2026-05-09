@@ -5,9 +5,12 @@ import java.util.Comparator;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
+import com.google.common.collect.Comparators;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
@@ -26,26 +29,52 @@ public final class MaterialRenderState {
 	private MaterialRenderState() {
 	}
 
-	public static void setup(Material material) {
-		setupTexture(material);
-		setupBackfaceCulling(material.backfaceCulling());
-		setupPolygonOffset(material.polygonOffset());
-		setupDepthTest(material.depthTest());
-		setupTransparency(material.transparency());
-		setupWriteMask(material.writeMask());
+	// TODO b3d-ification: This is a pretty slim method, texture binding should be handled in the pass
+	// I guess we could move setupTextureForRenderPass into TextureBinder or some other util class
+	// Or we could have a builder that takes in an identifier and other params and binds the texture with a created sampler
+	public static void setupForRenderPass(RenderPass renderPass, Material material) {
+		setupTextureForRenderPass(renderPass, material);
+		// 		setupBackfaceCulling(material.backfaceCulling()); // Should be handled by RenderPipeline
+		//		setupPolygonOffset(material.polygonOffset()); // Should be handled by RenderPipeline
+		//		setupDepthTest(material.depthTest()); // Should be handled by RenderPipeline
+		//		setupTransparency(material.transparency()); // Should be handled by RenderPipeline
+		//		setupWriteMask(material.writeMask()); // Should be handled by RenderPipeline
 	}
 
-	public static void setupOit(Material material) {
-		setupTexture(material);
-		setupBackfaceCulling(material.backfaceCulling());
-		setupPolygonOffset(material.polygonOffset());
-		setupDepthTest(material.depthTest());
+//	@Deprecated(forRemoval = true)
+//	public static void setup(Material material) {
+//		setupTexture(material);
+//		setupBackfaceCulling(material.backfaceCulling());
+//		setupPolygonOffset(material.polygonOffset());
+//		setupDepthTest(material.depthTest());
+//		setupTransparency(material.transparency());
+//		setupWriteMask(material.writeMask());
+//	}
+//
+//	@Deprecated(forRemoval = true)
+//	public static void setupOit(Material material) {
+//		setupTexture(material);
+//		setupBackfaceCulling(material.backfaceCulling());
+//		setupPolygonOffset(material.polygonOffset());
+//		setupDepthTest(material.depthTest());
+//		setupWriteMask(material.writeMask());
+//	}
 
-		WriteMask mask = material.writeMask();
-		boolean writeColor = mask.color();
-		GlStateManager._colorMask(writeColor ? ColorTargetState.WRITE_ALL : ColorTargetState.WRITE_NONE);
+	private static void setupTextureForRenderPass(RenderPass renderPass, Material material) {
+		AbstractTexture texture = Minecraft.getInstance()
+				.getTextureManager()
+				.getTexture(material.texture());
+
+		// TODO 1.21.11: give the Material more control, such as using default filter mode, address modes, AF, max LOD?
+		FilterMode filterMode = material.blur() ? FilterMode.LINEAR : FilterMode.NEAREST;
+		GpuSampler defaultSampler = texture.getSampler();
+		GpuSampler sampler = RenderSystem.getSamplerCache()
+				.getSampler(defaultSampler.getAddressModeU(), defaultSampler.getAddressModeV(), filterMode, filterMode, material.mipmap());
+
+		renderPass.bindTexture("Sampler0", texture.getTextureView(), sampler);
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupTexture(Material material) {
 		AbstractTexture texture = Minecraft.getInstance()
 				.getTextureManager()
@@ -61,6 +90,7 @@ public final class MaterialRenderState {
 		TextureBinder.bind(Samplers.DIFFUSE.number, texture.getTextureView(), sampler);
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupBackfaceCulling(boolean backfaceCulling) {
 		if (backfaceCulling) {
 			GlStateManager._enableCull();
@@ -69,6 +99,7 @@ public final class MaterialRenderState {
 		}
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupPolygonOffset(boolean polygonOffset) {
 		if (polygonOffset) {
 			GlStateManager._polygonOffset(0.1F, 1.0F);
@@ -79,6 +110,7 @@ public final class MaterialRenderState {
 		}
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupDepthTest(DepthTest depthTest) {
 		switch (depthTest) {
 		case OFF -> {
@@ -119,6 +151,7 @@ public final class MaterialRenderState {
 		}
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupTransparency(Transparency transparency) {
 		switch (transparency) {
 		case OPAQUE -> {
@@ -147,6 +180,7 @@ public final class MaterialRenderState {
 		}
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void setupWriteMask(WriteMask mask) {
 		GlStateManager._depthMask(mask.depth());
 		boolean writeColor = mask.color();
@@ -164,10 +198,8 @@ public final class MaterialRenderState {
 		return lhs.blur() == rhs.blur()
 				&& lhs.mipmap() == rhs.mipmap()
 				&& lhs.backfaceCulling() == rhs.backfaceCulling()
-				&& lhs.polygonOffset() == rhs.polygonOffset()
-				&& lhs.depthTest() == rhs.depthTest()
-				&& lhs.transparency() == rhs.transparency()
-				&& lhs.writeMask() == rhs.writeMask()
+				&& lhs.depthStencilState().orElse(null) == rhs.depthStencilState().orElse(null)
+				&& lhs.useOit() == rhs.useOit()
 				&& lhs.light().source().equals(rhs.light().source())
 				&& lhs.texture().equals(rhs.texture())
 				&& lhs.cutout().source().equals(rhs.cutout().source())
@@ -190,9 +222,6 @@ public final class MaterialRenderState {
 				material.light() != null &&
 				material.light().source() != null &&
 				material.texture() != null &&
-				material.depthTest() != null &&
-				material.transparency() != null &&
-				material.writeMask() != null &&
 				material.cardinalLightingMode() != null;
 		// @formatter:on
 	}
@@ -203,11 +232,6 @@ public final class MaterialRenderState {
 		}
 
 		int cmp;
-		cmp = lhs.transparency()
-				.compareTo(rhs.transparency());
-		if (cmp != 0) {
-			return cmp;
-		}
 		cmp = lhs.light()
 				.source()
 				.compareTo(rhs.light()
@@ -253,17 +277,15 @@ public final class MaterialRenderState {
 		if (cmp != 0) {
 			return cmp;
 		}
-		cmp = Boolean.compare(lhs.polygonOffset(), rhs.polygonOffset());
+		cmp = Comparators.emptiesFirst(Comparator.comparing(DepthStencilState::depthTest)
+					.thenComparing(DepthStencilState::writeDepth)
+					.thenComparing(DepthStencilState::depthBiasScaleFactor)
+					.thenComparing(DepthStencilState::depthBiasConstant))
+				.compare(lhs.depthStencilState(), rhs.depthStencilState());
 		if (cmp != 0) {
 			return cmp;
 		}
-		cmp = lhs.depthTest()
-				.compareTo(rhs.depthTest());
-		if (cmp != 0) {
-			return cmp;
-		}
-		cmp = lhs.writeMask()
-				.compareTo(rhs.writeMask());
+		cmp = Boolean.compare(lhs.useOit(), rhs.useOit());
 		if (cmp != 0) {
 			return cmp;
 		}

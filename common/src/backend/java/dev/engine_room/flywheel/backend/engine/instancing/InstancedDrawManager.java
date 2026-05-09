@@ -18,7 +18,6 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.api.material.Transparency;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
@@ -92,8 +91,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			oitDraws.clear();
 
 			for (var draw : allDraws) {
-				if (draw.material()
-						.transparency() == Transparency.ORDER_INDEPENDENT) {
+				if (draw.material().useOit()) {
 					oitDraws.add(draw);
 				} else {
 					draws.add(draw);
@@ -122,7 +120,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			// FIXME b3d-ification: This pipeline does not work
 			//renderPass.setPipeline(FlwRenderPipelines.FLYWHEEL_RENDER_PIPELINE);
-			Uniforms.bindToRenderPass(renderPass);
+			Uniforms.bindAll();
+			//Uniforms.bindToRenderPass(renderPass);
 			meshPool.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
@@ -175,8 +174,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			program.setUInt("_flw_baseVertex", drawCall.mesh().baseVertex());
 
-			// FIXME b3d-ification: Handle this
-			MaterialRenderState.setup(material);
+			MaterialRenderState.setupForRenderPass(renderPass, material);
 
 			drawCall.render(renderPass);
 		}
