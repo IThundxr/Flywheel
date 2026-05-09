@@ -82,4 +82,25 @@ public final class MaterialEncoder {
 
 		return bits;
 	}
+
+	// Packed format:
+	// ambientOcclusion[1] | cardinalLightingMode[2] | useLight[1] | useOverlay[1] | writeMask[2] | transparency[3] | depthTest[4] | polygonOffset[1] | backfaceCulling[1] | mipmap[1] | blur[1]
+	public static int packPropertiesNew(Material material) {
+		int bits = 0;
+
+		if (material.blur()) bits |= BLUR_MASK;
+		if (material.mipmap()) bits |= MIPMAP_MASK;
+		if (material.backfaceCulling()) bits |= BACKFACE_CULLING_MASK;
+		if (material.polygonOffset()) bits |= POLYGON_OFFSET_MASK;
+		bits |= (material.depthTest().ordinal() << DEPTH_TEST_OFFSET) & DEPTH_TEST_MASK;
+		bits |= (material.transparency().ordinal() << TRANSPARENCY_OFFSET) & TRANSPARENCY_MASK;
+		bits |= (material.writeMask().ordinal() << WRITE_MASK_OFFSET) & WRITE_MASK_MASK;
+		if (material.useOverlay()) bits |= USE_OVERLAY_MASK;
+		if (material.useLight()) bits |= USE_LIGHT_MASK;
+		bits |= (material.cardinalLightingMode()
+				.ordinal() << CARDINAL_LIGHTING_MODE_OFFSET) & CARDINAL_LIGHTING_MODE_MASK;
+		if (material.ambientOcclusion()) bits |= AMBIENT_OCCLUSION_MASK;
+
+		return bits;
+	}
 }

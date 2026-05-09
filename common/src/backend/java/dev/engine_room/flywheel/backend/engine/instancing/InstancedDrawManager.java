@@ -18,6 +18,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
@@ -29,6 +30,7 @@ import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
+import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import net.minecraft.client.Minecraft;
@@ -52,8 +54,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private final MeshPool meshPool;
 	private final InstancedLight light;
 
-	// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
-	//private final OitFramebuffer oitFramebuffer;
+	private final OitFramebuffer oitFramebuffer;
 
 	public InstancedDrawManager(InstancingPrograms programs) {
 		programs.acquire();
@@ -62,8 +63,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool = new MeshPool();
 		light = new InstancedLight();
 
-		// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
-		//oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 	}
 
 	@Override
@@ -118,8 +118,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
-			// FIXME b3d-ification: This pipeline does not work
-			//renderPass.setPipeline(FlwRenderPipelines.FLYWHEEL_RENDER_PIPELINE);
 			Uniforms.bindAll();
 			//Uniforms.bindToRenderPass(renderPass);
 			meshPool.bindToRenderPass(renderPass);
@@ -174,6 +172,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			program.setUInt("_flw_baseVertex", drawCall.mesh().baseVertex());
 
+			renderPass.setPipeline(FlwRenderPipelines.getForMaterial(material));
 			MaterialRenderState.setupForRenderPass(renderPass, material);
 
 			drawCall.render(renderPass);
@@ -220,8 +219,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		light.close();
 
-		// FIXME b3d-ification: Re-enable once OIT & indirect is hooked back up
-		//oitFramebuffer.delete();
+		oitFramebuffer.delete();
 
 		super.delete();
 	}
