@@ -117,6 +117,11 @@ public class SimpleMaterial implements Material {
 	}
 
 	@Override
+	public boolean useOit() {
+		return useOit;
+	}
+
+	@Override
 	public boolean useLight() {
 		return useLight;
 	}
