@@ -25,3 +25,11 @@ include("fabricWithoutFrapi")
 //include("neoforge")
 //include("vanillinNeoForge")
 include("vanillinFabric")
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("./libs.versions.toml"))
+        }
+    }
+}
