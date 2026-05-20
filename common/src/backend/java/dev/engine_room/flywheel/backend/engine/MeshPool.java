@@ -182,7 +182,7 @@ public class MeshPool implements AutoCloseable {
 
 		// TODO b3d-ification: We should probably submit RenderPass.Draw calls instead of doing these one by one
 		public void submitDraw(RenderPass renderPass, int instanceCount) {
-			renderPass.drawIndexed(baseVertex, firstIndexByteOffset(), mesh.indexCount(), instanceCount);
+			renderPass.drawIndexed(mesh.indexCount(), instanceCount, firstIndexByteOffset(), baseVertex, 0);
 		}
 
 		@Override
