@@ -10,12 +10,12 @@ import net.minecraft.resources.Identifier;
 
 public final class InternalVertex {
 	public static final VertexFormat FORMAT = VertexFormat.builder(0)
-			.addAttribute("Position", GpuFormat.RGB32_FLOAT)
-			.addAttribute("Color", GpuFormat.RGBA8_UNORM)
-			.addAttribute("UV0", GpuFormat.RG32_FLOAT)
-			.addAttribute("UV1", GpuFormat.RG16_SINT)
-			.addAttribute("UV2", GpuFormat.RG16_UINT)
-			.addAttribute("Normal", GpuFormat.RGBA8_SNORM)
+			.addAttribute("_flw_aPos", GpuFormat.RGB32_FLOAT)
+			.addAttribute("_flw_aColor", GpuFormat.RGBA8_UNORM)
+			.addAttribute("_flw_aTexCoord", GpuFormat.RG32_FLOAT)
+			.addAttribute("_flw_aOverlay", GpuFormat.RG16_SINT)
+			.addAttribute("_flw_aLight", GpuFormat.RG16_UINT)
+			.addAttribute("_flw_aNormal", GpuFormat.RGBA8_SNORM)
 			.build();
 
 	public static final Identifier LAYOUT_SHADER = IdentifierUtil.id("internal/vertex_input.vert");
