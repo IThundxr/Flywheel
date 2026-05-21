@@ -136,7 +136,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
 			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
-			//light.bindToRenderPass(renderPass);
+			light.bindToRenderPass(renderPass);
 
 			submitDraws(renderPass);
 
