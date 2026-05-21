@@ -38,10 +38,11 @@ open class PlatformExtension(val project: Project) {
                 systemProperties.put("mixin.debug.export", "true")
                 systemProperties.put("mixin.debug.verbose", "true")
 
-                programArguments.add("--renderDebugLabels")
-
                 // 720p baby!
                 programArguments.addAll("--width", "1280", "--height", "720")
+
+                // Helpful when debugging issues
+                programArguments.addAll("--renderDebugLabels", "--vulkanValidation")
             }
 
             // We're a client mod, but we need to make sure we correctly render when playing on a server.

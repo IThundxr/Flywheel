@@ -19,6 +19,11 @@ val stubs = sourceSets.create("stubs")
 val main = sourceSets.getByName("main")
 val testMod = sourceSets.create("testMod")
 
+neoForge {
+    accessTransformers.from(commonProject.file("src/main/resources/accesstransformer.cfg"))
+    interfaceInjectionData.from(commonProject.file("src/main/resources/interface_injections.json"))
+}
+
 transitiveSourceSets {
     compileClasspath = main.compileClasspath
 

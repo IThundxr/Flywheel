@@ -1,0 +1,8 @@
+{
+  "com/mojang/blaze3d/systems/RenderPass": [
+    "dev/engine_room/flywheel/backend/extension/b3d/FlwRenderPassExtension"
+  ],
+  "com/mojang/blaze3d/systems/RenderPassBackend": [
+    "dev/engine_room/flywheel/backend/extension/b3d/FlwRenderPassExtension"
+  ]
+}

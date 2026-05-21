@@ -199,6 +199,7 @@ public final class PipelineCompiler {
 						.withResource(pipeline.fragmentMain()))
 				.postLink((key, program) -> {
 
+					// TODO b3d-ification
 					program.bind();
 
 					program.setSamplerBinding("flw_diffuseTex", Samplers.DIFFUSE);
@@ -210,6 +211,7 @@ public final class PipelineCompiler {
 
 					GlProgram.unbind();
 				})
+				.snippet(pipeline.snippet())
 				.harness(pipeline.compilerMarker(), sources);
 
 		return new PipelineCompiler(harness);

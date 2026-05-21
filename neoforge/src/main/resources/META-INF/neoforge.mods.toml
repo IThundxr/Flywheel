@@ -21,6 +21,9 @@ config = "flywheel.impl.mixins.json"
 [[mixins]]
 config = "flywheel.impl.neoforge.mixins.json"
 
+[[accessTransformers]]
+file="accesstransformer.cfg"
+
 [[dependencies.${ flywheel_id }]]
 modId = "minecraft"
 type = "required"
