@@ -177,7 +177,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	}
 
 	private void submitDraws(RenderPass renderPass) {
-		drawDataBuffer.ensureCapacity(DRAW_DATA_SIZE * draws.size());
+		drawDataBuffer.ensureCapacity((long) DRAW_DATA_SIZE * draws.size());
 
 		long drawCount = 0;
 		for (var drawCall : draws) {
@@ -188,6 +188,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
 			renderPass.setPipeline(pipeline);
 
+			// TODO - This is bad and needs to be changed to use push constants on vulkan, and plain uniform bindings on OpenGL
 			GpuBufferSlice slice = drawDataBuffer.getCurrentBuffer().slice(DRAW_DATA_SIZE * drawCount, DRAW_DATA_SIZE);
 			try (MappedView view = slice.map(false, true)) {
 				Std140Builder builder = Std140Builder.intoBuffer(view.data());
@@ -200,7 +201,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			renderPass.setUniform("FlwInstancedDrawData", slice);
 
 			// TODO - See attached TODO on method
-			MaterialRenderState.setupForRenderPass(renderPass, material);
+			MaterialRenderState.setupTexture(renderPass, material);
 
 			drawCall.render(renderPass);
 

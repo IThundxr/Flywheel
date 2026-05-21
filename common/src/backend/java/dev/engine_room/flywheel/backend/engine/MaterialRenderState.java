@@ -21,18 +21,6 @@ public final class MaterialRenderState {
 	private MaterialRenderState() {
 	}
 
-	// TODO b3d-ification: This is a pretty slim method, texture binding should be handled in the pass
-	// I guess we could move setupTextureForRenderPass into TextureBinder or some other util class
-	// Or we could have a builder that takes in an identifier and other params and binds the texture with a created sampler
-	public static void setupForRenderPass(RenderPass renderPass, Material material) {
-		setupTextureForRenderPass(renderPass, material);
-		// 		setupBackfaceCulling(material.backfaceCulling()); // Should be handled by RenderPipeline
-		//		setupPolygonOffset(material.polygonOffset()); // Should be handled by RenderPipeline
-		//		setupDepthTest(material.depthTest()); // Should be handled by RenderPipeline
-		//		setupTransparency(material.transparency()); // Should be handled by RenderPipeline
-		//		setupWriteMask(material.writeMask()); // Should be handled by RenderPipeline
-	}
-
 //	@Deprecated(forRemoval = true)
 //	public static void setup(Material material) {
 //		setupTexture(material);
@@ -52,7 +40,7 @@ public final class MaterialRenderState {
 //		setupWriteMask(material.writeMask());
 //	}
 
-	private static void setupTextureForRenderPass(RenderPass renderPass, Material material) {
+	public static void setupTexture(RenderPass renderPass, Material material) {
 		AbstractTexture texture = Minecraft.getInstance()
 				.getTextureManager()
 				.getTexture(material.texture());
