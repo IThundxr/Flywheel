@@ -32,25 +32,25 @@ open class PlatformExtension(val project: Project) {
     fun setupLoomRuns() {
         project.the<LoomGradleExtensionAPI>().runs.apply {
             named("client") {
-                isIdeConfigGenerated = true
+                generateRunConfig = true
 
                 // Turn on our own debug flags
-                property("flw.dumpShaderSource", "true")
-                property("flw.debugMemorySafety", "true")
+                systemProperties.put("flw.dumpShaderSource", "true")
+                systemProperties.put("flw.debugMemorySafety", "true")
 
                 // Turn on mixin debug flags
-                property("mixin.debug.export", "true")
-                property("mixin.debug.verbose", "true")
+                systemProperties.put("mixin.debug.export", "true")
+                systemProperties.put("mixin.debug.verbose", "true")
 
                 programArgs("--renderDebugLabels")
 
                 // 720p baby!
-                programArgs("--width", "1280", "--height", "720")
+                programArguments.addAll("--width", "1280", "--height", "720")
             }
 
             // We're a client mod, but we need to make sure we correctly render when playing on a server.
             named("server") {
-                isIdeConfigGenerated = true
+                generateRunConfig = true
                 programArgs("--nogui")
             }
         }
