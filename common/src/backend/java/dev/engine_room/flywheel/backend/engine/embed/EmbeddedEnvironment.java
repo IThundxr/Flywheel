@@ -85,7 +85,8 @@ public class EmbeddedEnvironment implements VisualEmbedding, Environment {
 	public void setupDraw(GlProgram program) {
 		program.setMat4(EmbeddingUniforms.MODEL_MATRIX, poseComposed);
 		program.setMat3(EmbeddingUniforms.NORMAL_MATRIX, normalComposed);
-		throw new RuntimeException();
+		// B3d-ification - TODO
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
