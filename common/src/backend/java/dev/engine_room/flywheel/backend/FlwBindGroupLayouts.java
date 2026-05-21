@@ -5,6 +5,7 @@ import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.shaders.UniformType;
 
 import dev.engine_room.flywheel.backend.engine.instancing.InstancedInstancer;
+import dev.engine_room.flywheel.backend.engine.instancing.InstancedLight;
 import dev.engine_room.flywheel.backend.engine.uniform.FlwUniform;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import net.minecraft.util.Util;
@@ -19,8 +20,6 @@ public class FlwBindGroupLayouts {
 			// TODO - This needs to be made proper, and be written to in a better way
 			.withUniform("FlwInstancedDrawData", UniformType.UNIFORM_BUFFER)
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.RGBA32_UINT)
-			//.withUniform(InstancedLight.LUT_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
-			//.withUniform(InstancedLight.SECTIONS_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.build();
 
 	public static final BindGroupLayout BASE_SAMPLERS = BindGroupLayout.builder()
@@ -31,6 +30,11 @@ public class FlwBindGroupLayouts {
 
 	public static final BindGroupLayout CRUMBLING_SAMPLER = BindGroupLayout.builder()
 			.withSampler("_flw_crumblingTex")
+			.build();
+
+	public static final BindGroupLayout LIGHT_TEXEL_BUFFERS = BindGroupLayout.builder()
+			.withUniform(InstancedLight.LUT_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
+			.withUniform(InstancedLight.SECTIONS_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.build();
 
 	public static final BindGroupLayout UNIFORMS = Util.make(() -> {
