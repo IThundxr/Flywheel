@@ -42,7 +42,7 @@ public class CompilationHarness<K> {
 	}
 
 	private RenderPipeline compileRenderPipeline(PipelineKey<K> key) {
-		return compiler.compileRenderPipeline(key.pipelineSnippet, key.key, sources, shaderCache, programLinker);
+		return compiler.compileRenderPipeline(key.snippet, key.key, sources, shaderCache);
 	}
 
 	public void delete() {
@@ -58,9 +58,9 @@ public class CompilationHarness<K> {
 	public interface KeyCompiler<K> {
 		GlProgram compile(K key, ShaderSources loader, ShaderCache shaderCache, ProgramLinker programLinker);
 
-		RenderPipeline compileRenderPipeline(RenderPipeline.Snippet pipelineSnippet, K key, ShaderSources loader, ShaderCache shaderCache, ProgramLinker programLinker);
+		RenderPipeline compileRenderPipeline(RenderPipeline.Snippet snippet, K key, ShaderSources loader, ShaderCache shaderCache);
 	}
 
-	private record PipelineKey<K>(RenderPipeline.Snippet pipelineSnippet, K key) {
+	private record PipelineKey<K>(RenderPipeline.Snippet snippet, K key) {
 	}
 }

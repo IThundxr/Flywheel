@@ -10,28 +10,29 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 
-// TODO - We likely need some cache that can turn materials into render pipelines
+// TODO b3d-ification: This right now only supports the instancing backend, we need some way for backends to be able
+// to provide extra bind group layouts that should be used
 public class FlwRenderPipelines {
-	// TODO - Support clearing this on resource reload
-	private static final HashMap<FlwSnippetKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
+	private static final HashMap<CacheKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
 
-	private static RenderPipeline.Snippet FLYWHEEL_RENDER_PIPELINE_SNIPPET = RenderPipeline.builder()
+	private static final RenderPipeline.Snippet BASE_SNIPPET = RenderPipeline.builder()
 			.withVertexBinding(0, InternalVertex.FORMAT)
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-			.withBindGroupLayout(FlwBindGroupLayouts.BIND_GROUP)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
 			.buildSnippet();
 
+	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
+			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFER)
+			.buildSnippet();
+
 	@SuppressWarnings("DataFlowIssue")
 	public static RenderPipeline.Snippet getSnippet(Material material, ContextShader contextShader) {
-		return SNIPPET_CACHE.computeIfAbsent(new FlwSnippetKey(material, contextShader), key -> {
+		return SNIPPET_CACHE.computeIfAbsent(new CacheKey(material, contextShader), key -> {
 			Material m = key.material;
-			ContextShader cs = key.contextShader;
 
-			RenderPipeline.Builder builder = RenderPipeline.builder(FLYWHEEL_RENDER_PIPELINE_SNIPPET);
-
-			cs.onBuildPipeline(builder);
+			RenderPipeline.Builder builder = RenderPipeline.builder(BASE_SNIPPET);
+			key.contextShader.onBuildPipeline(builder);
 
 			builder.withCull(m.backfaceCulling());
 			if (m.depthStencilState() != null)
@@ -43,7 +44,7 @@ public class FlwRenderPipelines {
 		});
 	}
 
-	private record FlwSnippetKey(Material material, ContextShader contextShader) {
+	private record CacheKey(Material material, ContextShader contextShader) {
 	}
 
 	@Internal

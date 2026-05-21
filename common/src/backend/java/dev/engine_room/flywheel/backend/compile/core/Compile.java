@@ -10,7 +10,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -164,6 +167,7 @@ public class Compile<K> {
 
 	public static class ProgramStitcher<K> implements KeyCompiler<K> {
 		private final Map<ShaderType, ShaderCompiler<K>> compilers = new EnumMap<>(ShaderType.class);
+		private RenderPipeline.@Nullable Snippet programSnippet;
 		@Deprecated(forRemoval = true)
 		private BiConsumer<K, GlProgram> postLink = (k, p) -> {
 		};
@@ -183,6 +187,11 @@ public class Compile<K> {
 		@Deprecated(forRemoval = true)
 		public ProgramStitcher<K> postLink(BiConsumer<K, GlProgram> postLink) {
 			this.postLink = postLink;
+			return this;
+		}
+
+		public ProgramStitcher<K> snippet(RenderPipeline.Snippet snippet) {
+			this.programSnippet = snippet;
 			return this;
 		}
 
@@ -213,14 +222,18 @@ public class Compile<K> {
 		}
 
 		@Override
-		public RenderPipeline compileRenderPipeline(RenderPipeline.Snippet pipelineSnippet, K key, ShaderSources loader, ShaderCache shaderCache, ProgramLinker programLinker) {
+		public RenderPipeline compileRenderPipeline(Snippet snippet, K key, ShaderSources loader, ShaderCache shaderCache) {
 			if (compilers.isEmpty()) {
 				throw new IllegalStateException("No shader compilers were added!");
 			}
 
+			Snippet[] snippets = programSnippet == null
+					? new Snippet[] { snippet }
+					: new Snippet[] { snippet, programSnippet };
+
 			Identifier vertexShaderId = getIdFor(ShaderType.VERTEX, key);
 			Identifier fragmentShaderId = getIdFor(ShaderType.FRAGMENT, key);
-			RenderPipeline pipeline = RenderPipeline.builder(pipelineSnippet)
+			RenderPipeline pipeline = RenderPipeline.builder(snippets)
 					.withLocation(vertexShaderId)
 					.withVertexShader(vertexShaderId)
 					.withFragmentShader(fragmentShaderId)
