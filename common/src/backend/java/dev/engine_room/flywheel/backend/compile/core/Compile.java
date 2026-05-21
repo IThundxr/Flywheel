@@ -94,7 +94,6 @@ public class Compile<K> {
 			return this;
 		}
 
-		// TODO b3d-ification: Pretty sure this doesn't work at all
 		@Deprecated(forRemoval = true)
 		public ShaderCompiler<K> define(String def, int value) {
 			return onCompile(($, ctx) -> ctx.define(def, String.valueOf(value)));
