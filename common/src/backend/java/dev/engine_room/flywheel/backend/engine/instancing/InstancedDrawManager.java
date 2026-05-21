@@ -349,6 +349,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	public static void uploadMaterialUniform(Std140Builder builder, Material material) {
 		int packedFogAndCutout = MaterialEncoder.packUberShader(material);
 		int packedMaterialProperties = MaterialEncoder.packProperties(material);
-		builder.putVec2(packedFogAndCutout, packedMaterialProperties);
+		builder.putIVec2(packedFogAndCutout, packedMaterialProperties);
 	}
 }
