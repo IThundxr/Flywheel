@@ -218,7 +218,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 		matrixBuffer.delete();
 
-		oitFramebuffer.delete();
+		oitFramebuffer.close();
 	}
 
 	public void renderCrumbling(List<Engine.CrumblingBlock> crumblingBlocks) {

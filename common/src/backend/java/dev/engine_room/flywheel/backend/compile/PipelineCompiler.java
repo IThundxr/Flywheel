@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import org.jspecify.annotations.Nullable;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.LightShader;
@@ -14,9 +17,8 @@ import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.MaterialShaders;
 import dev.engine_room.flywheel.backend.BackendConfig;
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
-import dev.engine_room.flywheel.backend.InternalVertex;
+import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
-import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
 import dev.engine_room.flywheel.backend.compile.component.UberShaderComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
@@ -68,7 +70,7 @@ public final class PipelineCompiler {
 		MaterialShaderIndices.cutoutSources()
 				.index(cutout.source());
 
-		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader);
+		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader, oit);
 		return harness.getPipeline(pipelineSnippet, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
@@ -142,7 +144,7 @@ public final class PipelineCompiler {
 						.withResource(key -> key.materialShaders()
 								.vertexSource())
 						.withComponents(vertexComponents)
-						.withResource(InternalVertex.LAYOUT_SHADER)
+						.withResource(FlwVertexFormats.MAIN_FORMAT_SHADER)
 						.withComponent(key -> pipeline.assembler()
 								.assemble(key.instanceType()))
 						.withResource(pipeline.vertexMain()))
@@ -198,20 +200,6 @@ public final class PipelineCompiler {
 								.source())
 						.with((key, fetcher) -> (key.useCutout() ? CUTOUT : fetcher.get(CutoutShaders.OFF.source())))
 						.withResource(pipeline.fragmentMain()))
-				.postLink((key, program) -> {
-
-					// TODO b3d-ification
-					program.bind();
-
-					program.setSamplerBinding("flw_diffuseTex", Samplers.DIFFUSE);
-					program.setSamplerBinding("flw_overlayTex", Samplers.OVERLAY);
-					program.setSamplerBinding("flw_lightTex", Samplers.LIGHT);
-					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
-					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
-					program.setSamplerBinding("_flw_blueNoise", Samplers.NOISE);
-
-					GlProgram.unbind();
-				})
 				.snippet(pipeline.snippet())
 				.harness(pipeline.compilerMarker(), sources);
 
@@ -257,18 +245,20 @@ public final class PipelineCompiler {
 	}
 
 	public enum OitMode {
-		OFF("", ""),
-		DEPTH_RANGE("_FLW_DEPTH_RANGE", "_depth_range"),
-		GENERATE_COEFFICIENTS("_FLW_COLLECT_COEFFS", "_generate_coefficients"),
-		EVALUATE("_FLW_EVALUATE", "_resolve"),
+		OFF("", "", null),
+		DEPTH_RANGE("_FLW_DEPTH_RANGE", "_depth_range", FlwRenderPipelines.OIT_DEPTH_RANGE),
+		GENERATE_COEFFICIENTS("_FLW_COLLECT_COEFFS", "_generate_coefficients", FlwRenderPipelines.OIT_TRANSMITTANCE),
+		EVALUATE("_FLW_EVALUATE", "_resolve", FlwRenderPipelines.OIT_ACCUMULATE),
 		;
 
 		public final String define;
 		public final String name;
+		public final @Nullable Snippet snippet;
 
-		OitMode(String define, String name) {
+		OitMode(String define, String name, @Nullable Snippet snippet) {
 			this.define = define;
 			this.name = name;
+			this.snippet = snippet;
 		}
 	}
 }

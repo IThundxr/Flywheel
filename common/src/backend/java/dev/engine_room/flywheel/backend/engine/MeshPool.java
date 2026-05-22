@@ -5,13 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dev.engine_room.flywheel.backend.FlwVertexFormats;
+
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.Mesh;
-import dev.engine_room.flywheel.backend.InternalVertex;
 import dev.engine_room.flywheel.backend.util.ReferenceCounted;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
@@ -32,7 +33,7 @@ public class MeshPool implements AutoCloseable {
 	 * Create a new mesh pool.
 	 */
 	public MeshPool() {
-		vertexView = InternalVertex.createVertexView();
+		vertexView = FlwVertexFormats.createVertexView();
 		// TODO b3d-ification: Check if the default size needs to be bigger
 		vbo = new DynamicGpuBuffer(
 				"Flywheel MeshPool VBO",
@@ -157,7 +158,7 @@ public class MeshPool implements AutoCloseable {
 		}
 
 		public int byteSize() {
-			return mesh.vertexCount() * InternalVertex.FORMAT.getVertexSize();
+			return mesh.vertexCount() * FlwVertexFormats.MAIN_FORMAT.getVertexSize();
 		}
 
 		public int indexCount() {
