@@ -1,11 +1,9 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
-import java.nio.IntBuffer;
 import java.util.Collections;
 import java.util.function.Supplier;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL33C;
@@ -42,9 +40,6 @@ public class OitFramebuffer implements AutoCloseable {
 	public static final int[] RENDER_TRANSMITTANCE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3, GL46.GL_COLOR_ATTACHMENT4};
 	public static final int[] ACCUMULATE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT5};
 	public static final int[] DEPTH_ONLY_DRAW_BUFFERS = {};
-
-	public static final IntBuffer DRAW_ARRAYS_FIRST = BufferUtils.createIntBuffer(1).put(0).flip();
-	public static final IntBuffer DRAW_ARRAYS_COUNT = BufferUtils.createIntBuffer(1).put(3).flip();
 
 	private final OitPrograms programs;
 	@Deprecated(forRemoval = true)
@@ -328,7 +323,7 @@ public class OitFramebuffer implements AutoCloseable {
 		// Empty VAO, the actual full screen triangle is generated in the vertex shader
 		//GlStateManager._glBindVertexArray(vao);
 
-		renderPass.multiDraw(DRAW_ARRAYS_FIRST, DRAW_ARRAYS_COUNT, 1);
+		renderPass.draw(3, 1, 0, 0);
 	}
 
 	@Deprecated(forRemoval = true)
