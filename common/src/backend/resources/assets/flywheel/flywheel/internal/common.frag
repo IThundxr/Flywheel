@@ -23,12 +23,11 @@ flat in uvec2 _flw_ids;
 
 uniform sampler2D _flw_depthRange;
 
-uniform sampler2DArray _flw_coefficients;
+uniform sampler2D[4] _flw_coefficients;
 
 uniform sampler2D _flw_blueNoise;
 
 float tented_blue_noise(float normalizedDepth) {
-
     float tentIn = abs(normalizedDepth * 2. - 1);
     float tentIn2 = tentIn * tentIn;
     float tentIn4 = tentIn2 * tentIn2;

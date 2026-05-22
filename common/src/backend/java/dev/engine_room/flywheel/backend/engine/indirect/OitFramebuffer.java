@@ -1,131 +1,84 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
-import java.util.Collections;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL46;
+import org.joml.Vector4f;
+import org.joml.Vector4fc;
+import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
-import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.OitPrograms;
-import dev.engine_room.flywheel.backend.engine.TextureBinder;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
-import dev.engine_room.flywheel.backend.gl.GlUtil;
+import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 
-// TODO 26.2: Check if this works with Reverse-Z Depth
-// TODO 26.2: Make this use B3D as much as possible
-public class OitFramebuffer {
-	public static final float[] CLEAR_TO_ZERO = {0, 0, 0, 0};
-	public static final int[] DEPTH_RANGE_DRAW_BUFFERS = {GlConst.GL_COLOR_ATTACHMENT0};
-	public static final int[] RENDER_TRANSMITTANCE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3, GL46.GL_COLOR_ATTACHMENT4};
-	public static final int[] ACCUMULATE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT5};
-	public static final int[] DEPTH_ONLY_DRAW_BUFFERS = {};
+public class OitFramebuffer implements AutoCloseable {
+	public static final Optional<Vector4fc> CLEAR_TO_ZERO = Optional.of(new Vector4f(0, 0, 0, 0));
 
 	private final OitPrograms programs;
-	private final int vao;
+	// TODO b3d-ification: Maybe this should just be static?
+	private final CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-	public int fbo = -1;
-	public int depthBounds = -1;
-	public int coefficients = -1;
-	public int accumulate = -1;
+	@Nullable
+	public GpuTextureView depthBounds = null;
+	public final GpuTextureView[] coefficients = new GpuTextureView[4];
+	@Nullable
+	public GpuTextureView accumulate = null;
 
 	private int lastWidth = -1;
 	private int lastHeight = -1;
 
 	public OitFramebuffer(OitPrograms programs) {
 		this.programs = programs;
-		if (GlCompat.SUPPORTS_DSA) {
-			vao = GL46.glCreateVertexArrays();
-		} else {
-			vao = GlStateManager._glGenVertexArrays();
-		}
-	}
-
-	/**
-	 * Set up the framebuffer.
-	 */
-	public void prepare() {
-		RenderTarget renderTarget;
-
-		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
-			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
-
-			renderTarget.copyDepthFrom(Minecraft.getInstance().gameRenderer.mainRenderTarget());
-		} else {
-			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-		}
-
-		maybeResizeFBO(renderTarget.width, renderTarget.height);
-
-		Samplers.COEFFICIENTS.makeActive();
-		// Bind zero to state manager to make sure we clear its internal state
-		GlStateManager._bindTexture(0);
-		GL32.glBindTexture(GL32.GL_TEXTURE_2D_ARRAY, coefficients);
-
-		Samplers.DEPTH_RANGE.makeActive();
-		GlStateManager._bindTexture(depthBounds);
-
-		TextureBinder.bind(Samplers.NOISE.number, NoiseTextures.BLUE_NOISE.getGpuTextureView(), null);
-
-		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
-		GlTexture depthTexture = (GlTexture) renderTarget.getDepthTexture();
-		GL32.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_DEPTH_ATTACHMENT, depthTexture != null ? depthTexture.glId() : 0, 0);
 	}
 
 	/**
 	 * Render out the min and max depth per fragment.
 	 */
-	public void depthRange() {
-		// No depth writes, but we'll still use the depth test.
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_MAX);
-
+	public RenderPass createDepthRangePass() {
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
 		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
-
-		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_RANGE_DRAW_BUFFERS);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, new float[]{-far, -far, 0, 0});
-		} else {
-			GL32.glDrawBuffers(DEPTH_RANGE_DRAW_BUFFERS);
-			GL32.glClearColor(-far, -far, 0, 0);
-			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
-		}
+		return commandEncoder.createRenderPass(
+				() -> "Flw OIT Depth Range",
+				depthBounds, Optional.of(new Vector4f(-far, -far, 0, 0)),
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		);
 	}
 
 	/**
 	 * Generate the coefficients to the transmittance function.
 	 */
-	public void renderTransmittance() {
-		// No depth writes, but we'll still use the depth test
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
+	public RenderPass createTransmittancePass() {
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Transmittance")
+				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
+				.withDepthAttachment(renderTarget.getDepthTextureView());
 
-		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, RENDER_TRANSMITTANCE_DRAW_BUFFERS);
-
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 1, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 2, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 3, CLEAR_TO_ZERO);
-		} else {
-			GL32.glDrawBuffers(RENDER_TRANSMITTANCE_DRAW_BUFFERS);
-			GL32.glClearColor(0, 0, 0, 0);
-			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
+		for (GpuTextureView view : coefficients) {
+			descriptor.withColorAttachment(view, CLEAR_TO_ZERO);
 		}
+
+		RenderPass renderPass = commandEncoder.createRenderPass(descriptor);
+
+		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
+
+		return renderPass;
 	}
 
 	/**
@@ -133,130 +86,97 @@ public class OitFramebuffer {
 	 * function to determine at what depth that occurs and write out to the depth buffer.
 	 */
 	public void renderDepthFromTransmittance() {
-		// Only write to depth, not color.
-		GlStateManager._depthMask(true);
-		GlStateManager._colorMask(ColorTargetState.WRITE_NONE);
-		GlStateManager._disableBlend(0);
-		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Depth From Transmittance")
+				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
+				.withUnusedColorAttachment()
+				.withDepthAttachment(renderTarget.getDepthTextureView());
 
-		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_ONLY_DRAW_BUFFERS);
-		} else {
-			GL32.glDrawBuffers(DEPTH_ONLY_DRAW_BUFFERS);
+		try (RenderPass renderPass = commandEncoder.createRenderPass(descriptor)) {
+			Uniforms.bindToRenderPass(renderPass);
+
+			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+
+			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
+
+			renderPass.setPipeline(programs.getOitDepthPipeline());
+
+			drawFullscreenQuad(renderPass);
 		}
-
-		programs.getOitDepthProgram().bind();
-
-		drawFullscreenQuad();
 	}
 
 	/**
 	 * Sample the transmittance function and accumulate.
 	 */
-	public void accumulate() {
-		// No depth writes, but we'll still use the depth test
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
-
-		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, ACCUMULATE_DRAW_BUFFERS);
-
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, CLEAR_TO_ZERO);
-		} else {
-			GL32.glDrawBuffers(ACCUMULATE_DRAW_BUFFERS);
-			GL32.glClearColor(0, 0, 0, 0);
-			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
-		}
+	public RenderPass createAccumulatePass() {
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		return commandEncoder.createRenderPass(
+				() -> "Flw OIT Accumulate",
+				accumulate, CLEAR_TO_ZERO,
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		);
 	}
 
 	/**
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
+		RenderTarget renderTarget;
 		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
-			bindRenderTarget(Minecraft.getInstance().levelRenderer.itemEntityTarget());
+			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
 		} else {
-			bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
+			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		}
 
-		// The composite shader writes out the closest depth to gl_FragDepth.
-		// depthMask = true: OIT stuff renders on top of other transparent stuff.
-		// depthMask = false: other transparent stuff renders on top of OIT stuff.
-		// If Neo gets wavelet OIT we can use their hooks to be correct with everything.
-		GlStateManager._depthMask(true);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
+		try (RenderPass renderPass = commandEncoder.createRenderPass(
+				() -> "Flw OIT Composite",
+				renderTarget.getColorTextureView(), Optional.empty(),
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		)) {
+			Uniforms.bindToRenderPass(renderPass);
 
-		// We rely on the blend func to achieve:
-		// final color = (1 - transmittance_total) * sum(color_f * alpha_f * transmittance_f) / sum(alpha_f * transmittance_f)
-		//			+ color_dst * transmittance_total
-		//
-		// Though note that the alpha value we emit in the fragment shader is actually (1. - transmittance_total).
-		// The extra inversion step is so we can have a sane alpha value written out for the fabulous blit shader to consume.
-		GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
-		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
+			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+			renderPass.bindTexture("_flw_accumulate", accumulate, clampToEdgeNearest);
+			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
 
-		GlTextureUnit.T0.makeActive();
-		GlStateManager._bindTexture(accumulate);
+			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
-		programs.getOitCompositeProgram().bind();
+			renderPass.setPipeline(programs.getOitCompositePipeline());
 
-		drawFullscreenQuad();
-
-		bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
-	}
-
-	private static void bindRenderTarget(RenderTarget target) {
-		GlTexture colorTexture = (GlTexture) target.getColorTexture();
-		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
-		int i = GlUtil.getGlDevice().frameBufferCache().getFbo(
-				GlUtil.getGlDevice().directStateAccess(),
-				Collections.singletonList(colorTexture),
-				depthTexture
-		);
-		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
-		GlStateManager._viewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));
-	}
-
-	public void delete() {
-		deleteTextures();
-		GL32.glDeleteVertexArrays(vao);
-	}
-
-	private void drawFullscreenQuad() {
-		// Empty VAO, the actual full screen triangle is generated in the vertex shader
-		GlStateManager._glBindVertexArray(vao);
-
-		GlStateManager._drawArrays(GlConst.GL_TRIANGLES, 0, 3);
-	}
-
-	private void deleteTextures() {
-		if (depthBounds != -1) {
-			GlStateManager._deleteTexture(depthBounds);
+			drawFullscreenQuad(renderPass);
 		}
-		if (coefficients != -1) {
-			GlStateManager._deleteTexture(coefficients);
-		}
-		if (accumulate != -1) {
-			GlStateManager._deleteTexture(accumulate);
-		}
-		if (fbo != -1) {
-			GlStateManager._glDeleteFramebuffers(fbo);
+	}
+
+	private RenderTarget setupTexturesAndGetRenderTarget() {
+		Minecraft minecraft = Minecraft.getInstance();
+		GameRenderer gameRenderer = minecraft.gameRenderer;
+
+		RenderTarget renderTarget;
+		if (gameRenderer.gameRenderState().useShaderTransparency()) {
+			renderTarget = minecraft.levelRenderer.itemEntityTarget();
+
+			renderTarget.copyDepthFrom(gameRenderer.mainRenderTarget());
+		} else {
+			renderTarget = gameRenderer.mainRenderTarget();
 		}
 
-		// We sometimes get the same texture ID back when creating new textures,
-		// so bind zero to clear the GlStateManager
-		Samplers.COEFFICIENTS.makeActive();
-		GlStateManager._bindTexture(0);
-		Samplers.DEPTH_RANGE.makeActive();
-		GlStateManager._bindTexture(0);
+		maybeResizeTextures(renderTarget.width, renderTarget.height);
+
+		return renderTarget;
 	}
 
-	private void maybeResizeFBO(int width, int height) {
+	private void drawFullscreenQuad(RenderPass renderPass) {
+		renderPass.draw(3, 1, 0, 0);
+	}
+
+	private void maybeResizeTextures(int width, int height) {
 		if (lastWidth == width && lastHeight == height) {
 			return;
 		}
@@ -266,65 +186,60 @@ public class OitFramebuffer {
 
 		deleteTextures();
 
-		if (GlCompat.SUPPORTS_DSA) {
-			fbo = GL46.glCreateFramebuffers();
+		GpuDevice device = RenderSystem.getDevice();
 
-			depthBounds = GL46.glCreateTextures(GL46.GL_TEXTURE_2D);
-			coefficients = GL46.glCreateTextures(GL46.GL_TEXTURE_2D_ARRAY);
-			accumulate = GL46.glCreateTextures(GL46.GL_TEXTURE_2D);
+		depthBounds = device.createTextureView(device.createTexture(
+				"Flw OIT Depth Bounds",
+				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
+				GpuFormat.RG32_FLOAT,
+				width,
+				height,
+				1,
+				1
+		));
 
-			GL46.glTextureStorage2D(depthBounds, 1, GL32.GL_RG32F, width, height);
-			GL46.glTextureStorage3D(coefficients, 1, GL32.GL_RGBA16F, width, height, 4);
-			GL46.glTextureStorage2D(accumulate, 1, GL32.GL_RGBA16F, width, height);
+		for (int i = 0; i < coefficients.length; i++) {
+			coefficients[i] = device.createTextureView(device.createTexture(
+					"Flw OIT Coefficients #" + i,
+					GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
+					GpuFormat.RGBA16_FLOAT,
+					width,
+					height,
+					1,
+					1
+			));
+		}
 
-			GL46.glNamedFramebufferTexture(fbo, GlConst.GL_COLOR_ATTACHMENT0, depthBounds, 0);
-			GL46.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT1, coefficients, 0, 0);
-			GL46.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT2, coefficients, 0, 1);
-			GL46.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT3, coefficients, 0, 2);
-			GL46.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT4, coefficients, 0, 3);
-			GL46.glNamedFramebufferTexture(fbo, GL32.GL_COLOR_ATTACHMENT5, accumulate, 0);
-		} else {
-			fbo = GL46.glGenFramebuffers();
+		accumulate = device.createTextureView(device.createTexture(
+				"Flw OIT Accumulate",
+				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
+				GpuFormat.RGBA16_FLOAT,
+				width,
+				height,
+				1,
+				1
+		));
 
-			depthBounds = GlStateManager._genTexture();
-			coefficients = GlStateManager._genTexture();
-			accumulate = GlStateManager._genTexture();
+	}
 
-			GlTextureUnit.T0.makeActive();
-			GlStateManager._bindTexture(0);
+	@Override
+	public void close() {
+		deleteTextures();
+	}
 
-			GlStateManager._bindTexture(depthBounds);
-			GL32.glTexImage2D(GlConst.GL_TEXTURE_2D, 0, GL32.GL_RG32F, width, height, 0, GL46.GL_RGBA, GL46.GL_BYTE, 0);
-
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_CLAMP_TO_EDGE);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_CLAMP_TO_EDGE);
-
-			GL32.glBindTexture(GL32.GL_TEXTURE_2D_ARRAY, coefficients);
-			GL32.glTexImage3D(GL32.GL_TEXTURE_2D_ARRAY, 0, GL32.GL_RGBA16F, width, height, 4, 0, GL46.GL_RGBA, GL46.GL_BYTE, 0);
-
-			GlStateManager._texParameter(GL32.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GL32.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GL32.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_CLAMP_TO_EDGE);
-			GlStateManager._texParameter(GL32.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_CLAMP_TO_EDGE);
-
-			GlStateManager._bindTexture(accumulate);
-			GL32.glTexImage2D(GlConst.GL_TEXTURE_2D, 0, GL32.GL_RGBA16F, width, height, 0, GL46.GL_RGBA, GL46.GL_BYTE, 0);
-
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_NEAREST);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_CLAMP_TO_EDGE);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_CLAMP_TO_EDGE);
-
-			GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
-
-			GL46.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_COLOR_ATTACHMENT0, depthBounds, 0);
-			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT1, coefficients, 0, 0);
-			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT2, coefficients, 0, 1);
-			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT3, coefficients, 0, 2);
-			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT4, coefficients, 0, 3);
-			GL46.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT5, accumulate, 0);
+	private void deleteTextures() {
+		if (depthBounds != null) {
+			depthBounds.close();
+		}
+		for (int i = 0; i < coefficients.length; i++) {
+			GpuTextureView coefficient = coefficients[i];
+			if (coefficient != null) {
+				coefficient.close();
+				coefficients[i] = null;
+			}
+		}
+		if (accumulate != null) {
+			accumulate.close();
 		}
 	}
 }

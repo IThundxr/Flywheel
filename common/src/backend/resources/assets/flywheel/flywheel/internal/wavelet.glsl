@@ -42,12 +42,12 @@ void add_transmittance(inout vec4[4] coefficients, float transmittance, float de
 // -------------------------------------------------------------------------
 
 // TODO: maybe we could reduce the number of texel fetches below?
-float get_coefficients(in sampler2DArray coefficients, int index) {
-    return texelFetch(coefficients, ivec3(gl_FragCoord.xy, index >> 2), 0)[index & 3];
+float get_coefficients(in sampler2D[4] coefficients, int index) {
+    return texelFetch(coefficients[index >> 2], ivec2(gl_FragCoord.xy), 0)[index & 3];
 }
 
 /// Compute the total absorbance, as if at infinite depth.
-float total_absorbance(in sampler2DArray coefficients) {
+float total_absorbance(in sampler2D[4] coefficients) {
     float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0;
@@ -73,7 +73,7 @@ float total_absorbance(in sampler2DArray coefficients) {
 }
 
 /// Compute the absorbance at a given normalized depth.
-float absorbance(in sampler2DArray coefficients, float depth) {
+float absorbance(in sampler2D[4] coefficients, float depth) {
     float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0;
@@ -117,7 +117,7 @@ float absorbance(in sampler2DArray coefficients, float depth) {
 
 /// Compute the absorbance at a given normalized depth,
 /// correcting for self-occlusion by undoing the previously recorded absorbance event.
-float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, float signal) {
+float signal_corrected_absorbance(in sampler2D[4] coefficients, float depth, float signal) {
     float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0;
@@ -172,14 +172,14 @@ float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, f
 
 #define ABSORBANCE_TO_TRANSMITTANCE(a) clamp(exp(-(a)), 0., 1.)
 
-float total_transmittance(in sampler2DArray coefficients) {
+float total_transmittance(in sampler2D[4] coefficients) {
     return ABSORBANCE_TO_TRANSMITTANCE(total_absorbance(coefficients));
 }
 
-float transmittance(in sampler2DArray coefficients, float depth) {
+float transmittance(in sampler2D[4] coefficients, float depth) {
     return ABSORBANCE_TO_TRANSMITTANCE(absorbance(coefficients, depth));
 }
 
-float signal_corrected_transmittance(in sampler2DArray coefficients, float depth, float signal) {
+float signal_corrected_transmittance(in sampler2D[4] coefficients, float depth, float signal) {
     return ABSORBANCE_TO_TRANSMITTANCE(signal_corrected_absorbance(coefficients, depth, signal));
 }
