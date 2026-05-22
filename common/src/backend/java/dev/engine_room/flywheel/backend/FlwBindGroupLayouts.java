@@ -22,6 +22,12 @@ public class FlwBindGroupLayouts {
 			.withSampler("_flw_crumblingTex")
 			.build();
 
+	public static final BindGroupLayout OIT_SAMPLERS = BindGroupLayout.builder()
+			.withSampler("_flw_accumulate")
+			.withSampler("_flw_depthRange")
+			.withSampler("_flw_coefficients")
+			.build();
+
 	public static final BindGroupLayout INSTANCING_TEXEL_BUFFER = BindGroupLayout.builder()
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.RGBA32_UINT)
 			.build();

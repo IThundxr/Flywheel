@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 
+// TODO b3d-ification: Maybe a helper method that does the following:
+// renderPass.bindTexture(name, <NoiseTextures>.getTextureView(), <NoiseTextures>.getSampler());
 public enum NoiseTextures {
 	BLUE_NOISE("textures/flywheel/noise/blue.png");
 
@@ -22,15 +24,15 @@ public enum NoiseTextures {
 		this.reloadableTexture = new SimpleTexture(textureId);
 	}
 
-	public GpuTexture getGpuTexture() {
+	public GpuTexture getTexture() {
 		return reloadableTexture.getTexture();
 	}
 
-	public GpuTextureView getGpuTextureView() {
+	public GpuTextureView getTextureView() {
 		return reloadableTexture.getTextureView();
 	}
 
-	public GpuSampler getGpuSampler() {
+	public GpuSampler getSampler() {
 		return reloadableTexture.getSampler();
 	}
 

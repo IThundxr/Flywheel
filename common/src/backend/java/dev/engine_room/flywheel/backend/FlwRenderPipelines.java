@@ -16,7 +16,7 @@ public class FlwRenderPipelines {
 	private static final HashMap<CacheKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
 
 	private static final RenderPipeline.Snippet BASE_SNIPPET = RenderPipeline.builder()
-			.withVertexBinding(0, InternalVertex.FORMAT)
+			.withVertexBinding(0, FlwVertexFormats.MAIN_FORMAT)
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
@@ -24,6 +24,11 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
 			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFER)
+			.buildSnippet();
+
+	public static final RenderPipeline.Snippet OIT_SNIPPET = RenderPipeline.builder()
+			.withVertexBinding(0, FlwVertexFormats.EMPTY_FORMAT)
+			.withBindGroupLayout()
 			.buildSnippet();
 
 	@SuppressWarnings("DataFlowIssue")

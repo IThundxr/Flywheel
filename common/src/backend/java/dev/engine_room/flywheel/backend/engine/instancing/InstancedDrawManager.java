@@ -21,8 +21,8 @@ import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
@@ -36,6 +36,7 @@ import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
+import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
@@ -61,8 +62,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private final MeshPool meshPool;
 	private final InstancedLight light;
 
-	// TODO b3d-ification: Re-enable later
-	//private final OitFramebuffer oitFramebuffer;
+	private final OitFramebuffer oitFramebuffer;
 
 	public InstancedDrawManager(InstancingPrograms programs) {
 		programs.acquire();
@@ -71,8 +71,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool = new MeshPool();
 		light = new InstancedLight();
 
-		// TODO b3d-ification: Re-enable later
-		//oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		oitFramebuffer = new OitFramebuffer(programs.oitPrograms(), true);
 	}
 
 	@Override
@@ -225,8 +224,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		light.close();
 
-		// TODO b3d-ification: Re-enable later
-		//oitFramebuffer.delete();
+		oitFramebuffer.close();
 
 		super.delete();
 	}

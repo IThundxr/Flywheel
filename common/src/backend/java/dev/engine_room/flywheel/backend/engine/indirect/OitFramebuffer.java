@@ -1,15 +1,30 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
+import java.nio.IntBuffer;
 import java.util.Collections;
+import java.util.function.Supplier;
 
+import org.jspecify.annotations.Nullable;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL45C;
 import org.lwjgl.opengl.GL46;
 
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.backend.Samplers;
@@ -19,39 +34,62 @@ import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.GlUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 
-// TODO 26.2: Check if this works with Reverse-Z Depth
-// TODO 26.2: Make this use B3D as much as possible
-public class OitFramebuffer {
+public class OitFramebuffer implements AutoCloseable {
 	public static final float[] CLEAR_TO_ZERO = {0, 0, 0, 0};
 	public static final int[] DEPTH_RANGE_DRAW_BUFFERS = {GlConst.GL_COLOR_ATTACHMENT0};
 	public static final int[] RENDER_TRANSMITTANCE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3, GL46.GL_COLOR_ATTACHMENT4};
 	public static final int[] ACCUMULATE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT5};
 	public static final int[] DEPTH_ONLY_DRAW_BUFFERS = {};
 
+	public static final IntBuffer DRAW_ARRAYS_FIRST = BufferUtils.createIntBuffer(1).put(0).flip();
+	public static final IntBuffer DRAW_ARRAYS_COUNT = BufferUtils.createIntBuffer(1).put(3).flip();
+
 	private final OitPrograms programs;
+	@Deprecated(forRemoval = true)
 	private final int vao;
 
+	@Deprecated(forRemoval = true)
 	public int fbo = -1;
+	@Deprecated(forRemoval = true)
 	public int depthBounds = -1;
+	@Deprecated(forRemoval = true)
 	public int coefficients = -1;
+	@Deprecated(forRemoval = true)
 	public int accumulate = -1;
+
+	@Nullable
+	public GpuTextureView depthBoundsB3D = null;
+	@Nullable
+	public GpuTextureView coefficientsB3D = null;
+	@Nullable
+	public GpuTextureView accumulateB3D = null;
 
 	private int lastWidth = -1;
 	private int lastHeight = -1;
 
+	@Deprecated(forRemoval = true)
 	public OitFramebuffer(OitPrograms programs) {
 		this.programs = programs;
 		if (GlCompat.SUPPORTS_DSA) {
-			vao = GL46.glCreateVertexArrays();
+			vao = GL45C.glCreateVertexArrays();
 		} else {
 			vao = GlStateManager._glGenVertexArrays();
 		}
 	}
 
+	// TODO b3d-ification: Temp
+	public OitFramebuffer(OitPrograms programs, boolean isNew) {
+		this.programs = programs;
+		vao = -1;
+		throw new UnsupportedOperationException();
+	}
+
 	/**
 	 * Set up the framebuffer.
 	 */
+	@Deprecated(forRemoval = true)
 	public void prepare() {
 		RenderTarget renderTarget;
 
@@ -68,16 +106,69 @@ public class OitFramebuffer {
 		Samplers.COEFFICIENTS.makeActive();
 		// Bind zero to state manager to make sure we clear its internal state
 		GlStateManager._bindTexture(0);
-		GL32.glBindTexture(GL32.GL_TEXTURE_2D_ARRAY, coefficients);
+		GL33C.glBindTexture(GL33C.GL_TEXTURE_2D_ARRAY, coefficients);
 
 		Samplers.DEPTH_RANGE.makeActive();
 		GlStateManager._bindTexture(depthBounds);
 
-		TextureBinder.bind(Samplers.NOISE.number, NoiseTextures.BLUE_NOISE.getGpuTextureView(), null);
+		TextureBinder.bind(Samplers.NOISE.number, NoiseTextures.BLUE_NOISE.getTextureView(), null);
 
 		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
 		GlTexture depthTexture = (GlTexture) renderTarget.getDepthTexture();
-		GL32.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_DEPTH_ATTACHMENT, depthTexture != null ? depthTexture.glId() : 0, 0);
+		GL33C.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_DEPTH_ATTACHMENT, depthTexture != null ? depthTexture.glId() : 0, 0);
+	}
+
+	/**
+	 * Set up the framebuffer.
+	 */
+	public RenderPass prepareB3D(Supplier<String> label) {
+		Minecraft minecraft = Minecraft.getInstance();
+		GameRenderer gameRenderer = minecraft.gameRenderer;
+
+		RenderTarget renderTarget;
+		if (gameRenderer.gameRenderState().useShaderTransparency()) {
+			renderTarget = minecraft.levelRenderer.itemEntityTarget();
+
+			renderTarget.copyDepthFrom(gameRenderer.mainRenderTarget());
+		} else {
+			renderTarget = gameRenderer.mainRenderTarget();
+		}
+
+		int width = renderTarget.width;
+		int height = renderTarget.height;
+
+		maybeResizeFBOB3D(width, height);
+
+		RenderPassDescriptor descriptor = RenderPassDescriptor.create(label)
+				.withRenderArea(new RenderPass.RenderArea(0, 0, width, height))
+				.withColorAttachment(depthBoundsB3D) // GL_COLOR_ATTACHMENT0, depthBounds
+				.withColorAttachment(null) // GL_COLOR_ATTACHMENT1, coefficients, layer 0
+				.withColorAttachment(null) // GL_COLOR_ATTACHMENT2, coefficients, layer 1
+				.withColorAttachment(null) // GL_COLOR_ATTACHMENT3, coefficients, layer 2
+				.withColorAttachment(null) // GL_COLOR_ATTACHMENT4, coefficients, layer 3
+				.withColorAttachment(accumulateB3D) // GL_COLOR_ATTACHMENT5, accumulate
+				.withDepthAttachment(renderTarget.getDepthTextureView());
+
+		RenderPass renderPass = RenderSystem.getDevice()
+				.createCommandEncoder()
+				.createRenderPass(descriptor);
+
+		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+
+		// TODO b3d-ification: Not sure if the bindTexture(0) is still needed
+//		Samplers.COEFFICIENTS.makeActive();
+//		// Bind zero to state manager to make sure we clear its internal state
+//		GlStateManager._bindTexture(0);
+//		GL32.glBindTexture(GL32.GL_TEXTURE_2D_ARRAY, coefficients);
+
+		// TODO b3d-ification: This is a TEXTURE_2D_ARRAY so we need support for binding those
+		renderPass.bindTexture("_flw_coefficients", coefficientsB3D, clampToEdgeNearest);
+
+		renderPass.bindTexture("_flw_depthRange", depthBoundsB3D, clampToEdgeNearest);
+
+		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
+
+		return renderPass;
 	}
 
 	/**
@@ -89,16 +180,16 @@ public class OitFramebuffer {
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
 		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_MAX);
+		GlStateManager._blendEquationSeparate(GlConst.GL_MAX, GlConst.GL_MAX);
 
 		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
 
 		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_RANGE_DRAW_BUFFERS);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, new float[]{-far, -far, 0, 0});
+			GL45C.glNamedFramebufferDrawBuffers(fbo, DEPTH_RANGE_DRAW_BUFFERS);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 0, new float[]{-far, -far, 0, 0});
 		} else {
-			GL32.glDrawBuffers(DEPTH_RANGE_DRAW_BUFFERS);
-			GL32.glClearColor(-far, -far, 0, 0);
+			GL33C.glDrawBuffers(DEPTH_RANGE_DRAW_BUFFERS);
+			GL33C.glClearColor(-far, -far, 0, 0);
 			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
 		}
 	}
@@ -112,18 +203,18 @@ public class OitFramebuffer {
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
 		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
+		GlStateManager._blendEquationSeparate(GlConst.GL_FUNC_ADD, GlConst.GL_FUNC_ADD);
 
 		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, RENDER_TRANSMITTANCE_DRAW_BUFFERS);
+			GL45C.glNamedFramebufferDrawBuffers(fbo, RENDER_TRANSMITTANCE_DRAW_BUFFERS);
 
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 1, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 2, CLEAR_TO_ZERO);
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 3, CLEAR_TO_ZERO);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 0, CLEAR_TO_ZERO);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 1, CLEAR_TO_ZERO);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 2, CLEAR_TO_ZERO);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 3, CLEAR_TO_ZERO);
 		} else {
-			GL32.glDrawBuffers(RENDER_TRANSMITTANCE_DRAW_BUFFERS);
-			GL32.glClearColor(0, 0, 0, 0);
+			GL33C.glDrawBuffers(RENDER_TRANSMITTANCE_DRAW_BUFFERS);
+			GL33C.glClearColor(0, 0, 0, 0);
 			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
 		}
 	}
@@ -140,9 +231,9 @@ public class OitFramebuffer {
 		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
 
 		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_ONLY_DRAW_BUFFERS);
+			GL45C.glNamedFramebufferDrawBuffers(fbo, DEPTH_ONLY_DRAW_BUFFERS);
 		} else {
-			GL32.glDrawBuffers(DEPTH_ONLY_DRAW_BUFFERS);
+			GL33C.glDrawBuffers(DEPTH_ONLY_DRAW_BUFFERS);
 		}
 
 		programs.getOitDepthProgram().bind();
@@ -159,15 +250,15 @@ public class OitFramebuffer {
 		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
 		GlStateManager._enableBlend(0);
 		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
+		GlStateManager._blendEquationSeparate(GlConst.GL_FUNC_ADD, GlConst.GL_FUNC_ADD);
 
 		if (GlCompat.SUPPORTS_DSA) {
-			GL46.glNamedFramebufferDrawBuffers(fbo, ACCUMULATE_DRAW_BUFFERS);
+			GL45C.glNamedFramebufferDrawBuffers(fbo, ACCUMULATE_DRAW_BUFFERS);
 
-			GL46.glClearNamedFramebufferfv(fbo, GL46.GL_COLOR, 0, CLEAR_TO_ZERO);
+			GL45C.glClearNamedFramebufferfv(fbo, GL33C.GL_COLOR, 0, CLEAR_TO_ZERO);
 		} else {
-			GL32.glDrawBuffers(ACCUMULATE_DRAW_BUFFERS);
-			GL32.glClearColor(0, 0, 0, 0);
+			GL32C.glDrawBuffers(ACCUMULATE_DRAW_BUFFERS);
+			GL32C.glClearColor(0, 0, 0, 0);
 			GlStateManager._clear(GlConst.GL_COLOR_BUFFER_BIT);
 		}
 	}
@@ -197,7 +288,7 @@ public class OitFramebuffer {
 		// Though note that the alpha value we emit in the fragment shader is actually (1. - transmittance_total).
 		// The extra inversion step is so we can have a sane alpha value written out for the fabulous blit shader to consume.
 		GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
-		GL32.glBlendEquation(GlConst.GL_FUNC_ADD);
+		GlStateManager._blendEquationSeparate(GlConst.GL_FUNC_ADD, GlConst.GL_FUNC_ADD);
 		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
 
 		GlTextureUnit.T0.makeActive();
@@ -210,6 +301,7 @@ public class OitFramebuffer {
 		bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 	}
 
+	@Deprecated(forRemoval = true)
 	private static void bindRenderTarget(RenderTarget target) {
 		GlTexture colorTexture = (GlTexture) target.getColorTexture();
 		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
@@ -222,11 +314,7 @@ public class OitFramebuffer {
 		GlStateManager._viewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));
 	}
 
-	public void delete() {
-		deleteTextures();
-		GL32.glDeleteVertexArrays(vao);
-	}
-
+	@Deprecated(forRemoval = true)
 	private void drawFullscreenQuad() {
 		// Empty VAO, the actual full screen triangle is generated in the vertex shader
 		GlStateManager._glBindVertexArray(vao);
@@ -234,28 +322,16 @@ public class OitFramebuffer {
 		GlStateManager._drawArrays(GlConst.GL_TRIANGLES, 0, 3);
 	}
 
-	private void deleteTextures() {
-		if (depthBounds != -1) {
-			GlStateManager._deleteTexture(depthBounds);
-		}
-		if (coefficients != -1) {
-			GlStateManager._deleteTexture(coefficients);
-		}
-		if (accumulate != -1) {
-			GlStateManager._deleteTexture(accumulate);
-		}
-		if (fbo != -1) {
-			GlStateManager._glDeleteFramebuffers(fbo);
-		}
+	// TODO b3d-ification: Would be nice if RenderPass had a normal draw method, need to ask for that to be added
+	private void drawFullScreenQuadB3D(RenderPass renderPass) {
+		// TODO b3d-ification: We need to pass a empty buffer to renderpass so it uses a clean vertexarray
+		// Empty VAO, the actual full screen triangle is generated in the vertex shader
+		//GlStateManager._glBindVertexArray(vao);
 
-		// We sometimes get the same texture ID back when creating new textures,
-		// so bind zero to clear the GlStateManager
-		Samplers.COEFFICIENTS.makeActive();
-		GlStateManager._bindTexture(0);
-		Samplers.DEPTH_RANGE.makeActive();
-		GlStateManager._bindTexture(0);
+		renderPass.multiDraw(DRAW_ARRAYS_FIRST, DRAW_ARRAYS_COUNT, 1);
 	}
 
+	@Deprecated(forRemoval = true)
 	private void maybeResizeFBO(int width, int height) {
 		if (lastWidth == width && lastHeight == height) {
 			return;
@@ -325,6 +401,111 @@ public class OitFramebuffer {
 			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT3, coefficients, 0, 2);
 			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT4, coefficients, 0, 3);
 			GL46.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GL32.GL_COLOR_ATTACHMENT5, accumulate, 0);
+		}
+	}
+
+	private void maybeResizeFBOB3D(int width, int height) {
+		if (lastWidth == width && lastHeight == height) {
+			return;
+		}
+
+		lastWidth = width;
+		lastHeight = height;
+
+		deleteTexturesB3D();
+
+		if (GlCompat.SUPPORTS_DSA) {
+			fbo = GL45C.glCreateFramebuffers();
+
+			depthBounds = GL45C.glCreateTextures(GL45C.GL_TEXTURE_2D);
+			coefficients = GL45C.glCreateTextures(GL45C.GL_TEXTURE_2D_ARRAY);
+			accumulate = GL45C.glCreateTextures(GL45C.GL_TEXTURE_2D);
+
+			GL45C.glTextureStorage2D(depthBounds, 1, GL32.GL_RG32F, width, height);
+			GL45C.glTextureStorage3D(coefficients, 1, GL32.GL_RGBA16F, width, height, 4);
+			GL45C.glTextureStorage2D(accumulate, 1, GL32.GL_RGBA16F, width, height);
+
+			GL45C.glNamedFramebufferTexture(fbo, GlConst.GL_COLOR_ATTACHMENT0, depthBounds, 0);
+			GL45C.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT1, coefficients, 0, 0);
+			GL45C.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT2, coefficients, 0, 1);
+			GL45C.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT3, coefficients, 0, 2);
+			GL45C.glNamedFramebufferTextureLayer(fbo, GL32.GL_COLOR_ATTACHMENT4, coefficients, 0, 3);
+			GL45C.glNamedFramebufferTexture(fbo, GL32.GL_COLOR_ATTACHMENT5, accumulate, 0);
+		} else {
+			GpuDevice device = RenderSystem.getDevice();
+
+			depthBoundsB3D = device.createTextureView(device.createTexture(
+					"Flw OIT Depth Bounds",
+					0,
+					GpuFormat.RG32_FLOAT,
+					width,
+					height,
+					0,
+					0
+			));
+
+			// TODO b3d-ification: This needs to use glTexImage3D and GL_TEXTURE_2D_ARRAY instead
+			coefficientsB3D = device.createTextureView(device.createTexture(
+					"Flw OIT Coefficients",
+					0,
+					GpuFormat.RGBA16_FLOAT,
+					width,
+					height,
+					4,
+					0
+			));
+
+			accumulateB3D = device.createTextureView(device.createTexture(
+					"Flw OIT Accumulate",
+					0,
+					GpuFormat.RGBA16_FLOAT,
+					width,
+					height,
+					0,
+					0
+			));
+		}
+	}
+
+	@Override
+	public void close() {
+		deleteTextures();
+		deleteTexturesB3D();
+		GL32.glDeleteVertexArrays(vao);
+	}
+
+	@Deprecated(forRemoval = true)
+	private void deleteTextures() {
+		if (depthBounds != -1) {
+			GlStateManager._deleteTexture(depthBounds);
+		}
+		if (coefficients != -1) {
+			GlStateManager._deleteTexture(coefficients);
+		}
+		if (accumulate != -1) {
+			GlStateManager._deleteTexture(accumulate);
+		}
+		if (fbo != -1) {
+			GlStateManager._glDeleteFramebuffers(fbo);
+		}
+
+		// We sometimes get the same texture ID back when creating new textures,
+		// so bind zero to clear the GlStateManager
+		Samplers.COEFFICIENTS.makeActive();
+		GlStateManager._bindTexture(0);
+		Samplers.DEPTH_RANGE.makeActive();
+		GlStateManager._bindTexture(0);
+	}
+
+	private void deleteTexturesB3D() {
+		if (depthBoundsB3D != null) {
+			depthBoundsB3D.close();
+		}
+		if (coefficientsB3D != null) {
+			coefficientsB3D.close();
+		}
+		if (accumulateB3D != null) {
+			accumulateB3D.close();
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package dev.engine_room.flywheel.backend.compile;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
@@ -51,12 +53,22 @@ public class OitPrograms {
 		return new OitPrograms(harness);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitCompositeProgram() {
 		return harness.get(OitPrograms.OIT_COMPOSITE);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitDepthProgram() {
 		return harness.get(OitPrograms.OIT_DEPTH);
+	}
+
+	public RenderPipeline getOitCompositePipeline(RenderPipeline.Snippet snippet) {
+		return harness.getPipeline(snippet, OitPrograms.OIT_COMPOSITE);
+	}
+
+	public RenderPipeline getOitDepthPipeline(RenderPipeline.Snippet snippet) {
+		return harness.getPipeline(snippet, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {

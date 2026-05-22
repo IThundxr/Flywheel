@@ -8,8 +8,9 @@ import dev.engine_room.flywheel.lib.vertex.FullVertexView;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
 import net.minecraft.resources.Identifier;
 
-public final class InternalVertex {
-	public static final VertexFormat FORMAT = VertexFormat.builder(0)
+public final class FlwVertexFormats {
+	public static final Identifier MAIN_FORMAT_SHADER = IdentifierUtil.id("internal/vertex_input.vert");
+	public static final VertexFormat MAIN_FORMAT = VertexFormat.builder(0)
 			.addAttribute("_flw_aPos", GpuFormat.RGB32_FLOAT)
 			.addAttribute("_flw_aColor", GpuFormat.RGBA8_UNORM)
 			.addAttribute("_flw_aTexCoord", GpuFormat.RG32_FLOAT)
@@ -18,9 +19,10 @@ public final class InternalVertex {
 			.addAttribute("_flw_aNormal", GpuFormat.RGBA8_SNORM)
 			.build();
 
-	public static final Identifier LAYOUT_SHADER = IdentifierUtil.id("internal/vertex_input.vert");
+	public static final VertexFormat EMPTY_FORMAT = VertexFormat.builder(0)
+			.build();
 
-	private InternalVertex() {
+	private FlwVertexFormats() {
 	}
 
 	public static VertexView createVertexView() {

@@ -14,7 +14,7 @@ import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.MaterialShaders;
 import dev.engine_room.flywheel.backend.BackendConfig;
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
-import dev.engine_room.flywheel.backend.InternalVertex;
+import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
@@ -142,7 +142,7 @@ public final class PipelineCompiler {
 						.withResource(key -> key.materialShaders()
 								.vertexSource())
 						.withComponents(vertexComponents)
-						.withResource(InternalVertex.LAYOUT_SHADER)
+						.withResource(FlwVertexFormats.MAIN_FORMAT_SHADER)
 						.withComponent(key -> pipeline.assembler()
 								.assemble(key.instanceType()))
 						.withResource(pipeline.vertexMain()))
