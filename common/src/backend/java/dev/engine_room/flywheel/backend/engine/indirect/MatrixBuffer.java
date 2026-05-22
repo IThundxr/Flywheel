@@ -6,8 +6,13 @@ import org.lwjgl.system.MemoryUtil;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 
 public class MatrixBuffer {
-	private final ResizableStorageArray matrices = new ResizableStorageArray(EnvironmentStorage.MATRIX_SIZE_BYTES);
+	private final ResizableStorageArray matrices = new ResizableStorageArray(
+			"Flywheel Indirect MatrixBuffer",
+			0, // TODO b3d-ification: Handle usage type
+			EnvironmentStorage.MATRIX_SIZE_BYTES
+	);
 
+	// TODO b3d-ification: This should use the vanilla staging buffer instead
 	public void flush(StagingBuffer stagingBuffer, EnvironmentStorage environmentStorage) {
 		var arena = environmentStorage.arena;
 		var capacity = arena.capacity();
@@ -23,6 +28,20 @@ public class MatrixBuffer {
 		});
 	}
 
+	public void flushB3D(com.mojang.blaze3d.vertex.StagingBuffer.Uploader uploader, com.mojang.blaze3d.vertex.StagingBuffer.BufferHandle bufferHandle, EnvironmentStorage environmentStorage) {
+		var arena = environmentStorage.arena;
+		var size = bufferHandle.size();
+
+		if (size == 0) {
+			return;
+		}
+
+		matrices.ensureCapacity(size);
+
+		uploader.copyTo(bufferHandle, matrices.getBuffer(), 0);
+	}
+
+	// TODO b3d-ification: We need to pass the buffer slice to the draw call instead
 	public void bind() {
 		if (matrices.capacity() == 0) {
 			return;
@@ -32,6 +51,6 @@ public class MatrixBuffer {
 	}
 
 	public void delete() {
-		matrices.delete();
+		matrices.close();
 	}
 }

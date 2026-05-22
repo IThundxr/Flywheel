@@ -4,18 +4,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-
-import net.minecraft.resources.Identifier;
-
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL42C;
 import org.lwjgl.opengl.GL43;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -26,6 +25,7 @@ import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.CommonCrumbling;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
@@ -34,22 +34,19 @@ import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.TextureBinder;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.resources.Identifier;
 
 public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 	private final IndirectPrograms programs;
 	private final StagingBuffer stagingBuffer;
 	private final MeshPool meshPool;
-	private final GlVertexArray vertexArray;
 	private final Map<InstanceType<?>, IndirectCullingGroup<?>> cullingGroups = new HashMap<>();
-	private final GlBuffer crumblingDrawBuffer = new GlBuffer(GlBufferUsage.STREAM_DRAW);
+	private final DynamicGpuBuffer crumblingDrawBuffer;
 	private final LightBuffers lightBuffers;
 	private final MatrixBuffer matrixBuffer;
 
@@ -65,8 +62,12 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		// errors and falling back during construction is a bit more complicated.
 		stagingBuffer = new StagingBuffer(this.programs);
 		meshPool = new MeshPool();
-		vertexArray = GlVertexArray.create();
-		meshPool.bind(vertexArray);
+		// TODO b3d-ification: Check if the default size needs to be bigger
+		crumblingDrawBuffer = new DynamicGpuBuffer(
+				"Flw Indirect Crumbling Draw Buffer",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE,
+				1024 * 4 // 4 KB
+		);
 		lightBuffers = new LightBuffers();
 		matrixBuffer = new MatrixBuffer();
 
@@ -124,7 +125,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		// We could probably save some driver calls here when there are
 		// actually zero instances, but that feels like a very rare case
 
-		GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+		GL42C.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
 		matrixBuffer.bind();
 
@@ -134,16 +135,15 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 			group.dispatchCull();
 		}
 
-		GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+		GL42C.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
-		programs.getApplyProgram()
-				.bind();
+		programs.getApplyProgram().bind();
 
 		for (var group : cullingGroups.values()) {
 			group.dispatchApply();
 		}
 
-		GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+		GL42C.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
 		TextureBinder.bindLightAndOverlay();
 

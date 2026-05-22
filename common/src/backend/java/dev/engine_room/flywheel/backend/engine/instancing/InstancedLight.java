@@ -1,15 +1,18 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
-import java.nio.ByteBuffer;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import dev.engine_room.flywheel.lib.memory.MemoryBlock;
+
+import java.nio.ByteBuffer;
 
 public class InstancedLight implements AutoCloseable {
 	public static final String LUT_BINDING = "_flw_lightLut";
@@ -22,12 +25,12 @@ public class InstancedLight implements AutoCloseable {
 	public InstancedLight() {
 		lut = new DynamicGpuBuffer(
 				"Flw Instanced Lighting LUT UTB",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 				1024 * 4 // 4 KB
 		);
 		sections = new DynamicGpuBuffer(
 				"Flw Instanced Lighting Sections UTB",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 				1024 * 4 // 4 KB
 		);
 	}

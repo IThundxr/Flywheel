@@ -42,7 +42,7 @@ public class LightBuffers {
 	}
 
 	public void delete() {
-		lut.delete();
-		sections.delete();
+		lut.close();
+		sections.close();
 	}
 }

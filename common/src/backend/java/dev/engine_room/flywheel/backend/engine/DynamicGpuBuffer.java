@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.function.Function;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBuffer.Usage;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -11,21 +12,24 @@ import dev.engine_room.flywheel.backend.FlwBackend;
 
 // TODO b3d-ification: Document this a bit
 public class DynamicGpuBuffer implements AutoCloseable {
+	@Usage
+	private static final int BASE_USAGE_FLAGS = GpuBuffer.USAGE_COPY_DST;
+
 	private final String label;
-	@GpuBuffer.Usage
+	@Usage
 	private final int usage;
 	private final Function<Long, Long> sizeIncreaseFunc;
 
 	private GpuBuffer buffer;
 	private long capacity;
 
-	public DynamicGpuBuffer(String label, int usage, long initialCapacity) {
+	public DynamicGpuBuffer(String label, @Usage int usage, long initialCapacity) {
 		this(label, usage, initialCapacity, DynamicGpuBuffer::smallestEncompassingPowerOfTwo);
 	}
 
-	public DynamicGpuBuffer(String label, int usage, long initialCapacity, Function<Long, Long> sizeIncreaseFunc) {
+	public DynamicGpuBuffer(String label, @Usage int usage, long initialCapacity, Function<Long, Long> sizeIncreaseFunc) {
 		this.label = label;
-		this.usage = usage;
+		this.usage = usage | BASE_USAGE_FLAGS;
 		this.sizeIncreaseFunc = sizeIncreaseFunc;
 
 		this.capacity = this.sizeIncreaseFunc.apply(initialCapacity);

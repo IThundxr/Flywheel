@@ -122,8 +122,8 @@ public class IndirectBuffers {
 		multiBindBlock.free();
 
 		objectStorage.delete();
-		drawInstanceIndex.delete();
-		model.delete();
-		draw.delete();
+		drawInstanceIndex.close();
+		model.close();
+		draw.close();
 	}
 }

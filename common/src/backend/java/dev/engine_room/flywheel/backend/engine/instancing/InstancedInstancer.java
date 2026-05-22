@@ -53,7 +53,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 			needsFullWrite = true;
 			utb = new DynamicGpuBuffer(
 					"Flw " + this + " UTB",
-					GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+					GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 					byteSize,
 					this::increaseSize
 			);

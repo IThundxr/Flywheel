@@ -1,11 +1,13 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+
 import dev.engine_room.flywheel.lib.math.MoreMath;
 
 /**
  * A buffer that is aware of its content's stride with some control over how it grows.
  */
-public class ResizableStorageArray {
+public class ResizableStorageArray implements AutoCloseable {
 	private static final double DEFAULT_GROWTH_FACTOR = 1.25;
 	private final ResizableStorageBuffer buffer;
 	private final long stride;
@@ -13,11 +15,11 @@ public class ResizableStorageArray {
 
 	private long capacity;
 
-	public ResizableStorageArray(long stride) {
-		this(stride, DEFAULT_GROWTH_FACTOR);
+	public ResizableStorageArray(String label, @GpuBuffer.Usage int usage, long stride) {
+		this(label, usage, stride, DEFAULT_GROWTH_FACTOR);
 	}
 
-	public ResizableStorageArray(long stride, double growthFactor) {
+	public ResizableStorageArray(String label, @GpuBuffer.Usage int usage, long stride, double growthFactor) {
 		this.stride = stride;
 		this.growthFactor = growthFactor;
 
@@ -29,11 +31,11 @@ public class ResizableStorageArray {
 			throw new IllegalArgumentException("Growth factor must be greater than 1!");
 		}
 
-		this.buffer = new ResizableStorageBuffer();
+		this.buffer = new ResizableStorageBuffer(label, usage);
 	}
 
-	public int handle() {
-		return buffer.handle();
+	public GpuBuffer getBuffer() {
+		return buffer.getBuffer();
 	}
 
 	public long stride() {
@@ -56,8 +58,8 @@ public class ResizableStorageArray {
 		}
 	}
 
-	public void delete() {
-		buffer.delete();
+	public void close() {
+		buffer.close();
 	}
 
 	private long grow(long capacity) {
