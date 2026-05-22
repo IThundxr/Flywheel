@@ -40,7 +40,7 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 	}
 
 	static void reload(ShaderSources sources, List<SourceComponent> vertexComponents, List<SourceComponent> fragmentComponents) {
-		if (!DeviceFeatureCompat.INSTANCE.isInstancingSupported()) {
+		if (!DeviceFeatureCompat.SUPPORTS_INSTANCING) {
 			return;
 		}
 

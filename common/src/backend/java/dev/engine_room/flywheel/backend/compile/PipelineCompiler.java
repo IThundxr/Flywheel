@@ -119,6 +119,7 @@ public final class PipelineCompiler {
 							return "pipeline/" + pipeline.compilerMarker() + "/" + instance + "/" + material + "_" + context + debug;
 						})
 						.requireExtensions(extensions)
+						.enableExtension("GL_ARB_shader_draw_parameters")
 						.onCompile((rl, compilation) -> {
 							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
 								// Only define fma if it wouldn't be declared by gpu shader 5

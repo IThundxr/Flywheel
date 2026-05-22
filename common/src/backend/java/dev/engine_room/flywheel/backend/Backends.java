@@ -16,7 +16,7 @@ public final class Backends {
 	public static final Backend INSTANCING = SimpleBackend.builder()
 			.engineFactory(level -> new EngineImpl(level, new InstancedDrawManager(InstancingPrograms.get()), 256))
 			.priority(500)
-			.supported(() -> DeviceFeatureCompat.INSTANCE.isInstancingSupported() && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
+			.supported(() -> DeviceFeatureCompat.SUPPORTS_INSTANCING && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
 			.register(IdentifierUtil.id("instancing"));
 
 	/**
