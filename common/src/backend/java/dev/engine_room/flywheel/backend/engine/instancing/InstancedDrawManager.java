@@ -19,6 +19,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
@@ -174,7 +175,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			environment.setupDraw(renderPass);
 			uploadMaterialUniform(renderPass, material);
-			new UIntUniform("_flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			if (!DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
+				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			}
 
 			MaterialRenderState.setupTexture(renderPass, material);
 
@@ -196,7 +199,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 //
 //			uploadMaterialUniform(program, material);
 //
-//			program.setUInt("_flw_baseVertex", drawCall.mesh()
+//			program.setUInt("flw_baseVertex", drawCall.mesh()
 //					.baseVertex());
 //
 //			MaterialRenderState.setupOit(material);
@@ -308,12 +311,16 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 							RenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
 							renderPass.setPipeline(pipeline);
 
-							new IntUniform("_flw_baseInstance", index).set(renderPass);
 							uploadMaterialUniform(renderPass, crumblingMaterial);
 
 							MaterialRenderState.setupTexture(renderPass, crumblingMaterial);
 
-							draw.renderOne(renderPass);
+							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
+								draw.renderOne(renderPass, index);
+							} else {
+								new IntUniform("flw_baseInstance", index).set(renderPass);
+								draw.renderOne(renderPass);
+							}
 						}
 					}
 				}

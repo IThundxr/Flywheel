@@ -248,18 +248,17 @@ public class Compile<K> {
 				return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
 			};
 
-			// TODO b3d-ification: Maybe this should be placed elsewhere?
-//			if (Compilation.DUMP_SHADER_SOURCE) {
-//				for (ShaderType shaderType : ShaderType.values()) {
-//					ShaderCompiler<K> compiler = compilers.get(shaderType);
-//					if (compiler != null) {
-//						String source = compiler.getSource(key, shaderCache, loader);
-//
-//						String shaderName = compiler.getShaderName(key) + "." + shaderType.extension;
-//						Compilation.dumpSource(source, shaderName);
-//					}
-//				}
-//			}
+			if (Compilation.DUMP_SHADER_SOURCE) {
+				for (ShaderType shaderType : ShaderType.values()) {
+					ShaderCompiler<K> compiler = compilers.get(shaderType);
+					if (compiler != null) {
+						String source = compiler.getSource(key, shaderCache, loader);
+
+						String shaderName = compiler.getShaderName(key) + "." + shaderType.extension;
+						Compilation.dumpSource(source, shaderName);
+					}
+				}
+			}
 
 			RenderSystem.getDevice().precompilePipeline(pipeline, shaderSource);
 			return pipeline;
