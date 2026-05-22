@@ -1,10 +1,9 @@
 package dev.engine_room.flywheel.backend.engine;
 
-import java.util.Optional;
-
-import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.platform.BlendFactor;
 import com.mojang.blaze3d.platform.CompareOp;
 
 import dev.engine_room.flywheel.api.material.CardinalLightingMode;
@@ -21,7 +20,7 @@ public class CommonCrumbling {
 				.cutout(CutoutShaders.ONE_TENTH)
 				.light(LightShaders.SMOOTH_WHEN_EMBEDDED)
 				.depthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false, 1.0F, 10.0F))
-				.colorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
+				.colorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.DST_COLOR, BlendFactor.SRC_COLOR, BlendFactor.ONE, BlendFactor.ZERO)))
 				.useOverlay(false)
 				.useLight(false)
 				.cardinalLightingMode(CardinalLightingMode.OFF);
