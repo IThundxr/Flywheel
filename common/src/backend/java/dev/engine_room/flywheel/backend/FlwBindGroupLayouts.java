@@ -10,7 +10,6 @@ import dev.engine_room.flywheel.backend.engine.uniform.FlwUniform;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import net.minecraft.util.Util;
 
-// TODO b3d-ification: Support for other samplers for things like OIT
 public class FlwBindGroupLayouts {
 	public static final BindGroupLayout BASE_SAMPLERS = BindGroupLayout.builder()
 			.withSampler("flw_diffuseTex")
@@ -20,6 +19,25 @@ public class FlwBindGroupLayouts {
 
 	public static final BindGroupLayout CRUMBLING_SAMPLER = BindGroupLayout.builder()
 			.withSampler("_flw_crumblingTex")
+			.build();
+
+	public static final BindGroupLayout OIT_ACCUMULATE = BindGroupLayout.builder()
+			.withSampler("_flw_accumulate")
+			.build();
+
+	public static final BindGroupLayout OIT_DEPTH_RANGE = BindGroupLayout.builder()
+			.withSampler("_flw_depthRange")
+			.build();
+
+	public static final BindGroupLayout OIT_BLUE_NOISE = BindGroupLayout.builder()
+			.withSampler("_flw_blueNoise")
+			.build();
+
+	public static final BindGroupLayout OIT_COEFFICIENTS = BindGroupLayout.builder()
+			.withSampler("_flw_coefficients[0]")
+			.withSampler("_flw_coefficients[1]")
+			.withSampler("_flw_coefficients[2]")
+			.withSampler("_flw_coefficients[3]")
 			.build();
 
 	public static final BindGroupLayout INSTANCING_TEXEL_BUFFER = BindGroupLayout.builder()

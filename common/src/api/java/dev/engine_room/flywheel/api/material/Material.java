@@ -34,12 +34,9 @@ public interface Material {
 	 */
 	boolean backfaceCulling();
 
-	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
 	@Nullable
 	DepthStencilState depthStencilState();
 
-	// TODO: Look into having flywheel's own versions that are translated to B3D's at a later time
-	// TODO: RenderPipeline supports up to 8, do we want to do the same?
 	@Nullable
 	ColorTargetState colorTargetState();
 
