@@ -54,17 +54,21 @@ public class InstancedDraw {
 
 		instancer.bindToRenderPass(renderPass);
 
-		mesh.submitDraw(renderPass, instancer.instanceCount());
+		mesh.submitDraw(renderPass, instancer.instanceCount(), 0);
 	}
 
 	public void renderOne(RenderPass renderPass) {
+		renderOne(renderPass, 0);
+	}
+
+	public void renderOne(RenderPass renderPass, int baseInstance) {
 		if (mesh.isInvalid()) {
 			return;
 		}
 
 		instancer.bindToRenderPass(renderPass);
 
-		mesh.submitDraw(renderPass, 1);
+		mesh.submitDraw(renderPass, 1, baseInstance);
 	}
 
 	public void delete() {
