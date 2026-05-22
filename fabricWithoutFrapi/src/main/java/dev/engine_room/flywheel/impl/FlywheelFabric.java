@@ -9,7 +9,6 @@ import dev.engine_room.flywheel.backend.compile.FlwReloadListener;
 import dev.engine_room.flywheel.impl.mixin.fabric.ArgumentTypeInfosAccessor;
 import dev.engine_room.flywheel.impl.visualization.VisualizationEventHandler;
 import dev.engine_room.flywheel.lib.model.baked.FabricPartialModel;
-import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import dev.engine_room.flywheel.lib.util.RendererReloadCache;
 import dev.engine_room.flywheel.lib.util.ResourceReloadHolder;
 import net.fabricmc.api.ClientModInitializer;
@@ -58,7 +57,7 @@ public final class FlywheelFabric implements ClientModInitializer {
 
 		ClientCommandRegistrationCallback.EVENT.register(FlwCommands::registerClientCommands);
 
-		DebugScreenEntries.register(IdentifierUtil.id("flw_debug_info"), new FlwDebugInfo.FlwDebugEntry());
+		DebugScreenEntries.register(FlwDebugInfo.FlwDebugEntry.ID, new FlwDebugInfo.FlwDebugEntry());
 
 		EndClientResourceReloadCallback.EVENT.register((minecraft, resourceManager, initialReload, error) ->
 				BackendManagerImpl.onEndClientResourceReload(error.isPresent()));
