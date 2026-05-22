@@ -44,7 +44,7 @@ public class GlCommandEncoderMixin {
 			int location = uniformIds.computeIfAbsent(uniformName,
 					(String name) -> GlStateManager._glGetUniformLocation(glProgramId, name));
 
-			if (location > 0) {
+			if (location >= 0) {
 				binding.bindOpenGL(location);
 			}
 		}

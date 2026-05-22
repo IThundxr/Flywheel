@@ -19,11 +19,14 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
+import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
+import dev.engine_room.flywheel.backend.engine.CommonCrumbling;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
@@ -33,8 +36,11 @@ import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
+import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.resources.Identifier;
 
 public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private static final Comparator<InstancedDraw> DRAW_COMPARATOR = Comparator.comparingInt(InstancedDraw::bias)
@@ -261,45 +267,58 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
-		// FIXME b3d-ification: Reimplement with RenderPass
-//		var crumblingMaterial = SimpleMaterial.builder();
-//
-//		Uniforms.bindAll();
-//		vao.bindForDraw();
-//
-//		TextureBinder.bindLightAndOverlay();
-//		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
-//
-//		for (var groupEntry : byType.entrySet()) {
-//			var byProgress = groupEntry.getValue();
-//
-//			GroupKey<?> shader = groupEntry.getKey();
-//
-//			for (var progressEntry : byProgress.int2ObjectEntrySet()) {
-//				Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
-//				GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
-//				TextureBinder.bind(Samplers.CRUMBLING.number, crumblingTextureId, crumblingTextureSampler);
-//
-//				for (var instanceHandlePair : progressEntry.getValue()) {
-//					InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
-//					var index = instanceHandlePair.getSecond().index;
-//
-//					for (InstancedDraw draw : instancer.draws()) {
-//						CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
-//						var program = programs.get(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
-//						program.bind();
-//						program.setInt("_flw_baseInstance", index);
-//						uploadMaterialUniform(program, crumblingMaterial);
-//
-//						MaterialRenderState.setup(crumblingMaterial);
-//
-//						Samplers.INSTANCE_BUFFER.makeActive();
-//
-//						draw.renderOne(instanceTexture);
-//					}
-//				}
-//			}
-//		}
+		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+		SamplerCache samplers = RenderSystem.getSamplerCache();
+
+		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+		RenderTarget mainRenderTarget = gameRenderer.mainRenderTarget();
+
+		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
+		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw - Crumbling", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+			Uniforms.bindToRenderPass(renderPass);
+			meshPool.bindToRenderPass(renderPass);
+
+			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
+			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
+
+			for (var groupEntry : byType.entrySet()) {
+				var byProgress = groupEntry.getValue();
+
+				GroupKey<?> shader = groupEntry.getKey();
+
+				for (var progressEntry : byProgress.int2ObjectEntrySet()) {
+					Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
+					GpuTextureView crumblingTexture = Minecraft.getInstance()
+							.getTextureManager()
+							.getTexture(crumblingTextureId)
+							.getTextureView();
+					GpuSampler crumblingTextureSampler = samplers.getRepeat(FilterMode.NEAREST);
+
+					renderPass.bindTexture("_flw_crumblingTex", crumblingTexture, crumblingTextureSampler);
+
+					for (var instanceHandlePair : progressEntry.getValue()) {
+						InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
+						var index = instanceHandlePair.getSecond().index;
+
+						for (InstancedDraw draw : instancer.draws()) {
+							var crumblingMaterial = SimpleMaterial.builder();
+							CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
+							RenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
+							renderPass.setPipeline(pipeline);
+
+							new IntUniform("_flw_baseInstance", index).set(renderPass);
+							uploadMaterialUniform(renderPass, crumblingMaterial);
+
+							MaterialRenderState.setupTexture(renderPass, crumblingMaterial);
+
+							draw.renderOne(renderPass);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	@Override
