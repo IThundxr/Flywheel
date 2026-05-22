@@ -19,6 +19,13 @@ public sealed interface FlwUniformBinding {
 		renderPass.flywheel$setPlainUniform(this);
 	}
 
+	record IntUniform(String name, int value) implements FlwUniformBinding {
+		@Override
+		public void bindOpenGL(int location) {
+			GL33C.glUniform1i(location, value);
+		}
+	}
+
 	record UIntUniform(String name, int value) implements FlwUniformBinding {
 		@Override
 		public void bindOpenGL(int location) {
