@@ -57,7 +57,7 @@ public class OitFramebuffer implements AutoCloseable {
 	@Nullable
 	public GpuTextureView depthBoundsB3D = null;
 	@Nullable
-	public GpuTextureView coefficientsB3D = null;
+	public GpuTextureView[] coefficientsB3D = null;
 	@Nullable
 	public GpuTextureView accumulateB3D = null;
 
@@ -439,16 +439,17 @@ public class OitFramebuffer implements AutoCloseable {
 					0
 			));
 
-			// TODO b3d-ification: This needs to use glTexImage3D and GL_TEXTURE_2D_ARRAY instead
-			coefficientsB3D = device.createTextureView(device.createTexture(
-					"Flw OIT Coefficients",
-					0,
-					GpuFormat.RGBA16_FLOAT,
-					width,
-					height,
-					4,
-					0
-			));
+			for (int i = 0; i < 4; i++) {
+				coefficientsB3D[i] = device.createTextureView(device.createTexture(
+						"Flw OIT Coefficients #" + i,
+						0,
+						GpuFormat.RGBA16_FLOAT,
+						width,
+						height,
+						0,
+						0
+				));
+			}
 
 			accumulateB3D = device.createTextureView(device.createTexture(
 					"Flw OIT Accumulate",
@@ -496,8 +497,10 @@ public class OitFramebuffer implements AutoCloseable {
 		if (depthBoundsB3D != null) {
 			depthBoundsB3D.close();
 		}
-		if (coefficientsB3D != null) {
-			coefficientsB3D.close();
+		for (GpuTextureView coefficient : coefficientsB3D) {
+			if (coefficient != null) {
+				coefficient.close();
+			}
 		}
 		if (accumulateB3D != null) {
 			accumulateB3D.close();
