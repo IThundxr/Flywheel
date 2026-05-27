@@ -1,8 +1,13 @@
 package dev.engine_room.flywheel.backend.engine.indirect;
 
 import java.util.Collections;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.joml.Vector4f;
+import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL32C;
@@ -16,6 +21,7 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
@@ -35,6 +41,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 
 public class OitFramebuffer implements AutoCloseable {
+	// TODO - Perhaps rename?
+	public static final Optional<Vector4fc> CLEAR_ZERO = Optional.of(new Vector4f(0, 0, 0, 0));
+
 	public static final float[] CLEAR_TO_ZERO = {0, 0, 0, 0};
 	public static final int[] DEPTH_RANGE_DRAW_BUFFERS = {GlConst.GL_COLOR_ATTACHMENT0};
 	public static final int[] RENDER_TRANSMITTANCE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3, GL46.GL_COLOR_ATTACHMENT4};
@@ -56,8 +65,7 @@ public class OitFramebuffer implements AutoCloseable {
 
 	@Nullable
 	public GpuTextureView depthBoundsB3D = null;
-	@Nullable
-	public GpuTextureView[] coefficientsB3D = null;
+	public final GpuTextureView[] coefficientsB3D = new GpuTextureView[4];
 	@Nullable
 	public GpuTextureView accumulateB3D = null;
 
@@ -114,9 +122,94 @@ public class OitFramebuffer implements AutoCloseable {
 	}
 
 	/**
-	 * Set up the framebuffer.
+	 * Render out the min and max depth per fragment.
 	 */
-	public RenderPass prepareB3D(Supplier<String> label) {
+	public RenderPass createDepthRangePass() {
+		return createRenderPass(() -> "Flw OIT Depth Range", descriptor -> {
+			float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
+			descriptor.withColorAttachment(depthBoundsB3D, Optional.of(new Vector4f(-far, -far, 0, 0)));
+		});
+	}
+
+	/**
+	 * Generate the coefficients to the transmittance function.
+	 */
+	public RenderPass createTransmittancePass() {
+		RenderPass renderPass = createRenderPass(() -> "Flw OIT Transmittance", descriptor -> {
+			for (GpuTextureView view : coefficientsB3D) {
+				descriptor.withColorAttachment(view, CLEAR_ZERO);
+			}
+		});
+
+		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+		renderPass.bindTexture("_flw_depthRange", depthBoundsB3D, clampToEdgeNearest);
+		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
+
+		return renderPass;
+	}
+
+	/**
+	 * If any fragment has its transmittance fall off to zero, search the transmittance
+	 * function to determine at what depth that occurs and write out to the depth buffer.
+	 */
+	public void renderDepthFromTransmittanceB3D() {
+		try (RenderPass renderPass = createRenderPass(() -> "Flw OIT Depth From Transmittance")) {
+			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+			renderPass.bindTexture("_flw_coefficients0", coefficientsB3D[0], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients1", coefficientsB3D[1], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients2", coefficientsB3D[2], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients3", coefficientsB3D[3], clampToEdgeNearest);
+
+			renderPass.setPipeline(programs.getOitDepthPipeline());
+
+			drawFullScreenQuadB3D(renderPass);
+		}
+	}
+
+	/**
+	 * Sample the transmittance function and accumulate.
+	 */
+	public RenderPass createAccumulatePass() {
+		return createRenderPass(() -> "Flw OIT Accumulate", descriptor -> {
+			descriptor.withColorAttachment(accumulateB3D, CLEAR_ZERO);
+		});
+	}
+
+	/**
+	 * Composite the accumulated luminance onto the main framebuffer.
+	 */
+	public void compositeB3D() {
+		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+
+		RenderTarget renderTarget;
+		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
+			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
+		} else {
+			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+		}
+
+		GpuTextureView colorTextureView = renderTarget.getColorTextureView();
+		GpuTextureView depthTextureView = renderTarget.getDepthTextureView();
+
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw OIT Composite", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+			renderPass.bindTexture("_flw_accumulate", accumulateB3D, clampToEdgeNearest);
+
+			renderPass.setPipeline(programs.getOitCompositePipeline());
+
+			drawFullscreenQuad();
+		}
+	}
+
+	private RenderPass createRenderPass(Supplier<String> label, GpuTextureView... attachments) {
+		return createRenderPass(label, descriptor -> {
+			for (GpuTextureView attachment : attachments) {
+				descriptor.withColorAttachment(attachment);
+			}
+		});
+	}
+
+	private RenderPass createRenderPass(Supplier<String> label, Consumer<RenderPassDescriptor> descriptorFunc) {
 		Minecraft minecraft = Minecraft.getInstance();
 		GameRenderer gameRenderer = minecraft.gameRenderer;
 
@@ -129,46 +222,23 @@ public class OitFramebuffer implements AutoCloseable {
 			renderTarget = gameRenderer.mainRenderTarget();
 		}
 
-		int width = renderTarget.width;
-		int height = renderTarget.height;
-
-		maybeResizeFBOB3D(width, height);
+		maybeResizeFBOB3D(renderTarget.width, renderTarget.height);
 
 		RenderPassDescriptor descriptor = RenderPassDescriptor.create(label)
-				.withRenderArea(new RenderPass.RenderArea(0, 0, width, height))
-				.withColorAttachment(depthBoundsB3D) // GL_COLOR_ATTACHMENT0, depthBounds
-				.withColorAttachment(null) // GL_COLOR_ATTACHMENT1, coefficients, layer 0
-				.withColorAttachment(null) // GL_COLOR_ATTACHMENT2, coefficients, layer 1
-				.withColorAttachment(null) // GL_COLOR_ATTACHMENT3, coefficients, layer 2
-				.withColorAttachment(null) // GL_COLOR_ATTACHMENT4, coefficients, layer 3
-				.withColorAttachment(accumulateB3D) // GL_COLOR_ATTACHMENT5, accumulate
+				.withRenderArea(new RenderPass.RenderArea(0, 0, renderTarget.width, renderTarget.height))
 				.withDepthAttachment(renderTarget.getDepthTextureView());
 
-		RenderPass renderPass = RenderSystem.getDevice()
+		descriptorFunc.accept(descriptor);
+
+		return RenderSystem.getDevice()
 				.createCommandEncoder()
 				.createRenderPass(descriptor);
-
-		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-
-		// TODO b3d-ification: Not sure if the bindTexture(0) is still needed
-//		Samplers.COEFFICIENTS.makeActive();
-//		// Bind zero to state manager to make sure we clear its internal state
-//		GlStateManager._bindTexture(0);
-//		GL32.glBindTexture(GL32.GL_TEXTURE_2D_ARRAY, coefficients);
-
-		// TODO b3d-ification: This is a TEXTURE_2D_ARRAY so we need support for binding those
-		renderPass.bindTexture("_flw_coefficients", coefficientsB3D, clampToEdgeNearest);
-
-		renderPass.bindTexture("_flw_depthRange", depthBoundsB3D, clampToEdgeNearest);
-
-		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
-
-		return renderPass;
 	}
 
 	/**
 	 * Render out the min and max depth per fragment.
 	 */
+	@Deprecated(forRemoval = true)
 	public void depthRange() {
 		// No depth writes, but we'll still use the depth test.
 		GlStateManager._depthMask(false);
@@ -192,6 +262,7 @@ public class OitFramebuffer implements AutoCloseable {
 	/**
 	 * Generate the coefficients to the transmittance function.
 	 */
+	@Deprecated(forRemoval = true)
 	public void renderTransmittance() {
 		// No depth writes, but we'll still use the depth test
 		GlStateManager._depthMask(false);
@@ -218,6 +289,7 @@ public class OitFramebuffer implements AutoCloseable {
 	 * If any fragment has its transmittance fall off to zero, search the transmittance
 	 * function to determine at what depth that occurs and write out to the depth buffer.
 	 */
+	@Deprecated(forRemoval = true)
 	public void renderDepthFromTransmittance() {
 		// Only write to depth, not color.
 		GlStateManager._depthMask(true);
@@ -239,6 +311,7 @@ public class OitFramebuffer implements AutoCloseable {
 	/**
 	 * Sample the transmittance function and accumulate.
 	 */
+	@Deprecated(forRemoval = true)
 	public void accumulate() {
 		// No depth writes, but we'll still use the depth test
 		GlStateManager._depthMask(false);
@@ -261,6 +334,7 @@ public class OitFramebuffer implements AutoCloseable {
 	/**
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
+	@Deprecated(forRemoval = true)
 	public void composite() {
 		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
 			bindRenderTarget(Minecraft.getInstance().levelRenderer.itemEntityTarget());

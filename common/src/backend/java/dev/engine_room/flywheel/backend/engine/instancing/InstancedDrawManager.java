@@ -19,13 +19,15 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
+import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.CommonCrumbling;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
@@ -136,31 +138,51 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			light.bindToRenderPass(renderPass);
 
 			submitDraws(renderPass);
-
-			// FIXME b3d-ification: OIT draws need to be handled
-//			if (!oitDraws.isEmpty()) {
-//				oitFramebuffer.prepare();
-//
-//				oitFramebuffer.depthRange();
-//
-//				submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE);
-//
-//				oitFramebuffer.renderTransmittance();
-//
-//				submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS);
-//
-//				oitFramebuffer.renderDepthFromTransmittance();
-//
-//				// Need to bind this again because we just drew a full screen quad for OIT.
-//				vao.bindForDraw();
-//
-//				oitFramebuffer.accumulate();
-//
-//				submitOitDraws(PipelineCompiler.OitMode.EVALUATE);
-//
-//				oitFramebuffer.composite();
-//			}
 		}
+
+		if (!oitDraws.isEmpty()) {
+			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
+				submitOitDraws(renderPass, PipelineCompiler.OitMode.DEPTH_RANGE, FlwRenderPipelines.OIT_DEPTH_RANGE);
+			}
+
+			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
+				submitOitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS, FlwRenderPipelines.OIT_TRANSMITTANCE);
+			}
+
+			// This uses the empty VAO
+			oitFramebuffer.renderDepthFromTransmittanceB3D();
+
+			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
+				submitOitDraws(renderPass, OitMode.EVALUATE, FlwRenderPipelines.OIT_ACCUMULATE);
+			}
+
+			// This uses the empty VAO
+			oitFramebuffer.compositeB3D();
+		}
+
+		// FIXME b3d-ification: OIT draws need to be handled
+//		if (!oitDraws.isEmpty()) {
+//			oitFramebuffer.prepare(); - Not needed
+//
+//			oitFramebuffer.depthRange(); - createDepthRangePass
+//
+//			submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE); - submitOitDraws with OIT_DEPTH_RANGE pipeline
+//
+//			oitFramebuffer.renderTransmittance(); - createTransmittancePass
+//
+//			submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS); - submitOitDraws with OIT_TRANSMITTANCE pipeline
+//
+//			oitFramebuffer.renderDepthFromTransmittance(); - renderDepthFromTransmittance
+//
+//			// Need to bind this again because we just drew a full screen quad for OIT.
+//			vao.bindForDraw();
+//
+//			oitFramebuffer.accumulate(); - createAccumulatePass
+//
+//			submitOitDraws(PipelineCompiler.OitMode.EVALUATE); - submitOitDraws with OIT_ACCUMULATE pipeline
+//
+//			oitFramebuffer.composite(); - compositeB3D
+//		}
 	}
 
 	private void submitDraws(RenderPass renderPass) {
@@ -184,30 +206,24 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		}
 	}
 
-	// FIXME b3d-ification: Handle OIT through RenderPass
-//	private void submitOitDraws(PipelineCompiler.OitMode mode) {
-//		for (var drawCall : oitDraws) {
-//			var material = drawCall.material();
-//			var groupKey = drawCall.groupKey;
-//			var environment = groupKey.environment();
-//
-//			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, mode);
-//			program.bind();
-//
-//			environment.setupDraw(program);
-//
-//			uploadMaterialUniform(program, material);
-//
-//			program.setUInt("flw_baseVertex", drawCall.mesh()
-//					.baseVertex());
-//
-//			MaterialRenderState.setupOit(material);
-//
-//			Samplers.INSTANCE_BUFFER.makeActive();
-//
-//			drawCall.render(renderPass, instanceTexture);
-//		}
-//	}
+	private void submitOitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode, RenderPipeline.Snippet snippet) {
+		for (var drawCall : oitDraws) {
+			var material = drawCall.material();
+			var groupKey = drawCall.groupKey;
+			var environment = groupKey.environment();
+
+			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode, snippet);
+			renderPass.setPipeline(pipeline);
+
+			environment.setupDraw(renderPass);
+			uploadMaterialUniform(renderPass, material);
+			new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+
+			MaterialRenderState.setupTexture(renderPass, material);
+
+			drawCall.render(renderPass);
+		}
+	}
 
 	@Override
 	public void delete() {

@@ -22,10 +22,23 @@ public class FlwBindGroupLayouts {
 			.withSampler("_flw_crumblingTex")
 			.build();
 
-	public static final BindGroupLayout OIT_SAMPLERS = BindGroupLayout.builder()
+	public static final BindGroupLayout OIT_ACCUMULATE = BindGroupLayout.builder()
 			.withSampler("_flw_accumulate")
+			.build();
+
+	public static final BindGroupLayout OIT_DEPTH_RANGE = BindGroupLayout.builder()
 			.withSampler("_flw_depthRange")
-			.withSampler("_flw_coefficients")
+			.build();
+
+	public static final BindGroupLayout OIT_BLUE_NOISE = BindGroupLayout.builder()
+			.withSampler("_flw_blueNoise")
+			.build();
+
+	public static final BindGroupLayout OIT_COEFFICIENTS = BindGroupLayout.builder()
+			.withSampler("_flw_coefficients0")
+			.withSampler("_flw_coefficients1")
+			.withSampler("_flw_coefficients2")
+			.withSampler("_flw_coefficients3")
 			.build();
 
 	public static final BindGroupLayout INSTANCING_TEXEL_BUFFER = BindGroupLayout.builder()

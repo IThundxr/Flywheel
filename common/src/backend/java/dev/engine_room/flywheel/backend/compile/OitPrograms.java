@@ -2,11 +2,10 @@ package dev.engine_room.flywheel.backend.compile;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
-import dev.engine_room.flywheel.backend.Samplers;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
@@ -27,7 +26,7 @@ public class OitPrograms {
 		this.harness = harness;
 	}
 
-	public static OitPrograms createFullscreenCompiler(ShaderSources sources) {
+	public static OitPrograms createFullscreenCompiler(ShaderSources sources, RenderPipeline.Snippet snippet) {
 		var harness = COMPILE.program()
 				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper($ -> "fullscreen/fullscreen")
@@ -41,14 +40,7 @@ public class OitPrograms {
 							}
 						})
 						.withResource(s -> s))
-				.postLink((key, program) -> {
-					program.bind();
-					program.setSamplerBinding("_flw_accumulate", GlTextureUnit.T0);
-					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
-					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
-
-					GlProgram.unbind();
-				})
+				.snippet(snippet)
 				.harness("fullscreen", sources);
 		return new OitPrograms(harness);
 	}
@@ -63,12 +55,12 @@ public class OitPrograms {
 		return harness.get(OitPrograms.OIT_DEPTH);
 	}
 
-	public RenderPipeline getOitCompositePipeline(RenderPipeline.Snippet snippet) {
-		return harness.getPipeline(snippet, OitPrograms.OIT_COMPOSITE);
+	public RenderPipeline getOitCompositePipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_COMPOSITE, OitPrograms.OIT_COMPOSITE);
 	}
 
-	public RenderPipeline getOitDepthPipeline(RenderPipeline.Snippet snippet) {
-		return harness.getPipeline(snippet, OitPrograms.OIT_DEPTH);
+	public RenderPipeline getOitDepthPipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {

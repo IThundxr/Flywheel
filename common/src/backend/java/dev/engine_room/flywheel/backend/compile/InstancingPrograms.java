@@ -45,7 +45,7 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 		}
 
 		var pipelineCompiler = PipelineCompiler.create(sources, Pipelines.INSTANCING, vertexComponents, fragmentComponents, EXTENSIONS);
-		var fullscreen = OitPrograms.createFullscreenCompiler(sources);
+		var fullscreen = OitPrograms.createFullscreenCompiler(sources, Pipelines.INSTANCING.snippet());
 		InstancingPrograms newInstance = new InstancingPrograms(pipelineCompiler, fullscreen);
 
 		setInstance(newInstance);
@@ -75,7 +75,11 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 	}
 
 	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode) {
-		return pipeline.getPipeline(instanceType, contextShader, material, mode);
+		return getPipeline(instanceType, contextShader, material, mode, null);
+	}
+
+	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode, RenderPipeline.Snippet snippet) {
+		return pipeline.getPipeline(instanceType, contextShader, material, mode, snippet);
 	}
 
 	public OitPrograms oitPrograms() {

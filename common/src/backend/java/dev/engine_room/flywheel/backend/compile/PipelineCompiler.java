@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import org.jspecify.annotations.Nullable;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
@@ -52,7 +54,7 @@ public final class PipelineCompiler {
 		ALL.add(this);
 	}
 
-	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
+	public RenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit, RenderPipeline.@Nullable Snippet snippet) {
 		var light = material.light();
 		var cutout = material.cutout();
 		var shaders = material.shaders();
@@ -68,7 +70,7 @@ public final class PipelineCompiler {
 		MaterialShaderIndices.cutoutSources()
 				.index(cutout.source());
 
-		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader);
+		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader, snippet);
 		return harness.getPipeline(pipelineSnippet, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
