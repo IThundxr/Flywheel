@@ -150,14 +150,14 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			}
 
 			// This uses the empty VAO
-			oitFramebuffer.renderDepthFromTransmittanceB3D();
+			oitFramebuffer.renderDepthFromTransmittance();
 
 			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
 				submitOitDraws(renderPass, OitMode.EVALUATE, FlwRenderPipelines.OIT_ACCUMULATE);
 			}
 
 			// This uses the empty VAO
-			oitFramebuffer.compositeB3D();
+			oitFramebuffer.composite();
 		}
 
 		// FIXME b3d-ification: OIT draws need to be handled
