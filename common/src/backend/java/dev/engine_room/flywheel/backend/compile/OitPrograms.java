@@ -26,7 +26,7 @@ public class OitPrograms {
 		this.harness = harness;
 	}
 
-	public static OitPrograms createFullscreenCompiler(ShaderSources sources, RenderPipeline.Snippet snippet) {
+	public static OitPrograms createFullscreenCompiler(ShaderSources sources) {
 		var harness = COMPILE.program()
 				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper($ -> "fullscreen/fullscreen")
@@ -40,7 +40,6 @@ public class OitPrograms {
 							}
 						})
 						.withResource(s -> s))
-				.snippet(snippet)
 				.harness("fullscreen", sources);
 		return new OitPrograms(harness);
 	}
@@ -60,7 +59,7 @@ public class OitPrograms {
 	}
 
 	public RenderPipeline getOitDepthPipeline() {
-		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
+		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_FROM_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {

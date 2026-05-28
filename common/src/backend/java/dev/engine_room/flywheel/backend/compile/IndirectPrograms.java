@@ -89,7 +89,7 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 		var pipelineCompiler = PipelineCompiler.create(sources, Pipelines.INDIRECT, vertexComponents, fragmentComponents, EXTENSIONS);
 		var cullingCompiler = createCullingCompiler(sources);
 		var utilCompiler = createUtilCompiler(sources);
-		var fullscreenCompiler = OitPrograms.createFullscreenCompiler(sources, Pipelines.INDIRECT.snippet());
+		var fullscreenCompiler = OitPrograms.createFullscreenCompiler(sources);
 
 		IndirectPrograms newInstance = new IndirectPrograms(pipelineCompiler, cullingCompiler, utilCompiler, fullscreenCompiler);
 

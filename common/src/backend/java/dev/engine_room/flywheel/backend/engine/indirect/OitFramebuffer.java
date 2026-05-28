@@ -2,8 +2,6 @@ package dev.engine_room.flywheel.backend.engine.indirect;
 
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
@@ -14,14 +12,17 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.backend.compile.OitPrograms;
+import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 
@@ -29,6 +30,8 @@ public class OitFramebuffer implements AutoCloseable {
 	public static final Optional<Vector4fc> CLEAR_TO_ZERO = Optional.of(new Vector4f(0, 0, 0, 0));
 
 	private final OitPrograms programs;
+	// TODO b3d-ification: Maybe this should just be static?
+	private final CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
 	@Nullable
 	public GpuTextureView depthBounds = null;
@@ -47,21 +50,29 @@ public class OitFramebuffer implements AutoCloseable {
 	 * Render out the min and max depth per fragment.
 	 */
 	public RenderPass createDepthRangePass() {
-		return createRenderPass(() -> "Flw OIT Depth Range", descriptor -> {
-			float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
-			descriptor.withColorAttachment(depthBounds, Optional.of(new Vector4f(-far, -far, 0, 0)));
-		});
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
+		return commandEncoder.createRenderPass(
+				() -> "Flw OIT Depth Range",
+				depthBounds, Optional.of(new Vector4f(-far, -far, 0, 0)),
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		);
 	}
 
 	/**
 	 * Generate the coefficients to the transmittance function.
 	 */
 	public RenderPass createTransmittancePass() {
-		RenderPass renderPass = createRenderPass(() -> "Flw OIT Transmittance", descriptor -> {
-			for (GpuTextureView view : coefficients) {
-				descriptor.withColorAttachment(view, CLEAR_TO_ZERO);
-			}
-		});
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Transmittance")
+				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
+				.withDepthAttachment(renderTarget.getDepthTextureView());
+
+		for (GpuTextureView view : coefficients) {
+			descriptor.withColorAttachment(view, CLEAR_TO_ZERO);
+		}
+
+		RenderPass renderPass = commandEncoder.createRenderPass(descriptor);
 
 		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
@@ -75,12 +86,22 @@ public class OitFramebuffer implements AutoCloseable {
 	 * function to determine at what depth that occurs and write out to the depth buffer.
 	 */
 	public void renderDepthFromTransmittance() {
-		try (RenderPass renderPass = createRenderPass(() -> "Flw OIT Depth From Transmittance", _ -> {})) {
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Depth From Transmittance")
+				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
+				.withUnusedColorAttachment()
+				.withDepthAttachment(renderTarget.getDepthTextureView());
+
+		try (RenderPass renderPass = commandEncoder.createRenderPass(descriptor)) {
+			Uniforms.bindToRenderPass(renderPass);
+
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			renderPass.bindTexture("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+
+			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
 			renderPass.setPipeline(programs.getOitDepthPipeline());
 
@@ -92,17 +113,18 @@ public class OitFramebuffer implements AutoCloseable {
 	 * Sample the transmittance function and accumulate.
 	 */
 	public RenderPass createAccumulatePass() {
-		return createRenderPass(() -> "Flw OIT Accumulate", descriptor -> {
-			descriptor.withColorAttachment(accumulate, CLEAR_TO_ZERO);
-		});
+		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
+		return commandEncoder.createRenderPass(
+				() -> "Flw OIT Accumulate",
+				accumulate, CLEAR_TO_ZERO,
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		);
 	}
 
 	/**
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
-		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-
 		RenderTarget renderTarget;
 		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
 			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
@@ -110,29 +132,26 @@ public class OitFramebuffer implements AutoCloseable {
 			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		}
 
-		GpuTextureView colorTextureView = renderTarget.getColorTextureView();
-		GpuTextureView depthTextureView = renderTarget.getDepthTextureView();
+		try (RenderPass renderPass = commandEncoder.createRenderPass(
+				() -> "Flw OIT Composite",
+				renderTarget.getColorTextureView(), Optional.empty(),
+				renderTarget.getDepthTextureView(), OptionalDouble.empty()
+		)) {
+			Uniforms.bindToRenderPass(renderPass);
 
-		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw OIT Composite", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 			renderPass.bindTexture("_flw_accumulate", accumulate, clampToEdgeNearest);
+			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+
+			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
 			renderPass.setPipeline(programs.getOitCompositePipeline());
 
 			drawFullscreenQuad(renderPass);
 		}
-	}
-
-	private RenderPass createRenderPass(Supplier<String> label, Consumer<RenderPassDescriptor> descriptorFunc) {
-		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
-
-		RenderPassDescriptor descriptor = RenderPassDescriptor.create(label)
-				.withRenderArea(new RenderPass.RenderArea(0, 0, renderTarget.width, renderTarget.height))
-				.withDepthAttachment(renderTarget.getDepthTextureView());
-
-		descriptorFunc.accept(descriptor);
-
-		return RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor);
 	}
 
 	private RenderTarget setupTexturesAndGetRenderTarget() {
@@ -154,10 +173,6 @@ public class OitFramebuffer implements AutoCloseable {
 	}
 
 	private void drawFullscreenQuad(RenderPass renderPass) {
-		// TODO b3d-ification: We need to pass a empty buffer to renderpass so it uses a clean vertexarray
-		// Empty VAO, the actual full screen triangle is generated in the vertex shader
-		//GlStateManager._glBindVertexArray(vao);
-
 		renderPass.draw(3, 1, 0, 0);
 	}
 
@@ -175,34 +190,34 @@ public class OitFramebuffer implements AutoCloseable {
 
 		depthBounds = device.createTextureView(device.createTexture(
 				"Flw OIT Depth Bounds",
-				0,
+				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 				GpuFormat.RG32_FLOAT,
 				width,
 				height,
-				0,
-				0
+				1,
+				1
 		));
 
 		for (int i = 0; i < coefficients.length; i++) {
 			coefficients[i] = device.createTextureView(device.createTexture(
 					"Flw OIT Coefficients #" + i,
-					0,
+					GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 					GpuFormat.RGBA16_FLOAT,
 					width,
 					height,
-					0,
-					0
+					1,
+					1
 			));
 		}
 
 		accumulate = device.createTextureView(device.createTexture(
 				"Flw OIT Accumulate",
-				0,
+				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 				GpuFormat.RGBA16_FLOAT,
 				width,
 				height,
-				0,
-				0
+				1,
+				1
 		));
 
 	}

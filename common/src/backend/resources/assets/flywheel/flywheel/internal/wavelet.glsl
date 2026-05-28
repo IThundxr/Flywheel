@@ -42,8 +42,8 @@ void add_transmittance(inout vec4[4] coefficients, float transmittance, float de
 // -------------------------------------------------------------------------
 
 // TODO: maybe we could reduce the number of texel fetches below?
-float get_coefficients(in sampler2DArray coefficients, int index) {
-    return texelFetch(coefficients[index >> 2], ivec3(gl_FragCoord.xy, index >> 2), 0)[index & 3];
+float get_coefficients(in sampler2D[4] coefficients, int index) {
+    return texelFetch(coefficients[index >> 2], ivec2(gl_FragCoord.xy), 0)[index & 3];
 }
 
 /// Compute the total absorbance, as if at infinite depth.

@@ -23,10 +23,7 @@ flat in uvec2 _flw_ids;
 
 uniform sampler2D _flw_depthRange;
 
-uniform sampler2D _flw_coefficients0;
-uniform sampler2D _flw_coefficients1;
-uniform sampler2D _flw_coefficients2;
-uniform sampler2D _flw_coefficients3;
+uniform sampler2D[4] _flw_coefficients;
 
 uniform sampler2D _flw_blueNoise;
 
@@ -197,12 +194,6 @@ void _flw_main() {
     #endif
 
     #ifdef _FLW_EVALUATE
-
-    sampler2D[4] _flw_coefficients;
-    _flw_coefficients[0] = _flw_coefficients0;
-    _flw_coefficients[1] = _flw_coefficients1;
-    _flw_coefficients[2] = _flw_coefficients2;
-    _flw_coefficients[3] = _flw_coefficients3;
 
     float transmittance = signal_corrected_transmittance(_flw_coefficients, our_depth, our_transmittance);
 

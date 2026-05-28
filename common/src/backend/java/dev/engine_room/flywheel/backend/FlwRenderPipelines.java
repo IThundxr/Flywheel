@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.PrimitiveTopology;
@@ -20,14 +19,16 @@ import com.mojang.blaze3d.platform.CompareOp;
 
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
+import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 
-// TODO b3d-ification: This right now only supports the instancing backend, we need some way for backends to be able
-// to provide extra bind group layouts that should be used
 public class FlwRenderPipelines {
 	private static final HashMap<CacheKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
 
-	private static final RenderPipeline.Snippet BASE_SNIPPET = RenderPipeline.builder()
+	private static final RenderPipeline.Snippet BASE_VERTEX_BINDING = RenderPipeline.builder()
 			.withVertexBinding(0, FlwVertexFormats.MAIN_FORMAT)
+			.buildSnippet();
+
+	private static final RenderPipeline.Snippet BASE_TOPOLOGY_AND_BIND_GROUPS = RenderPipeline.builder()
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
@@ -39,31 +40,37 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet OIT_DEPTH_RANGE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-			.withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendOp.MAX)))
+			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendOp.MAX)), GpuFormat.RG32_FLOAT, ColorTargetState.WRITE_ALL))
 			.buildSnippet();
 
+	private static final ColorTargetState TRANSMITTANCE_STATE = new ColorTargetState(
+			Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)),
+			GpuFormat.RGBA16_FLOAT,
+			ColorTargetState.WRITE_ALL
+	);
 	public static final RenderPipeline.Snippet OIT_TRANSMITTANCE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-			.withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)))
+			.withColorTargetState(0, TRANSMITTANCE_STATE)
+			.withColorTargetState(1, TRANSMITTANCE_STATE)
+			.withColorTargetState(2, TRANSMITTANCE_STATE)
+			.withColorTargetState(3, TRANSMITTANCE_STATE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
 			.buildSnippet();
 
-	public static final RenderPipeline.Snippet OIT_DEPTH_TRANSMITTANCE = RenderPipeline.builder()
-			.withVertexBinding(0, FlwVertexFormats.EMPTY_FORMAT)
+	public static final RenderPipeline.Snippet OIT_DEPTH_FROM_TRANSMITTANCE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)
 			.withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
-			.withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_NONE))
+			.withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA16_FLOAT, ColorTargetState.WRITE_NONE))
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet OIT_ACCUMULATE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-			.withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)))
+			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)), GpuFormat.RGBA16_FLOAT, ColorTargetState.WRITE_ALL))
 			.buildSnippet();
 
-	public static final RenderPipeline.Snippet OIT_COMPOSITE = RenderPipeline.builder()
-			.withVertexBinding(0, FlwVertexFormats.EMPTY_FORMAT)
+	public static final RenderPipeline.Snippet OIT_COMPOSITE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)
 			// The composite shader writes out the closest depth to gl_FragDepth.
 			// depthMask = true: OIT stuff renders on top of other transparent stuff.
 			// depthMask = false: other transparent stuff renders on top of OIT stuff.
@@ -82,30 +89,47 @@ public class FlwRenderPipelines {
 			.buildSnippet();
 
 	@SuppressWarnings("DataFlowIssue")
-	public static RenderPipeline.Snippet getSnippet(Material material, ContextShader contextShader, RenderPipeline.@Nullable Snippet snippet) {
-		return SNIPPET_CACHE.computeIfAbsent(new CacheKey(material, contextShader, snippet), key -> {
+	public static RenderPipeline.Snippet getSnippet(Material material, ContextShader contextShader, OitMode oit) {
+		return SNIPPET_CACHE.computeIfAbsent(new CacheKey(material, contextShader, oit), key -> {
 			Material m = key.material;
-			Snippet extraSnippet = key.snippet;
+			OitMode oitMode = key.oit;
 
-			Snippet[] snippets = new Snippet[] { BASE_SNIPPET };
-			if (extraSnippet != null) {
-				snippets = ArrayUtils.add(snippets, extraSnippet);
+			Snippet[] snippets = new Snippet[] { BASE_VERTEX_BINDING, BASE_TOPOLOGY_AND_BIND_GROUPS };
+			if (oitMode.snippet != null) {
+				snippets = ArrayUtils.add(snippets, oitMode.snippet);
 			}
 
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
 			key.contextShader.onBuildPipeline(builder);
 
 			builder.withCull(m.backfaceCulling());
-			if (m.depthStencilState() != null)
+
+			if (m.depthStencilState() != null) {
 				builder.withDepthStencilState(m.depthStencilState());
-			if (m.colorTargetState() != null)
-				builder.withColorTargetState(m.colorTargetState());
+			}
+
+			if (m.colorTargetState() != null) {
+				// TODO b3d-ification: Not sure if this is correct
+				if (oitMode == OitMode.OFF) {
+					builder.withColorTargetState(m.colorTargetState());
+				} else {
+					ColorTargetState materialColorTargetState = m.colorTargetState();
+					ColorTargetState oitColorTargetState = oitMode.snippet.colorTargetStates()[0];
+
+					ColorTargetState newState = new ColorTargetState(
+							oitColorTargetState.blendFunction(),
+							oitColorTargetState.format(),
+							materialColorTargetState.writeMask()
+					);
+					builder.withColorTargetState(newState);
+				}
+			}
 
 			return builder.buildSnippet();
 		});
 	}
 
-	private record CacheKey(Material material, ContextShader contextShader, RenderPipeline.@Nullable Snippet snippet) {
+	private record CacheKey(Material material, ContextShader contextShader, OitMode oit) {
 	}
 
 	@Internal

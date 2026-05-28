@@ -73,15 +73,14 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool = new MeshPool();
 		light = new InstancedLight();
 
-		oitFramebuffer = new OitFramebuffer(programs.oitPrograms(), true);
+		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 	}
 
 	@Override
 	public void render(LightStorage lightStorage, EnvironmentStorage environmentStorage) {
 		super.render(lightStorage, environmentStorage);
 
-		this.instancers.values()
-				.removeIf(instancer -> {
+		this.instancers.values().removeIf(instancer -> {
 			if (instancer.instanceCount() == 0) {
 				instancer.delete();
 				return true;
@@ -120,69 +119,46 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		}
 
 		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-		SamplerCache samplers = RenderSystem.getSamplerCache();
-
-		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
-		RenderTarget mainRenderTarget = gameRenderer.mainRenderTarget();
-
+		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
-			Uniforms.bindToRenderPass(renderPass);
-			meshPool.bindToRenderPass(renderPass);
-
-			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
-			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
-			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
-
-			light.bindToRenderPass(renderPass);
-
+			setupPass(renderPass);
 			submitDraws(renderPass);
 		}
 
 		if (!oitDraws.isEmpty()) {
 			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
-				submitOitDraws(renderPass, PipelineCompiler.OitMode.DEPTH_RANGE, FlwRenderPipelines.OIT_DEPTH_RANGE);
+				setupPass(renderPass);
+				submitOitDraws(renderPass, PipelineCompiler.OitMode.DEPTH_RANGE);
 			}
 
 			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
-				submitOitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS, FlwRenderPipelines.OIT_TRANSMITTANCE);
+				setupPass(renderPass);
+				submitOitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
 			}
 
-			// This uses the empty VAO
 			oitFramebuffer.renderDepthFromTransmittance();
 
 			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
-				submitOitDraws(renderPass, OitMode.EVALUATE, FlwRenderPipelines.OIT_ACCUMULATE);
+				setupPass(renderPass);
+				submitOitDraws(renderPass, OitMode.EVALUATE);
 			}
 
-			// This uses the empty VAO
 			oitFramebuffer.composite();
 		}
+	}
 
-		// FIXME b3d-ification: OIT draws need to be handled
-//		if (!oitDraws.isEmpty()) {
-//			oitFramebuffer.prepare(); - Not needed
-//
-//			oitFramebuffer.depthRange(); - createDepthRangePass
-//
-//			submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE); - submitOitDraws with OIT_DEPTH_RANGE pipeline
-//
-//			oitFramebuffer.renderTransmittance(); - createTransmittancePass
-//
-//			submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS); - submitOitDraws with OIT_TRANSMITTANCE pipeline
-//
-//			oitFramebuffer.renderDepthFromTransmittance(); - renderDepthFromTransmittance
-//
-//			// Need to bind this again because we just drew a full screen quad for OIT.
-//			vao.bindForDraw();
-//
-//			oitFramebuffer.accumulate(); - createAccumulatePass
-//
-//			submitOitDraws(PipelineCompiler.OitMode.EVALUATE); - submitOitDraws with OIT_ACCUMULATE pipeline
-//
-//			oitFramebuffer.composite(); - compositeB3D
-//		}
+	private void setupPass(RenderPass renderPass) {
+		Uniforms.bindToRenderPass(renderPass);
+		meshPool.bindToRenderPass(renderPass);
+
+		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+		GpuSampler clampToEdgeLinear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+		renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+		renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
+
+		light.bindToRenderPass(renderPass);
 	}
 
 	private void submitDraws(RenderPass renderPass) {
@@ -206,13 +182,13 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		}
 	}
 
-	private void submitOitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode, RenderPipeline.Snippet snippet) {
+	private void submitOitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode) {
 		for (var drawCall : oitDraws) {
 			var material = drawCall.material();
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
 
-			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode, snippet);
+			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
 			renderPass.setPipeline(pipeline);
 
 			environment.setupDraw(renderPass);
