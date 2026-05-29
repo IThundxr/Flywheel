@@ -30,27 +30,31 @@ public abstract class VulkanRenderPassMixin {
 
 	@Inject(method = "pushDescriptors", at = @At("HEAD"))
 	private void flywheel$addPushConstantsSupport(CallbackInfo ci) {
-		Collection<FlwUniformBinding> bindings = ((FlwGlVulkanRenderPassExtension) this)
-				.flywheel$getUniformBindings().values();
+		FlwGlVulkanRenderPassExtension ext = (FlwGlVulkanRenderPassExtension) this;
 
-		if (bindings.isEmpty()) {
-			return;
-		}
-
-		try (MemoryStack stack = MemoryStack.stackPush()) {
-			ByteBuffer data = stack.malloc(128);
-
-			for (FlwUniformBinding binding : bindings) {
-				binding.writeVulkan(data);
+		if (ext.flywheel$uniformsDirty()) {
+			Collection<FlwUniformBinding> bindings = ext.flywheel$getUniformBindings().values();
+			if (bindings.isEmpty()) {
+				return;
 			}
 
-			VK12.vkCmdPushConstants(
-					this.commandBuffer(),
-					this.pipeline.pipelineLayout(),
-					VK12.VK_SHADER_STAGE_VERTEX_BIT | VK12.VK_SHADER_STAGE_FRAGMENT_BIT,
-					0,
-					data.flip()
-			);
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				ByteBuffer data = stack.malloc(128);
+
+				for (FlwUniformBinding binding : bindings) {
+					binding.writeVulkan(data);
+				}
+
+				VK12.vkCmdPushConstants(
+						this.commandBuffer(),
+						this.pipeline.pipelineLayout(),
+						VK12.VK_SHADER_STAGE_VERTEX_BIT | VK12.VK_SHADER_STAGE_FRAGMENT_BIT,
+						0,
+						data.flip()
+				);
+			}
+
+			ext.flywheel$setUniformsDirty(false);
 		}
 	}
 }

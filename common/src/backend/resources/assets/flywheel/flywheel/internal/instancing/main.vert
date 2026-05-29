@@ -2,14 +2,6 @@
 #include "flywheel:internal/packed_material.glsl"
 #include "flywheel:internal/instancing/light.glsl"
 
-#ifdef FLW_VULKAN
-layout(push_constant) uniform FlwPushConstants {
-    uvec2 _flw_packedMaterial;
-};
-#else
-uniform uvec2 _flw_packedMaterial;
-#endif
-
 #ifdef GL_ARB_shader_draw_parameters
 #define flw_baseInstance gl_BaseInstanceARB
 #define flw_baseVertex gl_BaseVertexARB
@@ -18,9 +10,20 @@ uniform int flw_baseInstance = 0;
 uniform uint flw_baseVertex;
 #endif
 
+#ifdef FLW_VULKAN
+layout(push_constant) uniform FlwPushConstants {
+    uvec2 _flw_packedMaterial;
+    #ifdef FLW_EMBEDDED
+    mat4 _flw_modelMatrixUniform;
+    mat3 _flw_normalMatrixUniform;
+    #endif
+};
+#else
+uniform uvec2 _flw_packedMaterial;
 #ifdef FLW_EMBEDDED
 uniform mat4 _flw_modelMatrixUniform;
 uniform mat3 _flw_normalMatrixUniform;
+#endif
 #endif
 
 void main() {

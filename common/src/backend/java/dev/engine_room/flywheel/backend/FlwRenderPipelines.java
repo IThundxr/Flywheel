@@ -34,11 +34,11 @@ public class FlwRenderPipelines {
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
+			.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
 			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFER)
-			.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS) // TODO vk: We need to bind this otherwise the vk shader fails, but it's not always used so it should be guarded behind a ifdef
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet OIT_DEPTH_RANGE = RenderPipeline.builder()
@@ -75,8 +75,8 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet OIT_COMPOSITE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)
 			// The composite shader writes out the closest depth to gl_FragDepth.
-			// depthMask = true: OIT stuff renders on top of other transparent stuff.
-			// depthMask = false: other transparent stuff renders on top of OIT stuff.
+			// depthWrite = true: OIT stuff renders on top of other transparent stuff.
+			// depthWrite = false: other transparent stuff renders on top of OIT stuff.
 			// If Neo gets wavelet OIT we can use their hooks to be correct with everything.
 			.withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
 			// We rely on the blend func to achieve:
