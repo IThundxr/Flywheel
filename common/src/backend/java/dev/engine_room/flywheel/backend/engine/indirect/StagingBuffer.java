@@ -11,8 +11,8 @@ import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBuffer;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import it.unimi.dsi.fastutil.PriorityQueue;

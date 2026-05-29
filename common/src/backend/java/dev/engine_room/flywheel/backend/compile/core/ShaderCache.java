@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
-import dev.engine_room.flywheel.backend.gl.shader.GlShader;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlShader;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;

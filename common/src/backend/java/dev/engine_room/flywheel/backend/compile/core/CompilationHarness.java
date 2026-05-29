@@ -5,8 +5,8 @@ import java.util.Map;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
-import dev.engine_room.flywheel.backend.gl.GlObject;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlObject;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
 
 public class CompilationHarness<K> {

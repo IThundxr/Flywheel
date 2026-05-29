@@ -1,4 +1,4 @@
-package dev.engine_room.flywheel.backend.gl.buffer;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer;
 
 import com.mojang.blaze3d.opengl.GlConst;
 
@@ -6,7 +6,7 @@ import com.mojang.blaze3d.opengl.GlConst;
  * Gives a hint to the driver about how you intend to use a buffer. For a detailed explanation, see
  * <a href="https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage">this article</a>.
  */
-@Deprecated(forRemoval = true)
+@Deprecated
 public enum GlBufferUsage {
 	STREAM_DRAW(GlConst.GL_STREAM_DRAW),
 	STREAM_READ(GlConst.GL_STREAM_READ),

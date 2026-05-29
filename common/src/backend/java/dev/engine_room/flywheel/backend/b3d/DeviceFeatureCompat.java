@@ -7,7 +7,7 @@ import com.mojang.blaze3d.systems.DeviceFeatures;
 import com.mojang.blaze3d.systems.DeviceInfo;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import dev.engine_room.flywheel.backend.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 
 public final class DeviceFeatureCompat {

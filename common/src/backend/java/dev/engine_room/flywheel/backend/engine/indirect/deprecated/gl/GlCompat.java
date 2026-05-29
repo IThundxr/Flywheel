@@ -1,4 +1,4 @@
-package dev.engine_room.flywheel.backend.gl;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl;
 
 import org.jetbrains.annotations.UnknownNullability;
 import org.lwjgl.PointerBuffer;
@@ -16,10 +16,11 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
 import dev.engine_room.flywheel.backend.compile.core.Compilation;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 
+@Deprecated
 public final class GlCompat {
 	@UnknownNullability
 	public static final GLCapabilities CAPABILITIES;

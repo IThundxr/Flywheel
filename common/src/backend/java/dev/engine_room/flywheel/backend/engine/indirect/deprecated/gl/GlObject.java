@@ -1,7 +1,7 @@
-package dev.engine_room.flywheel.backend.gl;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl;
 
 // Utility class for safely dealing with gl object handles.
-@Deprecated(forRemoval = true)
+@Deprecated
 public abstract class GlObject {
 	private static final int INVALID_HANDLE = Integer.MIN_VALUE;
 

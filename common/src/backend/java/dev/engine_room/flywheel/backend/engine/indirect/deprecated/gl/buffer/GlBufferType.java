@@ -1,4 +1,4 @@
-package dev.engine_room.flywheel.backend.gl.buffer;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer;
 
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL21;
@@ -10,9 +10,9 @@ import org.lwjgl.opengl.GL43;
 
 import com.mojang.blaze3d.opengl.GlConst;
 
-import dev.engine_room.flywheel.backend.gl.GlStateTracker;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlStateTracker;
 
-@Deprecated(forRemoval = true)
+@Deprecated
 public enum GlBufferType {
 	ARRAY_BUFFER(GlConst.GL_ARRAY_BUFFER, GL15C.GL_ARRAY_BUFFER_BINDING),
 	ELEMENT_ARRAY_BUFFER(GlConst.GL_ELEMENT_ARRAY_BUFFER, GL15C.GL_ELEMENT_ARRAY_BUFFER_BINDING),

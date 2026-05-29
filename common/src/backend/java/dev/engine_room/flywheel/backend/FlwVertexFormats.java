@@ -19,9 +19,6 @@ public final class FlwVertexFormats {
 			.addAttribute("_flw_aNormal", GpuFormat.RGBA8_SNORM)
 			.build();
 
-	public static final VertexFormat EMPTY_FORMAT = VertexFormat.builder(0)
-			.build();
-
 	private FlwVertexFormats() {
 	}
 

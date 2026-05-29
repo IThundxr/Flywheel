@@ -4,7 +4,6 @@ import org.lwjgl.opengl.GL43;
 
 import com.mojang.blaze3d.opengl.GlConst;
 
-// TODO: Waiting for mojang to impl a enum for compute shaders
 public enum ShaderType {
 	VERTEX("vertex", "VERTEX_SHADER", "vert", GlConst.GL_VERTEX_SHADER),
 	FRAGMENT("fragment", "FRAGMENT_SHADER", "frag", GlConst.GL_FRAGMENT_SHADER),

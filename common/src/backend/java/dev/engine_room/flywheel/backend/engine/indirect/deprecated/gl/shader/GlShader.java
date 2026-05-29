@@ -1,11 +1,11 @@
-package dev.engine_room.flywheel.backend.gl.shader;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.GlObject;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlObject;
+import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 
-// TODO: Waiting for mojang to add an enum for compute shaders, once that is done this can be replaced with GlShaderModule
-@Deprecated(forRemoval = true)
+@Deprecated
 public class GlShader extends GlObject {
 
 	public final ShaderType type;

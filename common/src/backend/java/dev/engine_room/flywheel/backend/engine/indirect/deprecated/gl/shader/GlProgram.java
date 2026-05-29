@@ -1,4 +1,4 @@
-package dev.engine_room.flywheel.backend.gl.shader;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader;
 
 import org.joml.Matrix3fc;
 import org.joml.Matrix4fc;
@@ -10,13 +10,12 @@ import org.slf4j.Logger;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.logging.LogUtils;
 
-import dev.engine_room.flywheel.backend.gl.GlObject;
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlObject;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlTextureUnit;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-// Unsure if this will be kept, RenderPipelines already handle this stuff
-@Deprecated(forRemoval = true)
+@Deprecated
 public class GlProgram extends GlObject {
 	private static final Logger LOGGER = LogUtils.getLogger();
 

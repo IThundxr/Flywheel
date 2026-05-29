@@ -1,33 +1,34 @@
-package dev.engine_room.flywheel.backend.engine;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.opengl.GL32;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.opengl.GlBuffer;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.opengl.GlConst;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.array.GlVertexArray;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBuffer;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.backend.util.ReferenceCounted;
+import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
 
-public class MeshPool implements AutoCloseable {
+@Deprecated
+public class IndirectMeshPool {
 	private final VertexView vertexView;
 	private final Map<Mesh, PooledMesh> meshes = new HashMap<>();
 	private final List<PooledMesh> meshList = new ArrayList<>();
 	private final List<PooledMesh> recentlyAllocated = new ArrayList<>();
 
-	private final DynamicGpuBuffer vbo;
-	private final IndexPool indexPool;
+	private final GlBuffer vbo;
+	private final IndirectIndexPool indexPool;
 
 	private boolean dirty;
 	private boolean anyToRemove;
@@ -35,15 +36,10 @@ public class MeshPool implements AutoCloseable {
 	/**
 	 * Create a new mesh pool.
 	 */
-	public MeshPool() {
+	public IndirectMeshPool() {
 		vertexView = FlwVertexFormats.createVertexView();
-		// TODO b3d-ification: Check if the default size needs to be bigger
-		vbo = new DynamicGpuBuffer(
-				"Flw MeshPool VBO",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX,
-				1024 * 64 // 64 KB
-		);
-		indexPool = new IndexPool();
+		vbo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
+		indexPool = new IndirectIndexPool();
 	}
 
 	/**
@@ -65,7 +61,8 @@ public class MeshPool implements AutoCloseable {
 		return bufferedModel;
 	}
 
-	public MeshPool.@Nullable PooledMesh get(Mesh mesh) {
+	@Nullable
+	public IndirectMeshPool.PooledMesh get(Mesh mesh) {
 		return meshes.get(mesh);
 	}
 
@@ -104,55 +101,47 @@ public class MeshPool implements AutoCloseable {
 	}
 
 	private void uploadAll() {
-		int neededSize = 0;
+		long neededSize = 0;
 		for (PooledMesh mesh : meshList) {
 			neededSize += mesh.byteSize();
 		}
 
-		try (MemoryStack stack = MemoryStack.stackPush()) {
-			ByteBuffer buffer = stack.malloc(neededSize);
-			final long vertexPtr = MemoryUtil.memAddress(buffer);
+		final var vertexBlock = MemoryBlock.malloc(neededSize);
+		final long vertexPtr = vertexBlock.ptr();
 
-			int byteIndex = 0;
-			int baseVertex = 0;
-			for (PooledMesh mesh : meshList) {
-				mesh.baseVertex = baseVertex;
+		int byteIndex = 0;
+		int baseVertex = 0;
+		for (PooledMesh mesh : meshList) {
+			mesh.baseVertex = baseVertex;
 
-				vertexView.ptr(vertexPtr + byteIndex);
-				vertexView.vertexCount(mesh.vertexCount());
-				mesh.mesh.write(vertexView);
+			vertexView.ptr(vertexPtr + byteIndex);
+			vertexView.vertexCount(mesh.vertexCount());
+			mesh.mesh.write(vertexView);
 
-				byteIndex += mesh.byteSize();
-				baseVertex += mesh.vertexCount();
-			}
-
-			vbo.write(buffer.position(byteIndex).flip());
+			byteIndex += mesh.byteSize();
+			baseVertex += mesh.vertexCount();
 		}
+
+		vbo.upload(vertexBlock);
+
+		vertexBlock.free();
 	}
 
-	public void bindToRenderPass(RenderPass renderPass) {
-		renderPass.setVertexBuffer(0, vbo.getCurrentBuffer().slice());
-		indexPool.bindToRenderPass(renderPass);
-	}
-
-	@Deprecated
 	public void bind(GlVertexArray vertexArray) {
 		indexPool.bind(vertexArray);
-		GlBuffer glBuffer = (GlBuffer) vbo.getCurrentBuffer();
-		vertexArray.bindVertexBuffer(0, glBuffer.handle(), 0, FlwVertexFormats.MAIN_FORMAT.getVertexSize());
+		vertexArray.bindVertexBuffer(0, vbo.handle(), 0, FlwVertexFormats.MAIN_FORMAT.getVertexSize());
 		vertexArray.bindAttributes(0, 0, FlwVertexFormats.MAIN_FORMAT);
+	}
+
+	public void delete() {
+		vbo.delete();
+		indexPool.delete();
+		meshes.clear();
+		meshList.clear();
 	}
 
 	public List<PooledMesh> pooledMeshes() {
 		return meshList;
-	}
-
-	@Override
-	public void close() {
-		vbo.close();
-		indexPool.close();
-		meshes.clear();
-		meshList.clear();
 	}
 
 	public class PooledMesh extends ReferenceCounted {
@@ -182,26 +171,29 @@ public class MeshPool implements AutoCloseable {
 		}
 
 		public int firstIndex() {
-			return MeshPool.this.indexPool.firstIndex(mesh.indexSequence());
+			return IndirectMeshPool.this.indexPool.firstIndex(mesh.indexSequence());
 		}
 
-		public int firstIndexByteOffset() {
-			return firstIndex() * Integer.BYTES;
+		public long firstIndexByteOffset() {
+			return (long) firstIndex() * Integer.BYTES;
 		}
 
 		public boolean isInvalid() {
 			return mesh.vertexCount() == 0 || baseVertex == INVALID_BASE_VERTEX || isDeleted();
 		}
 
-		// TODO b3d-ification: We should probably submit RenderPass.Draw calls instead of doing these one by one
-		public void submitDraw(RenderPass renderPass, int instanceCount, int baseInstance) {
-			renderPass.drawIndexed(mesh.indexCount(), instanceCount, firstIndexByteOffset(), baseVertex(), baseInstance);
+		public void draw(int instanceCount) {
+			if (instanceCount > 1) {
+				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
+			} else {
+				GL32.glDrawElementsBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
+			}
 		}
 
 		@Override
 		protected void _delete() {
-			MeshPool.this.dirty = true;
-			MeshPool.this.anyToRemove = true;
+			IndirectMeshPool.this.dirty = true;
+			IndirectMeshPool.this.anyToRemove = true;
 		}
 	}
 }
