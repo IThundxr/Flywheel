@@ -8,7 +8,6 @@
     "CameraAccessor",
     "CameraMixin",
     "CameraRenderStateMixin",
-    "FogRendererMixin",
     "GlStateManagerAccessor",
     "GlStateManagerMixin",
     "GpuDeviceAccessor",
