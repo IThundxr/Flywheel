@@ -51,6 +51,7 @@ public class FlwBindGroupLayouts {
 
 	public static final BindGroupLayout UNIFORMS = Util.make(() -> {
 		BindGroupLayout.Builder builder = BindGroupLayout.builder();
+		builder.withUniform("_FlwFogUniforms", UniformType.UNIFORM_BUFFER);
 		for (FlwUniform uniform : Uniforms.UNIFORMS)
 			builder.withUniform(uniform.getUniformName(), UniformType.UNIFORM_BUFFER);
 		return builder.build();

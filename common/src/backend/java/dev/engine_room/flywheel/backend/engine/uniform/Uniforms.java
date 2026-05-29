@@ -1,6 +1,8 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.api.backend.RenderContext;
 import net.minecraft.util.profiling.Profiler;
@@ -9,7 +11,6 @@ import net.minecraft.util.profiling.ProfilerFiller;
 public final class Uniforms {
 	public static final FlwUniform[] UNIFORMS = {
 			FrameUniforms.INSTANCE,
-			FogUniforms.INSTANCE,
 			OptionsUniforms.INSTANCE,
 			PlayerUniforms.INSTANCE,
 			LevelUniforms.INSTANCE
@@ -28,6 +29,11 @@ public final class Uniforms {
 	}
 
 	public static void bindToRenderPass(RenderPass renderPass) {
+		GpuBufferSlice fogUBO = RenderSystem.getShaderFog();
+		if (fogUBO != null) {
+			renderPass.setUniform("_FlwFogUniforms", fogUBO);
+		}
+
 		for (FlwUniform uniform : UNIFORMS) {
 			renderPass.setUniform(uniform.getUniformName(), uniform.getBuffer());
 		}
