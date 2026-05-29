@@ -5,8 +5,8 @@
 uniform uvec2 _flw_packedMaterial;
 
 #ifdef GL_ARB_shader_draw_parameters
-#define flw_baseInstance gl_BaseInstance
-#define flw_baseVertex gl_BaseVertex
+#define flw_baseInstance gl_BaseInstanceARB
+#define flw_baseVertex gl_BaseVertexARB
 #else
 uniform int flw_baseInstance = 0;
 uniform uint flw_baseVertex;

@@ -8,8 +8,8 @@ import com.mojang.blaze3d.vulkan.VulkanCommandEncoder;
 @Mixin(VulkanCommandEncoder.class)
 public class VulkanCommandEncoderMixin {
 	static {
-		((Runnable) () -> {
-			throw new UnsupportedOperationException("Support for push constants still needs to be added by flw");
-		}).run();
+//		((Runnable) () -> {
+//			throw new UnsupportedOperationException("Support for push constants still needs to be added by flw");
+//		}).run();
 	}
 }

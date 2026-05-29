@@ -10,14 +10,13 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 import dev.engine_room.flywheel.backend.util.AtomicReferenceCounted;
 
 public class InstancingPrograms extends AtomicReferenceCounted {
-	private static final List<String> EXTENSIONS = getExtensions(GlCompat.MAX_GLSL_VERSION);
+	private static final List<String> EXTENSIONS = getExtensions(DeviceFeatureCompat.MAX_GLSL_VERSION);
 
 	@Nullable
 	private static InstancingPrograms instance;

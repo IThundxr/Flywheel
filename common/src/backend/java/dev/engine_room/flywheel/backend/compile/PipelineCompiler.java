@@ -19,12 +19,12 @@ import dev.engine_room.flywheel.backend.BackendConfig;
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
 import dev.engine_room.flywheel.backend.compile.component.UberShaderComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
 import dev.engine_room.flywheel.backend.engine.uniform.FrameUniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
@@ -108,7 +108,7 @@ public final class PipelineCompiler {
 		// We could technically compile every version of light smoothness ahead of time,
 		// but that seems unnecessary as I doubt most folks will be changing this option often.
 		var harness = PIPELINE.program()
-				.link(PIPELINE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
+				.link(PIPELINE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper(key -> {
 							var instance = IdentifierUtil.toDebugFileNameNoExtension(key.instanceType()
 									.vertexShader());
@@ -123,7 +123,7 @@ public final class PipelineCompiler {
 						.requireExtensions(extensions)
 						.enableExtension("GL_ARB_shader_draw_parameters")
 						.onCompile((rl, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
 								// Only define fma if it wouldn't be declared by gpu shader 5
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}
@@ -148,7 +148,7 @@ public final class PipelineCompiler {
 						.withComponent(key -> pipeline.assembler()
 								.assemble(key.instanceType()))
 						.withResource(pipeline.vertexMain()))
-				.link(PIPELINE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
+				.link(PIPELINE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
 						.nameMapper(key -> {
 							var context = key.contextShader()
 									.nameLowerCase();
@@ -166,7 +166,7 @@ public final class PipelineCompiler {
 						.requireExtensions(extensions)
 						.enableExtension("GL_ARB_conservative_depth")
 						.onCompile((rl, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
 								// Only define fma if it wouldn't be declared by gpu shader 5
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}
