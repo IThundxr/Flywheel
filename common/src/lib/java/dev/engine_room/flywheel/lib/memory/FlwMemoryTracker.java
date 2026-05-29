@@ -6,7 +6,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import dev.engine_room.flywheel.lib.util.StringUtil;
 
-@Deprecated(forRemoval = true)
+@Deprecated
 public final class FlwMemoryTracker {
 	private static final AtomicLong CPU_MEMORY = new AtomicLong(0);
 	private static final AtomicLong GPU_MEMORY = new AtomicLong(0);

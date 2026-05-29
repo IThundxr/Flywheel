@@ -1,12 +1,12 @@
-package dev.engine_room.flywheel.backend.gl.buffer;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.GlObject;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlObject;
 import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
-@Deprecated(forRemoval = true)
+@Deprecated
 public class GlBuffer extends GlObject {
 	protected final GlBufferUsage usage;
 	/**

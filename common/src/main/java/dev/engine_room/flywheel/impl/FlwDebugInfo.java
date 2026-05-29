@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
 import dev.engine_room.flywheel.impl.visualization.VisualizationManagerImpl;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import it.unimi.dsi.fastutil.ints.IntArrayList;

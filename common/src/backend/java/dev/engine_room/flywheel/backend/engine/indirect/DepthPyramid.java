@@ -9,7 +9,7 @@ import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlTextureUnit;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import net.minecraft.client.Minecraft;
 

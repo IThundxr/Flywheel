@@ -1,19 +1,27 @@
-package dev.engine_room.flywheel.backend.engine;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated;
+
+import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
+@Deprecated
 public class TextureBinder {
 	public static void bind(int unit, Identifier textureId, @Nullable GpuSampler sampler) {
 		GpuTextureView texture = Minecraft.getInstance()
@@ -42,5 +50,24 @@ public class TextureBinder {
 			GlStateManager._texParameter(i, GL33C.GL_TEXTURE_BASE_LEVEL, textureView.baseMipLevel());
 			GlStateManager._texParameter(i, GL33C.GL_TEXTURE_MAX_LEVEL, textureView.baseMipLevel() + textureView.mipLevels() - 1);
 		}
+	}
+
+	public static void bindLightAndOverlay() {
+		var gameRenderer = Minecraft.getInstance().gameRenderer;
+		GpuSampler sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+		bind(Samplers.OVERLAY.number, gameRenderer.overlayTexture().getTextureView(), sampler);
+		bind(Samplers.LIGHT.number, gameRenderer.lightmap(), sampler);
+	}
+
+	public static void bindRenderTarget(RenderTarget target) {
+		GlTexture colorTexture = (GlTexture) target.getColorTexture();
+		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
+
+		GlDevice glDevice = GlUtil.getGlDevice();
+		int frameBufferHandle = glDevice
+				.frameBufferCache()
+				.getFbo(glDevice.directStateAccess(), List.of(colorTexture), depthTexture);
+
+		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, frameBufferHandle);
 	}
 }

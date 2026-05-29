@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
-import dev.engine_room.flywheel.backend.gl.shader.GlShader;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlShader;
 import net.minecraft.client.renderer.ShaderManager;
 
 public class ProgramLinker {

@@ -1,10 +1,11 @@
-package dev.engine_room.flywheel.backend.gl;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl;
 
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.mixin.GlStateManagerAccessor;
 
+@Deprecated
 public enum GlTextureUnit {
 	T0(0),
 	T1(1),

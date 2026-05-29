@@ -1,8 +1,11 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.opengl.GlBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -28,6 +31,15 @@ public final class Uniforms {
 		PlayerUniforms.INSTANCE.update(context);
 		LevelUniforms.INSTANCE.update(context);
 		profiler.pop();
+	}
+
+	@Deprecated
+	public static void bindAll(int programId) {
+		for (FlwUniform uniform : UNIFORMS) {
+			int index = GL33C.glGetUniformBlockIndex(programId, uniform.getUniformName());
+			GlBuffer glBuffer = (GlBuffer) uniform.getBuffer();
+			GL32.glBindBufferRange(GL32.GL_UNIFORM_BUFFER, index, glBuffer.handle(), 0, glBuffer.size());
+		}
 	}
 
 	public static void bindToRenderPass(RenderPass renderPass) {

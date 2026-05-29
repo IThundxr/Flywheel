@@ -1,34 +1,27 @@
-package dev.engine_room.flywheel.backend.engine;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated;
 
 import java.nio.ByteBuffer;
 
 import org.lwjgl.system.MemoryStack;
-
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.opengl.GlBuffer;
-import com.mojang.blaze3d.systems.RenderPass;
+import org.lwjgl.system.MemoryUtil;
 
 import dev.engine_room.flywheel.api.model.IndexSequence;
 import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.array.GlVertexArray;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBuffer;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferUsage;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
-public class IndexPool implements AutoCloseable {
-	private final DynamicGpuBuffer ebo;
+public class IndirectIndexPool {
+	private final GlBuffer ebo;
 
 	private final Reference2IntMap<IndexSequence> indexCounts;
 	private final Reference2IntMap<IndexSequence> firstIndices;
 
 	private boolean dirty;
 
-    public IndexPool() {
-		// TODO b3d-ification: check if we need a bigger buffer
-		ebo = new DynamicGpuBuffer(
-				"Flw IndexPool EBO",
-				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_INDEX,
-				1024 * 4 // 4 KB
-		);
+    public IndirectIndexPool() {
+		ebo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
 
 		indexCounts = new Reference2IntOpenHashMap<>();
 		firstIndices = new Reference2IntOpenHashMap<>();
@@ -71,7 +64,9 @@ public class IndexPool implements AutoCloseable {
 		}
 
 		try (MemoryStack stack = MemoryStack.stackPush()) {
-			ByteBuffer buffer = stack.malloc(totalIndexCount * Integer.BYTES);
+			int totalSize = totalIndexCount * Integer.BYTES;
+			ByteBuffer buffer = stack.malloc(totalSize);
+			long ptr = MemoryUtil.memAddress(buffer);
 
 			int firstIndex = 0;
 			for (Reference2IntMap.Entry<IndexSequence> entries : indexCounts.reference2IntEntrySet()) {
@@ -85,22 +80,15 @@ public class IndexPool implements AutoCloseable {
 				firstIndex += indexCount;
 			}
 
-			ebo.write(buffer.flip());
+			ebo.upload(ptr, totalSize);
 		}
 	}
 
-	public void bindToRenderPass(RenderPass renderPass) {
-		renderPass.setIndexBuffer(ebo.getCurrentBuffer(), IndexType.INT);
-	}
-
-	@Deprecated
 	public void bind(GlVertexArray vertexArray) {
-		GlBuffer glBuffer = (GlBuffer) ebo.getCurrentBuffer();
-		vertexArray.setElementBuffer(glBuffer.handle());
+		vertexArray.setElementBuffer(ebo.handle());
 	}
 
-	@Override
-	public void close() {
-		ebo.close();
+	public void delete() {
+		ebo.delete();
 	}
 }

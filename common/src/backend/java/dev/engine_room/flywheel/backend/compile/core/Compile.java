@@ -19,8 +19,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.compile.FlwPrograms;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness.KeyCompiler;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
-import dev.engine_room.flywheel.backend.gl.shader.GlShader;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlShader;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
@@ -171,6 +171,9 @@ public class Compile<K> {
 		@Deprecated(forRemoval = true)
 		private BiConsumer<K, GlProgram> postLink = (k, p) -> {
 		};
+		@Deprecated(forRemoval = true)
+		private BiConsumer<K, GlProgram> preLink = (k, p) -> {
+		};
 
 		public CompilationHarness<K> harness(String marker, ShaderSources sources) {
 			return new CompilationHarness<>(marker, sources, this);
@@ -187,6 +190,12 @@ public class Compile<K> {
 		@Deprecated(forRemoval = true)
 		public ProgramStitcher<K> postLink(BiConsumer<K, GlProgram> postLink) {
 			this.postLink = postLink;
+			return this;
+		}
+
+		@Deprecated(forRemoval = true)
+		public ProgramStitcher<K> preLink(BiConsumer<K, GlProgram> preLink) {
+			this.preLink = preLink;
 			return this;
 		}
 
@@ -210,7 +219,7 @@ public class Compile<K> {
 				shaders.add(compiler.compile(key, shaderCache, loader));
 			}
 
-			var out = programLinker.link(shaders, _ -> {});
+			var out = programLinker.link(shaders, p -> preLink.accept(key, p));
 
 			postLink.accept(key, out);
 

@@ -4,7 +4,7 @@ import org.lwjgl.opengl.GL45;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.GlObject;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlObject;
 import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 
 /**

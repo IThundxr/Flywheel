@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.compile.core;
 
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 
 public sealed interface LinkResult {
 	GlProgram unwrap();

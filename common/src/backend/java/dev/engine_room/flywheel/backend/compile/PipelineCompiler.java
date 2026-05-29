@@ -19,13 +19,14 @@ import dev.engine_room.flywheel.backend.BackendConfig;
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.Samplers;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
 import dev.engine_room.flywheel.backend.compile.component.UberShaderComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.engine.uniform.FrameUniforms;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
@@ -200,6 +201,27 @@ public final class PipelineCompiler {
 								.source())
 						.with((key, fetcher) -> (key.useCutout() ? CUTOUT : fetcher.get(CutoutShaders.OFF.source())))
 						.withResource(pipeline.fragmentMain()))
+				.preLink((key, program) -> {
+					program.bindAttribLocation("_flw_aPos", 0);
+					program.bindAttribLocation("_flw_aColor", 1);
+					program.bindAttribLocation("_flw_aTexCoord", 2);
+					program.bindAttribLocation("_flw_aOverlay", 3);
+					program.bindAttribLocation("_flw_aLight", 4);
+					program.bindAttribLocation("_flw_aNormal", 5);
+				})
+				.postLink((key, program) -> {
+					program.bind();
+
+					program.setSamplerBinding("flw_diffuseTex", Samplers.DIFFUSE);
+					program.setSamplerBinding("flw_overlayTex", Samplers.OVERLAY);
+					program.setSamplerBinding("flw_lightTex", Samplers.LIGHT);
+					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
+					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
+					program.setSamplerBinding("_flw_blueNoise", Samplers.NOISE);
+					key.contextShader().onLink(program);
+
+					GlProgram.unbind();
+				})
 				.snippet(pipeline.snippet())
 				.harness(pipeline.compilerMarker(), sources);
 

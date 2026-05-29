@@ -1,15 +1,15 @@
-package dev.engine_room.flywheel.backend.gl;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl;
 
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferType;
 import dev.engine_room.flywheel.backend.mixin.GlStateManagerAccessor;
 
 /**
  * Tracks bound buffers/vbos because GlStateManager doesn't do that for us.
  */
-@Deprecated(forRemoval = true)
+@Deprecated
 public class GlStateTracker {
 	private static final int[] BUFFERS = new int[GlBufferType.values().length];
 	private static int vao;

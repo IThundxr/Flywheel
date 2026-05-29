@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import dev.engine_room.flywheel.backend.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
 
 @Mixin(RenderSystem.class)
 abstract class RenderSystemMixin {

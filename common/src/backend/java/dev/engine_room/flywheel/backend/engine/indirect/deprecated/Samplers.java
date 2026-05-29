@@ -1,7 +1,8 @@
-package dev.engine_room.flywheel.backend;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated;
 
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlTextureUnit;
 
+@Deprecated
 public class Samplers {
 	public static final GlTextureUnit DIFFUSE = GlTextureUnit.T0;
 	public static final GlTextureUnit OVERLAY = GlTextureUnit.T1;

@@ -1,4 +1,4 @@
-package dev.engine_room.flywheel.backend.gl.buffer;
+package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer;
 
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL45C;
@@ -6,9 +6,9 @@ import org.lwjgl.system.Checks;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
 
-import dev.engine_room.flywheel.backend.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
 
-@Deprecated(forRemoval = true)
+@Deprecated
 public interface Buffer {
 	Buffer IMPL = new DSA().fallback();
 
