@@ -28,25 +28,27 @@ public class GlCommandEncoderMixin {
 
 	@Inject(method = "trySetup", at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;"))
 	private void flywheel$bindPlainUniforms(GlRenderPass renderPass, Collection<String> dynamicUniforms, CallbackInfoReturnable<Boolean> cir, @Local(name = "glProgram") GlProgram glProgram) {
-		Collection<FlwUniformBinding> bindings = ((FlwGlVulkanRenderPassExtension) renderPass)
-				.flywheel$getUniformBindings().values();
+		FlwGlVulkanRenderPassExtension ext = (FlwGlVulkanRenderPassExtension) renderPass;
 
-		if (bindings.isEmpty()) {
-			return;
-		}
-
-		Object2IntMap<String> uniformIds = flywheel$uniformIdsCache
-				.computeIfAbsent(glProgram, _ -> new Object2IntOpenHashMap<>());
-
-		int glProgramId = glProgram.getProgramId();
-		for (FlwUniformBinding binding : bindings) {
-			String uniformName = binding.name();
-			int location = uniformIds.computeIfAbsent(uniformName,
-					(String name) -> GlStateManager._glGetUniformLocation(glProgramId, name));
-
-			if (location >= 0) {
-				binding.bindOpenGL(location);
+		if (ext.flywheel$uniformsDirty()) {
+			Collection<FlwUniformBinding> bindings = ext.flywheel$getUniformBindings().values();
+			if (bindings.isEmpty()) {
+				return;
 			}
+
+			Object2IntMap<String> uniformIds = flywheel$uniformIdsCache
+					.computeIfAbsent(glProgram, _ -> new Object2IntOpenHashMap<>());
+
+			for (FlwUniformBinding binding : bindings) {
+				int location = uniformIds.computeIfAbsent(binding.name(),
+						(String name) -> GlStateManager._glGetUniformLocation(glProgram.getProgramId(), name));
+
+				if (location >= 0) {
+					binding.bindOpenGL(location);
+				}
+			}
+
+			ext.flywheel$setUniformsDirty(false);
 		}
 	}
 }

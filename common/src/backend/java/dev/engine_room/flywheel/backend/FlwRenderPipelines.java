@@ -1,6 +1,7 @@
 package dev.engine_room.flywheel.backend;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -18,6 +19,7 @@ import com.mojang.blaze3d.platform.BlendOp;
 import com.mojang.blaze3d.platform.CompareOp;
 
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 
@@ -32,6 +34,7 @@ public class FlwRenderPipelines {
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
+			.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
@@ -72,8 +75,8 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet OIT_COMPOSITE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)
 			// The composite shader writes out the closest depth to gl_FragDepth.
-			// depthMask = true: OIT stuff renders on top of other transparent stuff.
-			// depthMask = false: other transparent stuff renders on top of OIT stuff.
+			// depthWrite = true: OIT stuff renders on top of other transparent stuff.
+			// depthWrite = false: other transparent stuff renders on top of OIT stuff.
 			// If Neo gets wavelet OIT we can use their hooks to be correct with everything.
 			.withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
 			// We rely on the blend func to achieve:
@@ -102,6 +105,7 @@ public class FlwRenderPipelines {
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
 			key.contextShader.onBuildPipeline(builder);
 
+			builder.withShaderDefine("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 			builder.withCull(m.backfaceCulling());
 
 			if (m.depthStencilState() != null) {

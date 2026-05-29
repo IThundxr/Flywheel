@@ -13,7 +13,7 @@ import dev.engine_room.flywheel.backend.compile.core.Compilation;
 public enum ContextShader {
 	DEFAULT,
 	CRUMBLING("_FLW_CRUMBLING", b -> b.withBindGroupLayout(FlwBindGroupLayouts.CRUMBLING_SAMPLER)),
-	EMBEDDED("FLW_EMBEDDED", b -> b.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS));
+	EMBEDDED("FLW_EMBEDDED");
 
 	@Nullable
 	private final String define;
