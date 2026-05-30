@@ -1,7 +1,6 @@
 package dev.engine_room.flywheel.backend;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -19,7 +18,6 @@ import com.mojang.blaze3d.platform.BlendOp;
 import com.mojang.blaze3d.platform.CompareOp;
 
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 
@@ -105,7 +103,6 @@ public class FlwRenderPipelines {
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
 			key.contextShader.onBuildPipeline(builder);
 
-			builder.withShaderDefine("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 			builder.withCull(m.backfaceCulling());
 
 			if (m.depthStencilState() != null) {

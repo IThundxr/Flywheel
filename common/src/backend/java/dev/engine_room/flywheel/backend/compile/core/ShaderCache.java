@@ -3,10 +3,12 @@ package dev.engine_room.flywheel.backend.compile.core;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.gl.shader.GlShader;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
@@ -31,6 +33,7 @@ public class ShaderCache {
 		Compilation ctx = new Compilation();
 		ctx.version(glslVersion);
 		ctx.define(shaderType.define);
+		ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 
 		callback.accept(ctx);
 
@@ -46,6 +49,7 @@ public class ShaderCache {
 			Compilation ctx = new Compilation();
 			ctx.version(glslVersion);
 			ctx.define(shaderType.define);
+			ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 
 			callback.accept(ctx);
 
