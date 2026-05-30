@@ -1,13 +1,15 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
-import org.lwjgl.system.MemoryUtil;
+import java.nio.ByteBuffer;
+
+import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 public class InstancedLight implements AutoCloseable {
 	public static final String LUT_BINDING = "_flw_lightLut";
@@ -43,17 +45,14 @@ public class InstancedLight implements AutoCloseable {
 		light.upload(sections);
 
 		if (light.checkNeedsLutRebuildAndClear()) {
-			var lut = light.createLut();
+			IntArrayList lut = light.createLut();
+			int[] lutData = lut.elements();
 
-			var memoryBlock = MemoryBlock.malloc((long) lut.size() * Integer.BYTES);
-			long ptr = memoryBlock.ptr();
-
-			for (int i = 0; i < lut.size(); i++) {
-				MemoryUtil.memPutInt(ptr + (long) Integer.BYTES * i, lut.getInt(i));
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				ByteBuffer buffer = stack.malloc(lut.size() * Integer.BYTES);
+				buffer.asIntBuffer().put(lutData);
+				this.lut.write(buffer);
 			}
-
-			this.lut.write(memoryBlock.asBuffer());
-			memoryBlock.free();
 		}
 	}
 

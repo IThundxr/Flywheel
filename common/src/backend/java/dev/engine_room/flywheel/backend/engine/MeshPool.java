@@ -1,20 +1,21 @@
 package dev.engine_room.flywheel.backend.engine;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dev.engine_room.flywheel.backend.FlwVertexFormats;
-
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.Mesh;
+import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.util.ReferenceCounted;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
 
 public class MeshPool implements AutoCloseable {
@@ -101,29 +102,30 @@ public class MeshPool implements AutoCloseable {
 	}
 
 	private void uploadAll() {
-		long neededSize = 0;
+		int neededSize = 0;
 		for (PooledMesh mesh : meshList) {
 			neededSize += mesh.byteSize();
 		}
 
-		final var vertexBlock = MemoryBlock.malloc(neededSize);
-		final long vertexPtr = vertexBlock.ptr();
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			ByteBuffer buffer = stack.malloc(neededSize);
+			final long vertexPtr = MemoryUtil.memAddress(buffer);
 
-		int byteIndex = 0;
-		int baseVertex = 0;
-		for (PooledMesh mesh : meshList) {
-			mesh.baseVertex = baseVertex;
+			int byteIndex = 0;
+			int baseVertex = 0;
+			for (PooledMesh mesh : meshList) {
+				mesh.baseVertex = baseVertex;
 
-			vertexView.ptr(vertexPtr + byteIndex);
-			vertexView.vertexCount(mesh.vertexCount());
-			mesh.mesh.write(vertexView);
+				vertexView.ptr(vertexPtr + byteIndex);
+				vertexView.vertexCount(mesh.vertexCount());
+				mesh.mesh.write(vertexView);
 
-			byteIndex += mesh.byteSize();
-			baseVertex += mesh.vertexCount();
+				byteIndex += mesh.byteSize();
+				baseVertex += mesh.vertexCount();
+			}
+
+			vbo.write(buffer);
 		}
-
-		vbo.write(vertexBlock.asBuffer());
-		vertexBlock.free();
 	}
 
 	public void bindToRenderPass(RenderPass renderPass) {

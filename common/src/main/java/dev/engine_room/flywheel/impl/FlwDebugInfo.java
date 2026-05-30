@@ -10,9 +10,7 @@ import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.impl.visualization.VisualizationManagerImpl;
-import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
-import dev.engine_room.flywheel.lib.util.StringUtil;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -241,10 +239,6 @@ public final class FlwDebugInfo {
 				.append(" (")
 				.append(System.getProperty("os.arch"))
 				.append(")");
-		appendLine(out, "Flw CPU Memory: ").append(FlwMemoryTracker.getCpuMemory())
-				.append(" bytes");
-		appendLine(out, "Flw GPU Memory: ").append(FlwMemoryTracker.getGpuMemory())
-				.append(" bytes");
 	}
 
 	private static void addOpenGLDebugInfo(StringBuilder out) {
@@ -281,12 +275,6 @@ public final class FlwDebugInfo {
 					renderOrigin.getZ()
 				);
 			}
-
-			// TODO b3d-ification: This is not really correct anymore, it no longer tracks the buffers flw creates, it should probably be removed
-			add(displayer, "Memory Usage: CPU: %s, GPU: %s",
-				StringUtil.formatBytes(FlwMemoryTracker.getCpuMemory()),
-				StringUtil.formatBytes(FlwMemoryTracker.getGpuMemory())
-			);
 		}
 
 		@Override
