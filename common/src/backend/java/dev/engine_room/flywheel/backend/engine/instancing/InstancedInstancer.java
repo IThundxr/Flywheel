@@ -1,9 +1,12 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -14,7 +17,6 @@ import dev.engine_room.flywheel.backend.engine.BaseInstancer;
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.lib.math.MoreMath;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	public static final String TEXEL_BUFFER_BINDING = "_flw_instances";
@@ -60,12 +62,14 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		}
 
 		if (needsFullWrite) {
-			var temp = MemoryBlock.malloc(byteSize);
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				ByteBuffer buffer = stack.malloc(byteSize);
+				final long ptr = MemoryUtil.memAddress(buffer);
 
-			writeAll(temp.ptr());
+				writeAll(ptr);
 
-			utb.write(temp.asBuffer());
-			temp.free();
+				utb.write(buffer);
+			}
 		} else {
 			writeChanged();
 		}
@@ -80,15 +84,18 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 				return;
 			}
 			int actualEnd = Math.min(endInclusive, instances.size() - 1);
-			var temp = MemoryBlock.malloc((long) instanceStride * (actualEnd - startInclusive + 1));
-			long ptr = temp.ptr();
-			for (int i = startInclusive; i <= actualEnd; i++) {
-				writer.write(ptr, instances.get(i));
-				ptr += instanceStride;
-			}
 
-			utb.writeSpan(startInclusive * instanceStride, temp.asBuffer());
-			temp.free();
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				ByteBuffer buffer = stack.malloc(instanceStride * (actualEnd - startInclusive + 1));
+				long ptr = MemoryUtil.memAddress(buffer);
+
+				for (int i = startInclusive; i <= actualEnd; i++) {
+					writer.write(ptr, instances.get(i));
+					ptr += instanceStride;
+				}
+
+				utb.writeSpan(startInclusive * instanceStride, buffer);
+			}
 		});
 	}
 
