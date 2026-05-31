@@ -124,7 +124,7 @@ public class MeshPool implements AutoCloseable {
 				baseVertex += mesh.vertexCount();
 			}
 
-			vbo.write(buffer);
+			vbo.write(buffer.position(byteIndex).flip());
 		}
 	}
 

@@ -8,7 +8,6 @@ import dev.engine_room.flywheel.api.event.EndClientResourceReloadEvent;
 import dev.engine_room.flywheel.api.event.ReloadLevelRendererEvent;
 import dev.engine_room.flywheel.backend.compile.FlwProgramsReloader;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.impl.task.FlwTaskExecutor;
 import dev.engine_room.flywheel.impl.visualization.VisualizationEventHandler;
 import dev.engine_room.flywheel.lib.model.baked.NeoForgePartialModel;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
@@ -55,7 +54,7 @@ public final class FlywheelNeoForge {
 	}
 
 	private static void registerImplEventListeners(IEventBus gameEventBus, IEventBus modEventBus) {
-		gameEventBus.addListener((ClientStoppingEvent e) -> FlwTaskExecutor.get().shutdown());
+		gameEventBus.addListener((ClientStoppingEvent e) -> BackendManagerImpl.onClientStopping());
 
 		gameEventBus.addListener((ReloadLevelRendererEvent e) -> BackendManagerImpl.onReloadLevelRenderer(e.level()));
 

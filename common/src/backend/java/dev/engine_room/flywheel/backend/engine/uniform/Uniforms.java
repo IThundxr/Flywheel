@@ -1,5 +1,7 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
+import org.jetbrains.annotations.ApiStatus.Internal;
+
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -39,8 +41,8 @@ public final class Uniforms {
 		}
 	}
 
-	// TODO b3d-ification: This needs to be hooked up to close these buffers on shutdown
-	private static void closeAll() {
+	@Internal
+	public static void closeAll() {
 		for (FlwUniform uniform : UNIFORMS) {
 			uniform.close();
 		}
