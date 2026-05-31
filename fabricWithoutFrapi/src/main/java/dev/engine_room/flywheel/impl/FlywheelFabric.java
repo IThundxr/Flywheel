@@ -14,6 +14,7 @@ import dev.engine_room.flywheel.lib.util.ResourceReloadHolder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.fabricmc.fabric.api.resource.v1.reloader.ResourceReloaderKeys;
@@ -41,6 +42,8 @@ public final class FlywheelFabric implements ClientModInitializer {
 	}
 
 	private static void setupImpl() {
+		ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> BackendManagerImpl.onClientStopping());
+
 		ReloadLevelRendererCallback.EVENT.register(BackendManagerImpl::onReloadLevelRenderer);
 
 		// This Fabric event runs slightly later than the Forge event Flywheel uses, but it shouldn't make a difference.

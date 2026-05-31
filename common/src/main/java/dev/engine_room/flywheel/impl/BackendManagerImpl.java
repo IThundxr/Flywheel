@@ -3,6 +3,8 @@ package dev.engine_room.flywheel.impl;
 import java.util.ArrayList;
 
 import dev.engine_room.flywheel.api.backend.Backend;
+import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
+import dev.engine_room.flywheel.impl.task.FlwTaskExecutor;
 import dev.engine_room.flywheel.impl.visualization.VisualizationManagerImpl;
 import dev.engine_room.flywheel.lib.backend.SimpleBackend;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
@@ -97,5 +99,11 @@ public final class BackendManagerImpl {
 	public static void onReloadLevelRenderer(ClientLevel level) {
 		chooseBackend();
 		VisualizationManagerImpl.reset(level);
+	}
+
+	public static void onClientStopping() {
+		VisualizationManagerImpl.resetAll();
+		FlwTaskExecutor.get().shutdown();
+		Uniforms.closeAll();
 	}
 }
