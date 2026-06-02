@@ -44,7 +44,7 @@ final class BlockStateModelBufferer {
 		long seed = state.getSeed(pos);
 
 		Minecraft minecraft = Minecraft.getInstance();
-		GameRenderState gameRenderState = minecraft.gameRenderer.getGameRenderState();
+		GameRenderState gameRenderState = minecraft.gameRenderer.gameRenderState();
 		BlockColors blockColors = minecraft.getBlockColors();
 
 		// See ModelBlockRenderer#tesselateBlock
@@ -83,7 +83,7 @@ final class BlockStateModelBufferer {
 
 		Minecraft minecraft = Minecraft.getInstance();
 		ModelManager modelManager = minecraft.getModelManager();
-		GameRenderState gameRenderState = minecraft.gameRenderer.getGameRenderState();
+		GameRenderState gameRenderState = minecraft.gameRenderer.gameRenderState();
 		boolean useAo = gameRenderState.optionsRenderState.ambientOcclusion;
 		BlockColors blockColors = minecraft.getBlockColors();
 

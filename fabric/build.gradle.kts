@@ -96,7 +96,7 @@ tasks.withType<ProcessResources>().configureEach {
 }
 
 loom {
-    accessWidenerPath = commonProject.file("src/main/resources/flywheel.classtweaker")
+    accessWidenerPath = file("src/main/resources/flywheel.classtweaker")
 }
 
 jarSets {

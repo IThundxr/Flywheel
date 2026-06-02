@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuFence;
-import com.mojang.blaze3d.opengl.GlFence;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
@@ -188,7 +188,8 @@ public class StagingBuffer {
 		dispatchComputeCopies();
 
 		transfers.reset();
-		fencedRegions.enqueue(new FencedRegion(new GlFence(), usedCapacity));
+		GpuFence fence = RenderSystem.getDevice().createCommandEncoder().createFence();
+		fencedRegions.enqueue(new FencedRegion(fence, usedCapacity));
 
 		usedCapacity = 0;
 		start = pos;

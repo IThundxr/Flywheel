@@ -75,8 +75,14 @@ open class SubprojectExtension(val project: Project) {
             maven("https://maven.parchmentmc.org") {
                 name = "ParchmentMC"
             }
-            maven("https://maven.tterrag.com/") {
-                name = "tterrag maven"
+            // TODO - Temp
+            // https://github.com/neoforged/NeoForge/pull/3198
+            maven("https://prmaven.neoforged.net/NeoForge/pr3198") {
+                name = "NeoForged Maven for PR #3198"
+                content {
+                    includeModule("net.neoforged", "neoforge")
+                    includeModule("net.neoforged", "testframework")
+                }
             }
             maven("https://www.cursemaven.com") {
                 name = "CurseMaven"
