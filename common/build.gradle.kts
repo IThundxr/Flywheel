@@ -16,7 +16,7 @@ val main = sourceSets.getByName("main")
 val vanillin = sourceSets.create("vanillin")
 
 loom {
-    accessWidenerPath = file("src/main/resources/flywheel.classtweaker")
+    accessWidenerPath = file("src/main/resources/flywheel-common.classtweaker")
 }
 
 transitiveSourceSets {

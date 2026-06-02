@@ -21,9 +21,8 @@ include("common")
 include("fabricWithoutFrapi")
 // TODO - Re-enable when FRAPI is ported
 //include("fabric")
-// TODO - Re-enable neoforge when they finally decide to port to 26.2
-//include("neoforge")
-//include("vanillinNeoForge")
+include("neoforge")
+include("vanillinNeoForge")
 include("vanillinFabric")
 
 dependencyResolutionManagement {
