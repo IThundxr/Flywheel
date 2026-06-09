@@ -39,7 +39,7 @@ public class MeshPool implements AutoCloseable {
 		vbo = new DynamicGpuBuffer(
 				"Flw MeshPool VBO",
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX,
-				1024 * 32 // 32 KB
+				1024 * 64 // 64 KB
 		);
 		indexPool = new IndexPool();
 	}
