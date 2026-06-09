@@ -52,7 +52,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		if (utb == null) {
 			needsFullWrite = true;
 			utb = new DynamicGpuBuffer(
-					"Flywheel InstancedInstancer UTB",
+					"Flw " + this + " UTB",
 					GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 					byteSize,
 					this::increaseSize
@@ -107,7 +107,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	private long increaseSize(long capacity) {
-		return Math.max(capacity + (long) instanceStride * 16, (long) (capacity * 1.6));
+		return capacity + instanceStride * 16L;
 	}
 
 	public boolean needsToGrow(int capacity) {

@@ -37,9 +37,9 @@ public class MeshPool implements AutoCloseable {
 		vertexView = FlwVertexFormats.createVertexView();
 		// TODO b3d-ification: Check if the default size needs to be bigger
 		vbo = new DynamicGpuBuffer(
-				"Flywheel MeshPool VBO",
+				"Flw MeshPool VBO",
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX,
-				1024 * 16 // 16 MB
+				1024 * 32 // 32 KB
 		);
 		indexPool = new IndexPool();
 	}

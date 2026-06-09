@@ -23,7 +23,7 @@ public class IndexPool implements AutoCloseable {
     public IndexPool() {
 		// TODO b3d-ification: check if we need a bigger buffer
 		ebo = new DynamicGpuBuffer(
-				"Flywheel IndexPool EBO",
+				"Flw IndexPool EBO",
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_INDEX,
 				1024 * 4 // 4 KB
 		);

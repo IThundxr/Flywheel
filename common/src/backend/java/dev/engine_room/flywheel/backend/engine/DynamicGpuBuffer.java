@@ -35,7 +35,7 @@ public class DynamicGpuBuffer implements AutoCloseable {
 	public void ensureCapacity(long neededSize) {
 		if (neededSize > capacity) {
 			long newCapacity = sizeIncreaseFunc.apply(neededSize);
-			FlwBackend.LOGGER.info("Resizing {}, capacity limit of {} reached during a single frame. New capacity will be {}.", this.label, this.capacity, newCapacity);
+			FlwBackend.LOGGER.info("Resizing {}, capacity limit of {} reached. New capacity will be {}.", this.label, this.capacity, newCapacity);
 
 			this.capacity = newCapacity;
 			RenderSystem.queueFencedTask(buffer::close);
@@ -77,6 +77,7 @@ public class DynamicGpuBuffer implements AutoCloseable {
 		result |= result >> 4;
 		result |= result >> 8;
 		result |= result >> 16;
+		result |= result >> 32;
 		return result + 1;
 	}
 }

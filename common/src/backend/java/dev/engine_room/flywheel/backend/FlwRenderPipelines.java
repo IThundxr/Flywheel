@@ -110,7 +110,6 @@ public class FlwRenderPipelines {
 			}
 
 			if (m.colorTargetState() != null) {
-				// TODO b3d-ification: Not sure if this is correct
 				if (oitMode == OitMode.OFF) {
 					builder.withColorTargetState(m.colorTargetState());
 				} else {

@@ -382,7 +382,6 @@ public class VisualizationManagerImpl implements VisualizationManager {
 		}
 	}
 
-	private record CrumblingBlockImpl(BlockPos pos, int progress,
-									  List<Instance> instances) implements dev.engine_room.flywheel.api.backend.Engine.CrumblingBlock {
+	private record CrumblingBlockImpl(BlockPos pos, int progress, List<Instance> instances) implements Engine.CrumblingBlock {
 	}
 }
