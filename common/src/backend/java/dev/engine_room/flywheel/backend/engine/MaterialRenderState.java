@@ -9,9 +9,10 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.datafixers.util.Pair;
 
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.backend.Samplers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
@@ -20,25 +21,6 @@ public final class MaterialRenderState {
 
 	private MaterialRenderState() {
 	}
-
-//	@Deprecated(forRemoval = true)
-//	public static void setup(Material material) {
-//		setupTexture(material);
-//		setupBackfaceCulling(material.backfaceCulling());
-//		setupPolygonOffset(material.polygonOffset());
-//		setupDepthTest(material.depthTest());
-//		setupTransparency(material.transparency());
-//		setupWriteMask(material.writeMask());
-//	}
-//
-//	@Deprecated(forRemoval = true)
-//	public static void setupOit(Material material) {
-//		setupTexture(material);
-//		setupBackfaceCulling(material.backfaceCulling());
-//		setupPolygonOffset(material.polygonOffset());
-//		setupDepthTest(material.depthTest());
-//		setupWriteMask(material.writeMask());
-//	}
 
 	public static void setupTexture(RenderPass renderPass, Material material) {
 		AbstractTexture texture = Minecraft.getInstance()
@@ -54,8 +36,11 @@ public final class MaterialRenderState {
 		renderPass.bindTexture("flw_diffuseTex", texture.getTextureView(), sampler);
 	}
 
+	// Using setupTexture is better, but currently B3D and VK don't agree as getTexture can create a memory barrier
+	// in a renderpass, which isn't supported at the moment
+	// See: https://discord.com/channels/1138536747932864532/1424838212702044190/1513844934283755641
 	@Deprecated(forRemoval = true)
-	private static void setupTexture(Material material) {
+	public static Pair<GpuTextureView, GpuSampler> createTextureView(Material material) {
 		AbstractTexture texture = Minecraft.getInstance()
 				.getTextureManager()
 				.getTexture(material.texture());
@@ -66,8 +51,7 @@ public final class MaterialRenderState {
 		GpuSampler sampler = RenderSystem.getSamplerCache()
 				.getSampler(defaultSampler.getAddressModeU(), defaultSampler.getAddressModeV(), filterMode, filterMode, material.mipmap());
 
-		/// TODO 1.21.11: should cubemap textures be allowed?
-		TextureBinder.bind(Samplers.DIFFUSE.number, texture.getTextureView(), sampler);
+		return Pair.of(texture.getTextureView(), sampler);
 	}
 
 	public static boolean materialEquals(Material lhs, Material rhs) {

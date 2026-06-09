@@ -22,8 +22,9 @@ public final class FlwImpl {
 		// backend
 		FlwBackend.init(FlwConfig.INSTANCE.backendConfig());
 
-		// TODO - Temp
-		SharedConstants.IS_RUNNING_IN_IDE = true;
+		if (Boolean.getBoolean("flw.devEnv")) {
+			SharedConstants.IS_RUNNING_IN_IDE = true;
+		}
 	}
 
 	public static void freezeRegistries() {

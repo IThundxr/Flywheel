@@ -21,12 +21,12 @@ public class InstancedLight implements AutoCloseable {
 	// TODO b3d-ification: Check if the default sizes should be higher
 	public InstancedLight() {
 		lut = new DynamicGpuBuffer(
-				"Flywheel Instanced Light LUT UTB",
+				"Flw Instanced Lighting LUT UTB",
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 				1024 * 4 // 4 KB
 		);
 		sections = new DynamicGpuBuffer(
-				"Flywheel Instanced Light Sections UTB",
+				"Flw Instanced Lighting Sections UTB",
 				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
 				1024 * 4 // 4 KB
 		);

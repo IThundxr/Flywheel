@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
 
 public final class BackendManagerImpl {
 	public static final Backend OFF_BACKEND = SimpleBackend.builder()
-			.engineFactory(level -> {
+			.engineFactory(_ -> {
 				throw new UnsupportedOperationException("Cannot create engine when backend is off.");
 			})
 			.supported(() -> true)

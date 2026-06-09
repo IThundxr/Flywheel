@@ -17,6 +17,10 @@ public final class MoreMath {
 		return (size + 15) & ~15;
 	}
 
+	public static long align16Long(long size) {
+		return (size + 15) & ~15;
+	}
+
 	public static int align4(int size) {
 		return (size + 3) & ~3;
 	}

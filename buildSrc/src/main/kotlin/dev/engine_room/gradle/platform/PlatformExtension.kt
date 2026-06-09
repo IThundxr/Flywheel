@@ -35,6 +35,7 @@ open class PlatformExtension(val project: Project) {
                 jvmArguments.add("-XX:+AllowEnhancedClassRedefinition")
 
                 // Turn on our own debug flags
+                systemProperties.put("flw.devEnv", "true")
                 systemProperties.put("flw.dumpShaderSource", "true")
                 systemProperties.put("flw.debugMemorySafety", "true")
 

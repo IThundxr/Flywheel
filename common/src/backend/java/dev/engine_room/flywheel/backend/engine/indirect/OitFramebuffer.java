@@ -27,17 +27,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 
 public class OitFramebuffer implements AutoCloseable {
-	public static final Optional<Vector4fc> CLEAR_TO_ZERO = Optional.of(new Vector4f(0, 0, 0, 0));
+	private static final Optional<Vector4fc> CLEAR_TO_ZERO = Optional.of(new Vector4f(0, 0, 0, 0));
+	private static final CommandEncoder COMMAND_ENCODER = RenderSystem.getDevice().createCommandEncoder();
 
 	private final OitPrograms programs;
-	// TODO b3d-ification: Maybe this should just be static?
-	private final CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
 	@Nullable
-	public GpuTextureView depthBounds = null;
-	public final GpuTextureView[] coefficients = new GpuTextureView[4];
+	private GpuTextureView depthBounds = null;
+	private final GpuTextureView[] coefficients = new GpuTextureView[4];
 	@Nullable
-	public GpuTextureView accumulate = null;
+	private GpuTextureView accumulate = null;
 
 	private int lastWidth = -1;
 	private int lastHeight = -1;
@@ -52,7 +51,7 @@ public class OitFramebuffer implements AutoCloseable {
 	public RenderPass createDepthRangePass() {
 		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
 		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
-		return commandEncoder.createRenderPass(
+		return COMMAND_ENCODER.createRenderPass(
 				() -> "Flw OIT Depth Range",
 				depthBounds, Optional.of(new Vector4f(-far, -far, 0, 0)),
 				renderTarget.getDepthTextureView(), OptionalDouble.empty()
@@ -72,7 +71,7 @@ public class OitFramebuffer implements AutoCloseable {
 			descriptor.withColorAttachment(view, CLEAR_TO_ZERO);
 		}
 
-		RenderPass renderPass = commandEncoder.createRenderPass(descriptor);
+		RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor);
 
 		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
@@ -92,7 +91,7 @@ public class OitFramebuffer implements AutoCloseable {
 				.withUnusedColorAttachment()
 				.withDepthAttachment(renderTarget.getDepthTextureView());
 
-		try (RenderPass renderPass = commandEncoder.createRenderPass(descriptor)) {
+		try (RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor)) {
 			Uniforms.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
@@ -114,7 +113,7 @@ public class OitFramebuffer implements AutoCloseable {
 	 */
 	public RenderPass createAccumulatePass() {
 		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
-		return commandEncoder.createRenderPass(
+		return COMMAND_ENCODER.createRenderPass(
 				() -> "Flw OIT Accumulate",
 				accumulate, CLEAR_TO_ZERO,
 				renderTarget.getDepthTextureView(), OptionalDouble.empty()
@@ -132,7 +131,7 @@ public class OitFramebuffer implements AutoCloseable {
 			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		}
 
-		try (RenderPass renderPass = commandEncoder.createRenderPass(
+		try (RenderPass renderPass = COMMAND_ENCODER.createRenderPass(
 				() -> "Flw OIT Composite",
 				renderTarget.getColorTextureView(), Optional.empty(),
 				renderTarget.getDepthTextureView(), OptionalDouble.empty()
@@ -189,7 +188,7 @@ public class OitFramebuffer implements AutoCloseable {
 		GpuDevice device = RenderSystem.getDevice();
 
 		depthBounds = device.createTextureView(device.createTexture(
-				"Flw OIT Depth Bounds",
+				"Flw OIT FBO Depth Bounds",
 				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 				GpuFormat.RG32_FLOAT,
 				width,
@@ -200,7 +199,7 @@ public class OitFramebuffer implements AutoCloseable {
 
 		for (int i = 0; i < coefficients.length; i++) {
 			coefficients[i] = device.createTextureView(device.createTexture(
-					"Flw OIT Coefficients #" + i,
+					"Flw OIT FBO Coefficients #" + i,
 					GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 					GpuFormat.RGBA16_FLOAT,
 					width,
@@ -211,7 +210,7 @@ public class OitFramebuffer implements AutoCloseable {
 		}
 
 		accumulate = device.createTextureView(device.createTexture(
-				"Flw OIT Accumulate",
+				"Flw OIT FBO Accumulate",
 				GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT,
 				GpuFormat.RGBA16_FLOAT,
 				width,

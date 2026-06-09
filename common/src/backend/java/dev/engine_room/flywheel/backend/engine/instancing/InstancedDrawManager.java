@@ -19,7 +19,6 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
@@ -122,27 +121,27 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
-		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			setupPass(renderPass);
-			submitDraws(renderPass);
+			submitDraws(renderPass, OitMode.OFF);
 		}
 
 		if (!oitDraws.isEmpty()) {
 			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
 				setupPass(renderPass);
-				submitOitDraws(renderPass, PipelineCompiler.OitMode.DEPTH_RANGE);
+				submitDraws(renderPass, OitMode.DEPTH_RANGE);
 			}
 
 			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
 				setupPass(renderPass);
-				submitOitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
+				submitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
 			}
 
 			oitFramebuffer.renderDepthFromTransmittance();
 
 			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
 				setupPass(renderPass);
-				submitOitDraws(renderPass, OitMode.EVALUATE);
+				submitDraws(renderPass, OitMode.EVALUATE);
 			}
 
 			oitFramebuffer.composite();
@@ -161,29 +160,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		light.bindToRenderPass(renderPass);
 	}
 
-	private void submitDraws(RenderPass renderPass) {
-		for (var drawCall : draws) {
-			var material = drawCall.material();
-			var groupKey = drawCall.groupKey;
-			var environment = groupKey.environment();
-
-			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
-			renderPass.setPipeline(pipeline);
-
-			environment.setupDraw(renderPass);
-			uploadMaterialUniform(renderPass, material);
-			if (!DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
-				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
-			}
-
-			MaterialRenderState.setupTexture(renderPass, material);
-
-			drawCall.render(renderPass);
-		}
-	}
-
-	private void submitOitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode) {
-		for (var drawCall : oitDraws) {
+	private void submitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode) {
+		var drawCalls = mode == OitMode.OFF ? draws : oitDraws;
+		for (var drawCall : drawCalls) {
 			var material = drawCall.material();
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
@@ -193,9 +172,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 			environment.setupDraw(renderPass);
 			uploadMaterialUniform(renderPass, material);
-			new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			if (!DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
+				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			}
 
-			MaterialRenderState.setupTexture(renderPass, material);
+			renderPass.bindTexture("flw_diffuseTex", drawCall.getTextureView(), drawCall.getTextureSampler());
 
 			drawCall.render(renderPass);
 		}
@@ -203,8 +184,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 	@Override
 	public void delete() {
-		instancers.values()
-				.forEach(InstancedInstancer::delete);
+		instancers.values().forEach(InstancedInstancer::delete);
 
 		allDraws.forEach(InstancedDraw::delete);
 		allDraws.clear();
@@ -268,7 +248,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
-		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flywheel Instanced Draw - Crumbling", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw - Crumbling", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			Uniforms.bindToRenderPass(renderPass);
 			meshPool.bindToRenderPass(renderPass);
 
@@ -303,7 +283,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 							uploadMaterialUniform(renderPass, crumblingMaterial);
 
-							MaterialRenderState.setupTexture(renderPass, crumblingMaterial);
+							renderPass.bindTexture("flw_diffuseTex", draw.getTextureView(), draw.getTextureSampler());
 
 							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
 								draw.renderOne(renderPass, index);
