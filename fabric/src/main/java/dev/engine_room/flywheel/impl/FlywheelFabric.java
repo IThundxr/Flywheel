@@ -6,11 +6,9 @@ import dev.engine_room.flywheel.api.Flywheel;
 import dev.engine_room.flywheel.api.event.EndClientResourceReloadCallback;
 import dev.engine_room.flywheel.api.event.ReloadLevelRendererCallback;
 import dev.engine_room.flywheel.backend.compile.FlwReloadListener;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.impl.mixin.fabric.ArgumentTypeInfosAccessor;
 import dev.engine_room.flywheel.impl.visualization.VisualizationEventHandler;
 import dev.engine_room.flywheel.lib.model.baked.FabricPartialModel;
-import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import dev.engine_room.flywheel.lib.util.RendererReloadCache;
 import dev.engine_room.flywheel.lib.util.ResourceReloadHolder;
 import net.fabricmc.api.ClientModInitializer;
@@ -86,8 +84,6 @@ public final class FlywheelFabric implements ClientModInitializer {
 	}
 
 	private static void setupBackend() {
-		ReloadLevelRendererCallback.EVENT.register(level -> Uniforms.onReloadLevelRenderer());
-
 		ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(FlwReloadListener.ID, FlwReloadListener.INSTANCE);
 	}
 

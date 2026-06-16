@@ -132,7 +132,8 @@ neoForge {
 
 dependencies {
     compileOnly(libs.sodium.neoforge.api)
-    compileOnly("maven.modrinth:iris:${libs.versions.iris.get()}-neoforge")
+    // TODO: Enable when iris is ported
+    //compileOnly("maven.modrinth:iris:${libs.versions.iris.get()}-neoforge")
 
     "forApi"(project(path = common, configuration = "apiClasses"))
     "forLib"(project(path = common, configuration = "libClasses"))

@@ -18,9 +18,7 @@ plugins {
 rootProject.name = "Flywheel"
 
 include("common")
-include("fabricWithoutFrapi")
-// TODO - Re-enable when FRAPI is ported
-//include("fabric")
+include("fabric")
 include("neoforge")
 include("vanillinNeoForge")
 include("vanillinFabric")
