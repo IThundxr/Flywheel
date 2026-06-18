@@ -20,6 +20,7 @@ import com.mojang.blaze3d.platform.CompareOp;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
+import dev.engine_room.flywheel.lib.material.LightShaders;
 
 public class FlwRenderPipelines {
 	private static final HashMap<CacheKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
@@ -32,6 +33,9 @@ public class FlwRenderPipelines {
 			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
 			.withBindGroupLayout(FlwBindGroupLayouts.BASE_SAMPLERS)
 			.withBindGroupLayout(FlwBindGroupLayouts.UNIFORMS)
+			.buildSnippet();
+
+	private static final RenderPipeline.Snippet INSTANCED_LIGHTING = RenderPipeline.builder()
 			.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS)
 			.buildSnippet();
 
@@ -98,6 +102,10 @@ public class FlwRenderPipelines {
 			Snippet[] snippets = new Snippet[] { BASE_VERTEX_BINDING, BASE_TOPOLOGY_AND_BIND_GROUPS };
 			if (oitMode.snippet != null) {
 				snippets = ArrayUtils.add(snippets, oitMode.snippet);
+			}
+
+			if (material.light() != LightShaders.SMOOTH_WHEN_EMBEDDED) {
+				snippets = ArrayUtils.add(snippets, INSTANCED_LIGHTING);
 			}
 
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
