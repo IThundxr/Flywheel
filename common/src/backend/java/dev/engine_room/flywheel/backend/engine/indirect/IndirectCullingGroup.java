@@ -7,7 +7,7 @@ import java.util.List;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;

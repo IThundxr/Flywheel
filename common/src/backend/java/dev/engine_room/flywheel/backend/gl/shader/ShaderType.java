@@ -2,7 +2,7 @@ package dev.engine_room.flywheel.backend.gl.shader;
 
 import org.lwjgl.opengl.GL43;
 
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 public enum ShaderType {
 	VERTEX("vertex", "VERTEX_SHADER", "vert", GlConst.GL_VERTEX_SHADER),

@@ -7,8 +7,8 @@ import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
 
-import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.commands.GpuFence;
 
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;

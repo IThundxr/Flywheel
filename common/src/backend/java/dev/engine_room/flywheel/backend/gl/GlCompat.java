@@ -11,8 +11,8 @@ import org.lwjgl.opengl.KHRShaderSubgroup;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
 import dev.engine_room.flywheel.backend.compile.core.Compilation;

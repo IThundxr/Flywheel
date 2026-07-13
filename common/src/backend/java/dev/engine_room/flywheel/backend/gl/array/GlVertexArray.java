@@ -3,8 +3,8 @@ package dev.engine_room.flywheel.backend.gl.array;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33C;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;

@@ -6,9 +6,9 @@ import java.util.BitSet;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.Checks;
 
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import net.minecraft.util.Util;

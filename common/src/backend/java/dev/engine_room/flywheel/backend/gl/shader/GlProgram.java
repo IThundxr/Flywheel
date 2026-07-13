@@ -7,8 +7,8 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.slf4j.Logger;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;

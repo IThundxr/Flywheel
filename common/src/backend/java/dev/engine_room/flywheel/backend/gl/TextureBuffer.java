@@ -2,7 +2,7 @@ package dev.engine_room.flywheel.backend.gl;
 
 import org.lwjgl.opengl.GL32;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 public class TextureBuffer extends GlObject {
 	public static final int MAX_TEXELS = GlStateManager._getInteger(GL32.GL_MAX_TEXTURE_BUFFER_SIZE);
