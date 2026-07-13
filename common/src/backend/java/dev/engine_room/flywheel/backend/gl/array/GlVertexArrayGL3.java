@@ -2,7 +2,6 @@ package dev.engine_room.flywheel.backend.gl.array;
 
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 
 import org.lwjgl.opengl.ARBInstancedArrays;
 import org.lwjgl.opengl.GL33C;
@@ -10,6 +9,8 @@ import org.lwjgl.system.Checks;
 
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
@@ -18,7 +19,7 @@ import net.minecraft.util.Util;
 public abstract class GlVertexArrayGL3 extends GlVertexArray {
 	private final BitSet attributeDirty = new BitSet(MAX_ATTRIBS);
 	private final int[] attributeOffsets = new int[MAX_ATTRIBS];
-	private final VertexAttribute[] attributes = new VertexAttribute[MAX_ATTRIBS];
+	private final VertexFormatElement[] vertexFormatElements = new VertexFormatElement[MAX_ATTRIBS];
 	private final int[] attributeBindings = Util.make(new int[MAX_ATTRIBS], a -> Arrays.fill(a, -1));
 	private final int[] bindingBuffers = new int[MAX_ATTRIB_BINDINGS];
 	private final long[] bindingOffsets = new long[MAX_ATTRIB_BINDINGS];
@@ -54,6 +55,7 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 			}
 		}
 	}
+
 	@Override
 	public void setBindingDivisor(int bindingIndex, int divisor) {
 		if (bindingDivisors[bindingIndex] != divisor) {
@@ -62,19 +64,17 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 	}
 
 	@Override
-	public void bindAttributes(int bindingIndex, int startAttribIndex, List<VertexAttribute> vertexAttributes) {
+	public void bindAttributes(final int bindingIndex, final int startAttribIndex, VertexFormat vertexFormat) {
 		int attribIndex = startAttribIndex;
-		int offset = 0;
 
-		for (VertexAttribute attribute : vertexAttributes) {
+		for (VertexFormatElement element : vertexFormat.getElements()) {
 			attributeBindings[attribIndex] = bindingIndex;
-			attributes[attribIndex] = attribute;
-			attributeOffsets[attribIndex] = offset;
+			vertexFormatElements[attribIndex] = element;
+			attributeOffsets[attribIndex] = element.offset();
 
 			attributeDirty.set(attribIndex);
 
 			attribIndex++;
-			offset += attribute.byteWidth();
 		}
 	}
 
@@ -99,9 +99,9 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 
 	private void updateAttribute(int attribIndex) {
 		int bindingIndex = attributeBindings[attribIndex];
-		var attribute = attributes[attribIndex];
+		var element = vertexFormatElements[attribIndex];
 
-		if (bindingIndex == -1 || attribute == null) {
+		if (bindingIndex == -1 || element == null) {
 			return;
 		}
 
@@ -111,10 +111,16 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 		long offset = bindingOffsets[bindingIndex] + attributeOffsets[attribIndex];
 		int stride = bindingStrides[bindingIndex];
 
-		if (attribute instanceof VertexAttribute.Float f) {
-			GlStateManager._vertexAttribPointer(attribIndex, f.size(), GlConst.toGl(f.type()), f.normalized(), stride, offset);
-		} else if (attribute instanceof VertexAttribute.Int vi) {
-			GlStateManager._vertexAttribIPointer(attribIndex, vi.size(), GlConst.toGl(vi.type()), stride, offset);
+		int glExternalId = GlConst.toGlExternalId(element.format());
+		int glType = GlConst.toGlType(element.format());
+		boolean isIntegerFormat = GlConst.isGlFormatInteger(glExternalId);
+		boolean isNormalizedFormat = GlConst.isFormatNormalized(element.format());
+		int channelCount = GlConst.glFormatChannelCount(glExternalId);
+
+		if (isIntegerFormat) {
+			GlStateManager._vertexAttribIPointer(attribIndex, channelCount, glType, stride, offset);
+		} else {
+			GlStateManager._vertexAttribPointer(attribIndex, channelCount, glType, isNormalizedFormat, stride, offset);
 		}
 
 		int divisor = bindingDivisors[bindingIndex];

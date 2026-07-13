@@ -2,13 +2,14 @@ package dev.engine_room.flywheel.backend.gl.array;
 
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.Checks;
 
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
@@ -18,7 +19,7 @@ import net.minecraft.util.Util;
 public class GlVertexArraySeparateAttributes extends GlVertexArray {
 	public static final boolean SUPPORTED = isSupported();
 	private final BitSet attributeEnabled = new BitSet(MAX_ATTRIBS);
-	private final VertexAttribute[] attributes = new VertexAttribute[MAX_ATTRIBS];
+	private final VertexFormatElement[] vertexFormatElements = new VertexFormatElement[MAX_ATTRIBS];
 	private final int[] attributeBindings = Util.make(new int[MAX_ATTRIBS], a -> Arrays.fill(a, -1));
 	private final int[] bindingBuffers = new int[MAX_ATTRIB_BINDINGS];
 	private final long[] bindingOffsets = new long[MAX_ATTRIB_BINDINGS];
@@ -51,24 +52,30 @@ public class GlVertexArraySeparateAttributes extends GlVertexArray {
 	}
 
 	@Override
-	public void bindAttributes(final int bindingIndex, final int startAttribIndex, List<VertexAttribute> vertexAttributes) {
+	public void bindAttributes(final int bindingIndex, final int startAttribIndex, VertexFormat vertexFormat) {
 		GlStateTracker.bindVao(handle());
 		int attribIndex = startAttribIndex;
-		int offset = 0;
 
-		for (var attribute : vertexAttributes) {
+		for (VertexFormatElement element : vertexFormat.getElements()) {
 			if (!attributeEnabled.get(attribIndex)) {
 				GlStateManager._enableVertexAttribArray(attribIndex);
 				attributeEnabled.set(attribIndex);
 			}
 
-			if (!attribute.equals(attributes[attribIndex])) {
-				if (attribute instanceof VertexAttribute.Float f) {
-					GL43C.glVertexAttribFormat(attribIndex, f.size(), GlConst.toGl(f.type()), f.normalized(), offset);
-				} else if (attribute instanceof VertexAttribute.Int vi) {
-					GL43C.glVertexAttribIFormat(attribIndex, vi.size(), GlConst.toGl(vi.type()), offset);
+			if (!element.equals(vertexFormatElements[attribIndex])) {
+				int glExternalId = GlConst.toGlExternalId(element.format());
+				int glType = GlConst.toGlType(element.format());
+				boolean isIntegerFormat = GlConst.isGlFormatInteger(glExternalId);
+				boolean isNormalizedFormat = GlConst.isFormatNormalized(element.format());
+				int channelCount = GlConst.glFormatChannelCount(glExternalId);
+
+				if (isIntegerFormat) {
+					GL43C.glVertexAttribIFormat(attribIndex, channelCount, glType, element.offset());
+				} else {
+					GL43C.glVertexAttribFormat(attribIndex, channelCount, glType, isNormalizedFormat, element.offset());
 				}
-				attributes[attribIndex] = attribute;
+
+				vertexFormatElements[attribIndex] = element;
 			}
 
 			if (attributeBindings[attribIndex] != bindingIndex) {
@@ -77,7 +84,6 @@ public class GlVertexArraySeparateAttributes extends GlVertexArray {
 			}
 
 			attribIndex++;
-			offset += attribute.byteWidth();
 		}
 	}
 

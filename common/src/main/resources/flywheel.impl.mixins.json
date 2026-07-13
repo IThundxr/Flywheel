@@ -9,6 +9,7 @@
     "EntityRendererAccessor",
     "EntityTypeMixin",
     "GameRendererMixin",
+    "LevelExtractorMixin",
     "LevelMixin",
     "LevelRendererMixin",
     "MinecraftMixin",
@@ -17,7 +18,7 @@
     "fix.FixFabulousDepthMixin",
     "visualmanage.BlockEntityMixin",
     "visualmanage.LevelChunkMixin",
-    "visualmanage.LevelRendererMixin",
+    "visualmanage.LevelExtractorMixin",
     "visualmanage.SectionCompilerMixin"
   ],
   "injectors": {

@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.api.visualization;
 
-import java.util.SortedSet;
+import java.util.List;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -8,9 +8,9 @@ import org.jspecify.annotations.Nullable;
 import dev.engine_room.flywheel.api.backend.RenderContext;
 import dev.engine_room.flywheel.api.internal.FlwApiLink;
 import dev.engine_room.flywheel.api.visual.Effect;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.client.renderer.state.level.BlockBreakingRenderState;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.Vec3i;
-import net.minecraft.server.level.BlockDestructionProgress;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -50,29 +50,28 @@ public interface VisualizationManager {
 		/**
 		 * Prepare visuals for render.
 		 *
-		 * <p>Guaranteed to be called before {@link #afterEntities} and {@link #beforeCrumbling}.
+		 * <p>Guaranteed to be called before {@link #beforeSolids} and {@link #beforeTranslucent}.
 		 * <br>Guaranteed to be called after the render thread has processed all light updates.
 		 * <br>The caller is otherwise free to choose an invocation site, but it is recommended to call
 		 * this as early as possible to give the VisualizationManager time to process things off-thread.
 		 */
 		void onStartLevelRender(RenderContext ctx);
 
-		// TODO 1.21.11: update method name and doc
 		/**
 		 * Render instances.
 		 *
-		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and before {@link #beforeCrumbling}.
+		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and before {@link #beforeTranslucent}.
 		 * <br>The caller is otherwise free to choose an invocation site, but it is recommended to call
 		 * this between rendering entities and block entities.
 		 */
-		void afterEntities(RenderContext ctx);
+		void beforeSolids(RenderContext ctx);
 
 		/**
 		 * Render crumbling block entities.
 		 *
-		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and {@link #afterEntities}
-		 * @param destructionProgress The destruction progress map from {@link net.minecraft.client.renderer.LevelRenderer LevelRenderer}.
+		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and {@link #beforeSolids}
+		 * @param blockBreakingRenderStates The destruction render states list from {@link LevelRenderState levelRenderState}..
 		 */
-		void beforeCrumbling(RenderContext ctx, Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress);
+		void beforeTranslucent(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates);
 	}
 }
