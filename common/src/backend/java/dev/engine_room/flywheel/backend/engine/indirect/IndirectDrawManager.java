@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
+
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
@@ -252,7 +254,8 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 			}
 
 			for (var progressEntry : byProgress.int2ObjectEntrySet()) {
-				Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
+				// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
+				Identifier crumblingTextureId = ModelBakeryAccessor.flywheel$getBREAKING_LOCATIONS().get(progressEntry.getIntKey());
 				GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
 				TextureBinder.bind(Samplers.CRUMBLING.number, crumblingTextureId, crumblingTextureSampler);
 

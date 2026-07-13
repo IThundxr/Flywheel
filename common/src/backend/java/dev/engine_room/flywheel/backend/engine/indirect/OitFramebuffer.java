@@ -51,15 +51,7 @@ public class OitFramebuffer {
 	 * Set up the framebuffer.
 	 */
 	public void prepare() {
-		RenderTarget renderTarget;
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.gameRenderer.gameRenderState().useShaderTransparency()) {
-			renderTarget = mc.levelRenderer.itemEntityTarget();
-
-			renderTarget.copyDepthFrom(mc.gameRenderer.mainRenderTarget());
-		} else {
-			renderTarget = mc.gameRenderer.mainRenderTarget();
-		}
+		RenderTarget renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
 		maybeResizeFBO(renderTarget.width, renderTarget.height);
 
@@ -176,12 +168,8 @@ public class OitFramebuffer {
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.gameRenderer.gameRenderState().useShaderTransparency()) {
-			bindRenderTarget(mc.levelRenderer.itemEntityTarget());
-		} else {
-			bindRenderTarget(mc.gameRenderer.mainRenderTarget());
-		}
+		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+		bindRenderTarget(mainRenderTarget);
 
 		// The composite shader writes out the closest depth to gl_FragDepth.
 		// depthMask = true: OIT stuff renders on top of other transparent stuff.
@@ -209,7 +197,7 @@ public class OitFramebuffer {
 
 		drawFullscreenQuad();
 
-		bindRenderTarget(mc.gameRenderer.mainRenderTarget());
+		bindRenderTarget(mainRenderTarget);
 	}
 
 	private static void bindRenderTarget(RenderTarget target) {
