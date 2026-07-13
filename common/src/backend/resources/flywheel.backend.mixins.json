@@ -13,6 +13,7 @@
     "GlStateManagerMixin",
     "GpuDeviceAccessor",
     "LightingMixin",
+    "ModelBakeryAccessor",
     "OptionsMixin",
     "RenderSystemMixin",
     "light.LayerLightSectionStorageAccessor",

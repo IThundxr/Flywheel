@@ -79,6 +79,15 @@ public class FabricMeshEmitter extends MeshEmitter {
 	}
 
 	@Override
+	public VertexConsumer setUv3(float u, float v) {
+		BufferBuilder bufferBuilder = getBuffer(shade, ao);
+		if (bufferBuilder != null) {
+			bufferBuilder.setUv3(u, v);
+		}
+		return this;
+	}
+
+	@Override
 	public VertexConsumer setNormal(float x, float y, float z) {
 		BufferBuilder bufferBuilder = getBuffer(shade, ao);
 		if (bufferBuilder != null) {

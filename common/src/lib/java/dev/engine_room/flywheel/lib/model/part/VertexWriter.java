@@ -77,6 +77,13 @@ class VertexWriter implements VertexConsumer {
 		return this;
 	}
 
+	// TODO 26.3: Make sure ignoring this is correct
+	@Override
+	public VertexConsumer setUv3(float u, float v) {
+		// ignore enchantment glint
+		return this;
+	}
+
 	@Override
 	public VertexConsumer setNormal(float x, float y, float z) {
 		if (!filledNormal) {

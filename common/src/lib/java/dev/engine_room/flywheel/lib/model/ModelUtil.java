@@ -78,6 +78,11 @@ public final class ModelUtil {
 
 	@Nullable
 	public static Material getItemMaterial(RenderType renderType) {
+		// TODO 26.3: Port this
+		if (true) {
+			throw new UnsupportedOperationException("Not ported yet");
+		}
+
 		if (renderType == Sheets.cutoutItemSheet()) {
 			return Materials.CUTOUT_BLOCK;
 		}
@@ -90,12 +95,13 @@ public final class ModelUtil {
 			return Materials.TRANSLUCENT_ITEM_ENTITY_ITEM;
 		}
 
-		if (renderType == RenderTypes.glint() || renderType == RenderTypes.glintTranslucent()) {
-			return Materials.GLINT;
-		}
-		if (renderType == RenderTypes.entityGlint()) {
-			return Materials.GLINT_ENTITY;
-		}
+		// TODO 26.3: Port this
+//		if (renderType == RenderTypes.glint() || renderType == RenderTypes.glintTranslucent()) {
+//			return Materials.GLINT;
+//		}
+//		if (renderType == RenderTypes.entityGlint()) {
+//			return Materials.GLINT_ENTITY;
+//		}
 		return null;
 	}
 

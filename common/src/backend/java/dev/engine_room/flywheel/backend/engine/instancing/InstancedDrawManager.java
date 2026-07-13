@@ -32,6 +32,7 @@ import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.gl.TextureBuffer;
 import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.ModelBakery;
@@ -277,7 +278,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			GroupKey<?> shader = groupEntry.getKey();
 
 			for (var progressEntry : byProgress.int2ObjectEntrySet()) {
-				Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
+				// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
+				Identifier crumblingTextureId = ModelBakeryAccessor.flywheel$getBREAKING_LOCATIONS().get(progressEntry.getIntKey());
 				GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
 				TextureBinder.bind(Samplers.CRUMBLING.number, crumblingTextureId, crumblingTextureSampler);
 
