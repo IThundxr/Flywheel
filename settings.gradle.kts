@@ -16,6 +16,7 @@ rootDir.walkTopDown()
     .filter { it.isDirectory }
     .filter { it != rootDir }
     .filter { it.name != "buildSrc" && it.name != "build-logic" }
+    .filter { it.name != "neoforge" } // TODO: Enable neoforge when it supports 26.3
     .filter { it.resolve("build.gradle").exists() || it.resolve("build.gradle.kts").exists() }
     .forEach {
         val relativePath = it.toRelativeString(rootDir)
