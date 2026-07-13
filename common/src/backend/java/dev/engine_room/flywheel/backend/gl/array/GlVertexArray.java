@@ -1,11 +1,10 @@
 package dev.engine_room.flywheel.backend.gl.array;
 
-import java.util.List;
-
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
@@ -36,7 +35,7 @@ public abstract class GlVertexArray extends GlObject {
 
 	public abstract void setBindingDivisor(int bindingIndex, int divisor);
 
-	public abstract void bindAttributes(int bindingIndex, int startAttribIndex, List<VertexAttribute> vertexAttributes);
+	public abstract void bindAttributes(final int bindingIndex, final int startAttribIndex, VertexFormat vertexFormat);
 
 	public abstract void setElementBuffer(int ebo);
 

@@ -12,7 +12,6 @@
     "GlStateManagerAccessor",
     "GlStateManagerMixin",
     "GpuDeviceAccessor",
-    "LevelRendererAccessor",
     "LightingMixin",
     "OptionsMixin",
     "RenderSystemMixin",

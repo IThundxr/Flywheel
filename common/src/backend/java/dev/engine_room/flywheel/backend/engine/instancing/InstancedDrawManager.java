@@ -123,7 +123,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		TextureBinder.bindLightAndOverlay();
 		light.bind();
 
-		TextureBinder.bindRenderTarget(Minecraft.getInstance().getMainRenderTarget());
+		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 
 
 		submitDraws();
@@ -269,7 +269,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		vao.bindForDraw();
 
 		TextureBinder.bindLightAndOverlay();
-		TextureBinder.bindRenderTarget(Minecraft.getInstance().getMainRenderTarget());
+		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 
 		for (var groupEntry : byType.entrySet()) {
 			var byProgress = groupEntry.getValue();
@@ -306,7 +306,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	@Override
 	public void triggerFallback() {
 		InstancingPrograms.kill();
-		Minecraft.getInstance().levelRenderer.allChanged();
+		Minecraft.getInstance().levelExtractor.allChanged();
 	}
 
 	@Override

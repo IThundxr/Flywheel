@@ -2,12 +2,10 @@ package dev.engine_room.flywheel.backend.engine;
 
 import java.util.BitSet;
 
-import dev.engine_room.flywheel.api.model.Model;
-import dev.engine_room.flywheel.lib.model.LineModelBuilder;
-
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
+import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.api.task.Plan;
 import dev.engine_room.flywheel.api.visual.Effect;
 import dev.engine_room.flywheel.api.visual.EffectVisual;
@@ -19,6 +17,7 @@ import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
 import dev.engine_room.flywheel.lib.instance.InstanceTypes;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.math.MoreMath;
+import dev.engine_room.flywheel.lib.model.LineModelBuilder;
 import dev.engine_room.flywheel.lib.task.SimplePlan;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
 import dev.engine_room.flywheel.lib.visual.util.InstanceRecycler;

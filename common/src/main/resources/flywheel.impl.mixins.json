@@ -9,6 +9,7 @@
     "EntityRendererAccessor",
     "EntityTypeMixin",
     "GameRendererMixin",
+    "LevelExtractorMixin",
     "LevelMixin",
     "LevelRendererMixin",
     "MinecraftMixin",
@@ -16,7 +17,7 @@
     "PoseStackMixin",
     "visualmanage.BlockEntityMixin",
     "visualmanage.LevelChunkMixin",
-    "visualmanage.LevelRendererMixin",
+    "visualmanage.LevelExtractorMixin",
     "visualmanage.SectionCompilerMixin"
   ],
   "injectors": {

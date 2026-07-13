@@ -1,5 +1,6 @@
 package dev.engine_room.flywheel.impl.mixin.visualmanage;
 
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -8,15 +9,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.extract.LevelExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-@Mixin(LevelRenderer.class)
-abstract class LevelRendererMixin {
+@Mixin(LevelExtractor.class)
+abstract class LevelExtractorMixin {
 	@Shadow
-	private ClientLevel level;
+	private @Nullable ClientLevel level;
 
 	/**
 	 * This gets called when a block is marked for rerender by vanilla.

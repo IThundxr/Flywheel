@@ -10,7 +10,6 @@ import dev.engine_room.flywheel.api.backend.RenderContext;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.backend.engine.indirect.DepthPyramid;
 import dev.engine_room.flywheel.backend.extension.CameraRenderStateExtension;
-import dev.engine_room.flywheel.backend.mixin.LevelRendererAccessor;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -163,7 +162,8 @@ public final class FrameUniforms extends UniformWriter {
 	}
 
 	private static long writeTime(long ptr, RenderContext context) {
-		int ticks = ((LevelRendererAccessor) context.renderer()).flywheel$getTicks();
+		// TODO 26.2: We probably shouldn't cast longs to ints like this
+		int ticks = (int) context.levelRenderState().gameTime;
 		float partialTick = context.partialTick();
 		float renderTicks = ticks + partialTick;
 		float renderSeconds = renderTicks / 20f;
@@ -194,7 +194,7 @@ public final class FrameUniforms extends UniformWriter {
 
 	private static long writeCullData(long ptr, CameraRenderState cameraRenderState) {
 		var mc = Minecraft.getInstance();
-		var mainRenderTarget = mc.getMainRenderTarget();
+		var mainRenderTarget = mc.gameRenderer.mainRenderTarget();
 
 		int pyramidWidth = DepthPyramid.mip0Size(mainRenderTarget.width);
 		int pyramidHeight = DepthPyramid.mip0Size(mainRenderTarget.height);

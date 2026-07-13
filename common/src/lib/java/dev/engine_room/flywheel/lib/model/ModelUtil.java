@@ -78,7 +78,7 @@ public final class ModelUtil {
 
 	@Nullable
 	public static Material getItemMaterial(RenderType renderType) {
-		if (renderType == Sheets.cutoutBlockSheet()) {
+		if (renderType == Sheets.cutoutItemSheet()) {
 			return Materials.CUTOUT_BLOCK;
 		}
 
