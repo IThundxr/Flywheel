@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 

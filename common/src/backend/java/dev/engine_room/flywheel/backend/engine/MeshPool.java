@@ -8,8 +8,8 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL32;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
