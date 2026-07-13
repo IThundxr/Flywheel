@@ -173,7 +173,7 @@ public class SimpleMaterial implements Material {
 			mipmap = true;
 			backfaceCulling = true;
 			polygonOffset = false;
-			depthTest = DepthTest.LEQUAL;
+			depthTest = DepthTest.GEQUAL;
 			transparency = Transparency.OPAQUE;
 			writeMask = WriteMask.COLOR_DEPTH;
 			useOverlay = true;

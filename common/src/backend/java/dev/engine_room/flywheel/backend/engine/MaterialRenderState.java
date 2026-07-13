@@ -71,7 +71,7 @@ public final class MaterialRenderState {
 
 	private static void setupPolygonOffset(boolean polygonOffset) {
 		if (polygonOffset) {
-			GlStateManager._polygonOffset(-1.0F, -10.0F);
+			GlStateManager._polygonOffset(1.0F, 10.0F);
 			GlStateManager._enablePolygonOffset();
 		} else {
 			GlStateManager._polygonOffset(0.0F, 0.0F);
