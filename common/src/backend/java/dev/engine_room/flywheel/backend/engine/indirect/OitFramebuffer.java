@@ -8,7 +8,6 @@ import org.lwjgl.opengl.GL46;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlDevice;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
 
@@ -203,9 +202,8 @@ public class OitFramebuffer {
 	private static void bindRenderTarget(RenderTarget target) {
 		GlTexture colorTexture = (GlTexture) target.getColorTexture();
 		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
-		GlDevice device = GlUtil.getGlDevice();
-		int i = device.frameBufferCache().getFbo(
-				device.directStateAccess(),
+		int i = GlUtil.getFramebufferCache().getFbo(
+				GlUtil.getDirectStateAccess(),
 				Collections.singletonList(colorTexture),
 				depthTexture
 		);

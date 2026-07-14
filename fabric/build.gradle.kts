@@ -49,7 +49,7 @@ transitiveSourceSets {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/flywheel.accesswidener")
+    accessWidenerPath = file("src/main/resources/flywheel.classtweaker")
 
     mods.getByName(getExt("mod_id")).apply {
         sourceSet(api)

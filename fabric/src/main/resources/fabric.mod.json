@@ -31,5 +31,5 @@
     "fabric-api": ">=${fabric_api_version}",
     "java": ">=${java_version}"
   },
-  "accessWidener": "flywheel.accesswidener"
+  "accessWidener": "flywheel.classtweaker"
 }
