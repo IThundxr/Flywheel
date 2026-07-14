@@ -20,7 +20,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
-	@WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;render(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/renderer/state/level/CameraRenderState;Lorg/joml/Matrix4fc;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V"))
+	@WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;render(Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/renderer/state/level/CameraRenderState;Lorg/joml/Matrix4fc;Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V"))
 	private void extractProjectionMatrixNoBob(LevelRenderer instance, GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, Operation<Void> original, @Local(name = "projectionMatrix") Matrix4f projectionMatrix) {
 		ScopedValue.where(RenderContextImpl.PROJECTION_MATRIX_NO_BOB, projectionMatrix)
 				.run(() -> original.call(instance, resourceAllocator, deltaTracker, renderOutline, cameraState, modelViewMatrix, terrainFog, fogColor, shouldRenderSky));

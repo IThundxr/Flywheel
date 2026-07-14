@@ -2,6 +2,8 @@ package dev.engine_room.flywheel.impl.mixin;
 
 import java.util.List;
 
+import net.minecraft.client.renderer.GameRenderer;
+
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector4f;
@@ -47,6 +49,9 @@ abstract class LevelRendererMixin {
 	@Final
 	private LevelRenderState levelRenderState;
 
+	@Shadow
+	@Final
+	private GameRenderer gameRenderer;
 	@Unique
 	@Nullable
 	private RenderContextImpl flywheel$renderContext;
@@ -80,19 +85,23 @@ abstract class LevelRendererMixin {
 				.run(() -> original.call(instance, resourceAllocator, inspector));
 	}
 
-	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;executeSolid()V"))
+	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/resource/ResourceHandle;get()Ljava/lang/Object;"))
 	private void flywheel$beforeSolids(CallbackInfo ci) {
 		if (flywheel$renderContext != null) {
 			ClientLevel level = Minecraft.getInstance().level;
 			VisualizationManager manager = VisualizationManager.get(level);
 			if (manager != null) {
 				manager.renderDispatcher().beforeSolids(flywheel$renderContext);
+
+				if (!gameRenderer.useImprovedTransparency()) {
+					manager.renderDispatcher().beforeTranslucent(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
+				}
 			}
 		}
 	}
 
-	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;executeTranslucent()V"))
-	private void flywheel$beforeRenderCrumbling(CallbackInfo ci) {
+	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;executeOit(Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;)V"))
+	private void flywheel$beforeOit(CallbackInfo ci) {
 		if (flywheel$renderContext != null) {
 			ClientLevel level = Minecraft.getInstance().level;
 			VisualizationManager manager = VisualizationManager.get(level);

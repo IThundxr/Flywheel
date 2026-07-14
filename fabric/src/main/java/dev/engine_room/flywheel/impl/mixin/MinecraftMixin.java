@@ -31,7 +31,7 @@ abstract class MinecraftMixin {
 		FabricFlwConfig.INSTANCE.load();
 	}
 
-	@Inject(method = "lambda$new$4", at = @At("HEAD"))
+	@Inject(method = "lambda$new$3", at = @At("HEAD"))
 	private void flywheel$onEndInitialResourceReload(@Coerce Object gameLoadCookie, Optional<Throwable> error, CallbackInfo ci) {
 		EndClientResourceReloadCallback.EVENT.invoker()
 				.onEndClientResourceReload((Minecraft) (Object) this, resourceManager, true, error);
