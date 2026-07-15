@@ -31,6 +31,6 @@ uvec2 get_xy() {
 }
 
 float reduce_4(vec4 v) {
-    return max(max(v.x, v.y), max(v.z, v.w));
+    return min(min(v.x, v.y), min(v.z, v.w));
 }
 

@@ -109,11 +109,11 @@ bool _flw_isVisible(uint instanceIndex, uint modelIndex) {
             float depth10 = texelFetch(_flw_depthPyramid, bounds.zy, level).r;
             float depth00 = texelFetch(_flw_depthPyramid, bounds.xy, level).r;
 
-            float depth = max(max(depth00, depth01), max(depth10, depth11));
+            float depth = min(min(depth00, depth01), min(depth10, depth11));
 
-            float depthSphere = 1. + _flw_cullData.znear / (center.z + radius);
+            float depthSphere = -_flw_cullData.znear / (center.z + radius);
 
-            isVisible = isVisible && depthSphere <= depth;
+            isVisible = isVisible && depthSphere >= depth;
         }
     }
 
