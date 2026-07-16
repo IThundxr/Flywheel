@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
-
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
@@ -37,10 +35,10 @@ import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
+import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 
 public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
@@ -66,7 +64,6 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		stagingBuffer = new StagingBuffer(this.programs);
 		meshPool = new MeshPool();
 		vertexArray = GlVertexArray.create();
-		meshPool.bind(vertexArray);
 		lightBuffers = new LightBuffers();
 		matrixBuffer = new MatrixBuffer();
 
@@ -148,6 +145,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		TextureBinder.bindLightAndOverlay();
 
 		vertexArray.bindForDraw();
+		meshPool.bind(vertexArray);
 		lightBuffers.bind();
 		matrixBuffer.bind();
 		Uniforms.bindAll();
@@ -206,7 +204,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 		stagingBuffer.delete();
 
-		meshPool.delete();
+		meshPool.close();
 
 		crumblingDrawBuffer.delete();
 
