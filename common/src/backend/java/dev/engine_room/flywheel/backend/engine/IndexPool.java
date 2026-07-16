@@ -1,23 +1,28 @@
 package dev.engine_room.flywheel.backend.engine;
 
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+
 import dev.engine_room.flywheel.api.model.IndexSequence;
 import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
-public class IndexPool {
-	private final GlBuffer ebo;
+public class IndexPool implements AutoCloseable {
+	private final DynamicGpuBuffer ebo;
 
 	private final Reference2IntMap<IndexSequence> indexCounts;
 	private final Reference2IntMap<IndexSequence> firstIndices;
 
 	private boolean dirty;
 
-    public IndexPool() {
-		ebo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
+	public IndexPool() {
+		// TODO b3d-ification: check if we need a bigger buffer
+		ebo = new DynamicGpuBuffer(
+				"Flw IndexPool EBO",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_INDEX,
+				1024 * 4 // 4 KB
+		);
 
 		indexCounts = new Reference2IntOpenHashMap<>();
 		firstIndices = new Reference2IntOpenHashMap<>();
@@ -74,15 +79,16 @@ public class IndexPool {
 			firstIndex += indexCount;
 		}
 
-		ebo.upload(indexBlock);
+		ebo.write(indexBlock.asBuffer());
 		indexBlock.free();
 	}
 
 	public void bind(GlVertexArray vertexArray) {
-		vertexArray.setElementBuffer(ebo.handle());
+		vertexArray.setElementBuffer(ebo.getHandle());
 	}
 
-	public void delete() {
-		ebo.delete();
+	@Override
+	public void close() {
+		ebo.close();
 	}
 }

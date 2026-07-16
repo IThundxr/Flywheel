@@ -35,7 +35,6 @@ import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 
 public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
@@ -68,8 +67,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		vao = GlVertexArray.create();
 		instanceTexture = new TextureBuffer();
 		light = new InstancedLight();
-
-		meshPool.bind(vao);
 
 		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 
@@ -121,6 +118,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		Uniforms.bindAll();
 		vao.bindForDraw();
+		meshPool.bind(vao);
 		TextureBinder.bindLightAndOverlay();
 		light.bind();
 
@@ -211,7 +209,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		draws.clear();
 		oitDraws.clear();
 
-		meshPool.delete();
+		meshPool.close();
 		instanceTexture.delete();
 		programs.release();
 		vao.delete();
