@@ -5,6 +5,7 @@ import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.mixin.GlStateManagerAccessor;
 
+@Deprecated(forRemoval = true)
 public enum GlTextureUnit {
 	T0(0),
 	T1(1),

@@ -16,6 +16,7 @@ import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
 import net.minecraft.util.Util;
 
+@Deprecated(forRemoval = true)
 public abstract class GlVertexArrayGL3 extends GlVertexArray {
 	private final BitSet attributeDirty = new BitSet(MAX_ATTRIBS);
 	private final int[] attributeOffsets = new int[MAX_ATTRIBS];

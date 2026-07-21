@@ -13,6 +13,7 @@ import com.mojang.renderpearl.backend.opengl.GlConst;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import net.minecraft.util.Util;
 
+@Deprecated(forRemoval = true)
 public class GlVertexArrayDSA extends GlVertexArray {
 	public static final boolean SUPPORTED = isSupported();
 	private final BitSet attributeEnabled = new BitSet(MAX_ATTRIBS);

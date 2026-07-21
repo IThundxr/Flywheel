@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL32;
 
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
+@Deprecated(forRemoval = true)
 public class TextureBuffer extends GlObject {
 	public static final int MAX_TEXELS = GlStateManager._getInteger(GL32.GL_MAX_TEXTURE_BUFFER_SIZE);
 	public static final int MAX_BYTES = MAX_TEXELS * 16; // 4 channels * 4 bytes

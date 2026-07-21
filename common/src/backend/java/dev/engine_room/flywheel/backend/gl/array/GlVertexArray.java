@@ -9,6 +9,7 @@ import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 
+@Deprecated(forRemoval = true)
 public abstract class GlVertexArray extends GlObject {
 	protected static final int MAX_ATTRIBS = GlStateManager._getInteger(GL32.GL_MAX_VERTEX_ATTRIBS);
 	protected static final int MAX_ATTRIB_BINDINGS = 16;

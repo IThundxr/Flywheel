@@ -1,5 +1,9 @@
 package dev.engine_room.flywheel.backend.gl;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.backend.opengl.DirectStateAccess;
@@ -7,10 +11,7 @@ import com.mojang.renderpearl.backend.opengl.FrameBufferCache;
 
 import dev.engine_room.flywheel.backend.mixin.GpuDeviceAccessor;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-
+@Deprecated(forRemoval = true)
 public class GlUtil {
 	private static final MethodHandle GET_FRAMEBUFFER_CACHE;
 	private static final MethodHandle GET_DIRECT_STATE_ACCESS;

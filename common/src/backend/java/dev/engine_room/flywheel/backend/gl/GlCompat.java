@@ -20,6 +20,7 @@ import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 
+@Deprecated(forRemoval = true)
 public final class GlCompat {
 	@UnknownNullability
 	public static final GLCapabilities CAPABILITIES;

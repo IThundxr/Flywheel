@@ -8,6 +8,7 @@ import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 
+@Deprecated(forRemoval = true)
 public interface Buffer {
 	Buffer IMPL = new DSA().fallback();
 

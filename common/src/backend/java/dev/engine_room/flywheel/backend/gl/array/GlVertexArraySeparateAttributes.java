@@ -16,6 +16,7 @@ import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
 import net.minecraft.util.Util;
 
+@Deprecated(forRemoval = true)
 public class GlVertexArraySeparateAttributes extends GlVertexArray {
 	public static final boolean SUPPORTED = isSupported();
 	private final BitSet attributeEnabled = new BitSet(MAX_ATTRIBS);

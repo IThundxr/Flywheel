@@ -4,6 +4,7 @@ import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 
+@Deprecated(forRemoval = true)
 public class GlShader extends GlObject {
 
 	public final ShaderType type;
