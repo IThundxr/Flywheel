@@ -5,13 +5,14 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceWriter;
 import dev.engine_room.flywheel.backend.engine.BaseInstancer;
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
@@ -20,7 +21,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 
 	private final InstanceWriter<I> writer;
 	@Nullable
-	private GlBuffer vbo;
+	private DynamicGpuBuffer utb;
 
 	private final List<InstancedDraw> draws = new ArrayList<>();
 
@@ -36,28 +37,33 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		return draws;
 	}
 
-	public void init() {
-		if (vbo != null) {
-			return;
-		}
-
-		vbo = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
-	}
-
 	public void updateBuffer() {
-		if (changed.isEmpty() || vbo == null) {
+		if (changed.isEmpty()) {
 			return;
 		}
 
 		int byteSize = instanceStride * instances.size();
-		if (needsToGrow(byteSize)) {
+
+		boolean needsFullWrite;
+		if (utb == null) {
+			needsFullWrite = true;
+			utb = new DynamicGpuBuffer(
+					"Flw " + this + " UTB",
+					GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+					byteSize,
+					this::increaseSize
+			);
+		} else {
+			needsFullWrite = needsToGrow(byteSize);
+		}
+
+		if (needsFullWrite) {
 			// TODO: Should this memory block be persistent?
 			var temp = MemoryBlock.malloc(increaseSize(byteSize));
 
 			writeAll(temp.ptr());
 
-			vbo.upload(temp);
-
+			utb.write(temp.asBuffer());
 			temp.free();
 		} else {
 			writeChanged();
@@ -80,8 +86,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 				ptr += instanceStride;
 			}
 
-			vbo.uploadSpan((long) startInclusive * instanceStride, temp);
-
+			utb.writeSpan(startInclusive * instanceStride, temp.asBuffer());
 			temp.free();
 		});
 	}
@@ -106,7 +111,7 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 			return false;
 		}
 
-        return capacity > vbo.size();
+        return capacity > utb.getCurrentCapacity();
     }
 
 	public void parallelUpdate() {
@@ -164,11 +169,11 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	public void delete() {
-		if (vbo == null) {
+		if (utb == null) {
 			return;
 		}
-		vbo.delete();
-		vbo = null;
+		utb.close();
+		utb = null;
 
 		for (InstancedDraw instancedDraw : draws) {
 			instancedDraw.delete();
@@ -180,10 +185,10 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	public void bind(TextureBuffer buffer) {
-		if (vbo == null) {
+		if (utb == null) {
 			return;
 		}
 
-		buffer.bind(vbo.handle());
+		buffer.bind(utb.getHandle());
 	}
 }

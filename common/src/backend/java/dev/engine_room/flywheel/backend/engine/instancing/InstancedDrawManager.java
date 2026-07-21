@@ -214,7 +214,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		programs.release();
 		vao.delete();
 
-		light.delete();
+		light.close();
 
 		oitFramebuffer.delete();
 
@@ -228,8 +228,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 	@Override
 	protected <I extends Instance> void initialize(InstancerKey<I> key, InstancedInstancer<?> instancer) {
-		instancer.init();
-
 		var meshes = key.model()
 				.meshes();
 		for (int i = 0; i < meshes.size(); i++) {
