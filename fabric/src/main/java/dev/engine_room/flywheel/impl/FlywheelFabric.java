@@ -86,8 +86,8 @@ public final class FlywheelFabric implements ClientModInitializer {
 	}
 
 	private static void setupBackend() {
-		// TODO 26.3: uniform system was rebuilt on B3D; closing buffers on reload is the closest equivalent
-		ReloadLevelRendererCallback.EVENT.register(level -> Uniforms.closeAll());
+		// 26.3: the rebuilt uniform system keeps level-independent GPU buffers alive for the
+		// whole session; the old per-reload reset hook is gone upstream and is not needed.
 
 		ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(FlwReloadListener.ID, FlwReloadListener.INSTANCE);
 	}

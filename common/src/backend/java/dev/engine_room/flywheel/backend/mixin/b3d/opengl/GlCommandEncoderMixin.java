@@ -26,8 +26,10 @@ public class GlCommandEncoderMixin {
 	@Unique
 	private final Map<GlProgram, Object2IntMap<String>> flywheel$uniformIdsCache = new IdentityHashMap<>();
 
-	@Inject(method = "trySetup", at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;"))
-	private void flywheel$bindPlainUniforms(GlRenderPass renderPass, Collection<String> dynamicUniforms, CallbackInfoReturnable<Boolean> cir, @Local(name = "glProgram") GlProgram glProgram) {
+	// TODO 26.3: trySetup became setupDraw and the dynamic-uniform loop was reworked;
+	// GL plain-uniform binding needs a proper port. Optional so the game can boot meanwhile.
+	@Inject(method = "trySetup", at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;"), require = 0, expect = 0)
+	private void flywheel$bindPlainUniforms(GlRenderPass renderPass, Collection<String> dynamicUniforms, CallbackInfoReturnable<Boolean> cir, @Local GlProgram glProgram) {
 		FlwGlVulkanRenderPassExtension ext = (FlwGlVulkanRenderPassExtension) renderPass;
 
 		if (ext.flywheel$uniformsDirty()) {
