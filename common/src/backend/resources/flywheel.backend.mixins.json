@@ -1,32 +1,33 @@
 {
-  "required": true,
-  "minVersion": "0.8",
-  "package": "dev.engine_room.flywheel.backend.mixin",
-  "compatibilityLevel": "JAVA_25",
-  "client": [
-    "AbstractClientPlayerAccessor",
-    "CameraAccessor",
-    "CameraMixin",
-    "CameraRenderStateMixin",
-    "GlStateManagerAccessor",
-    "GlStateManagerMixin",
-    "GpuDeviceAccessor",
-    "LightingMixin",
-    "MinecraftMixin",
-    "OptionsMixin",
-    "RenderSystemMixin",
-    "b3d.GlVulkanRenderPassMixin",
-    "b3d.RenderPassBackendMixin",
-    "b3d.RenderPassMixin",
-    "b3d.opengl.GlCommandEncoderMixin",
-    "b3d.vulkan.VulkanRenderPassMixin",
-    "b3d.vulkan.VulkanRenderPipelineMixin",
-    "light.LayerLightSectionStorageAccessor",
-    "light.LightEngineAccessor",
-    "light.SkyDataLayerStorageMapAccessor",
-    "light.SkyLightSectionStorageMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+	"required": true,
+	"minVersion": "0.8",
+	"package": "dev.engine_room.flywheel.backend.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AbstractClientPlayerAccessor",
+		"CameraAccessor",
+		"CameraMixin",
+		"CameraRenderStateMixin",
+		"GlStateManagerAccessor",
+		"GlStateManagerMixin",
+		"GpuDeviceAccessor",
+		"LightingMixin",
+		"MinecraftMixin",
+		"OptionsMixin",
+		"RenderSystemMixin",
+		"b3d.GlVulkanRenderPassMixin",
+		"b3d.RenderPassBackendMixin",
+		"b3d.RenderPassMixin",
+		"b3d.opengl.GlCommandEncoderMixin",
+		"b3d.vulkan.VulkanRenderPassMixin",
+		"b3d.vulkan.VulkanRenderPipelineMixin",
+		"light.LayerLightSectionStorageAccessor",
+		"light.LightEngineAccessor",
+		"light.SkyDataLayerStorageMapAccessor",
+		"light.SkyLightSectionStorageMixin",
+		"b3d.RenderPassInterfaceMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
 }
