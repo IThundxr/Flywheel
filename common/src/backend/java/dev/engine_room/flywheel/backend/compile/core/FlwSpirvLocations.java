@@ -22,7 +22,17 @@ public final class FlwSpirvLocations {
 	public record Processed(String vertex, String fragment) {
 	}
 
+	// Vulkan GLSL renames these builtins; glslang rejects the GL names.
+	private static String renameBuiltins(String src) {
+		return src.replaceAll("\\bgl_VertexID\\b", "gl_VertexIndex")
+				.replaceAll("\\bgl_InstanceID\\b", "gl_InstanceIndex");
+	}
+
 	public static Processed process(String vertexSrc, String fragmentSrc) {
+		vertexSrc = renameBuiltins(vertexSrc);
+		if (fragmentSrc != null) {
+			fragmentSrc = renameBuiltins(fragmentSrc);
+		}
 		Map<String, Integer> varyingSizes = new TreeMap<>();
 		collectVaryings(vertexSrc, "out", varyingSizes);
 		if (fragmentSrc != null) {
