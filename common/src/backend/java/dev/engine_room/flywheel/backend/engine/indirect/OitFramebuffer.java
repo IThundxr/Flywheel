@@ -102,7 +102,11 @@ public class OitFramebuffer implements AutoCloseable {
 			renderPass.setUniform("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
 			renderPass.setUniform("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
-			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(programs.getOitDepthPipeline()));
+			var flywheel$compiled = dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.getOrNull(programs.getOitDepthPipeline());
+			if (flywheel$compiled == null) {
+				return;
+			}
+			renderPass.setPipeline(flywheel$compiled);
 
 			drawFullscreenQuad(renderPass);
 		}
@@ -148,7 +152,11 @@ public class OitFramebuffer implements AutoCloseable {
 			renderPass.setUniform("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
 			renderPass.setUniform("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
-			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(programs.getOitCompositePipeline()));
+			var flywheel$compiled = dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.getOrNull(programs.getOitCompositePipeline());
+			if (flywheel$compiled == null) {
+				return;
+			}
+			renderPass.setPipeline(flywheel$compiled);
 
 			drawFullscreenQuad(renderPass);
 		}

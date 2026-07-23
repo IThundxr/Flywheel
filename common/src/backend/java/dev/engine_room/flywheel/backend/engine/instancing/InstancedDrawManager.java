@@ -168,7 +168,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			var environment = groupKey.environment();
 
 			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
-			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(pipeline));
+			var flywheel$compiled = dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.getOrNull(pipeline);
+			if (flywheel$compiled == null) {
+				continue;
+			}
+			renderPass.setPipeline(flywheel$compiled);
 
 			environment.setupDraw(renderPass);
 			uploadMaterialUniform(renderPass, material);
@@ -279,7 +283,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 							var crumblingMaterial = SimpleMaterial.builder();
 							CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
 							RenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
-							renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(pipeline));
+							var flywheel$compiled = dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.getOrNull(pipeline);
+			if (flywheel$compiled == null) {
+				continue;
+			}
+			renderPass.setPipeline(flywheel$compiled);
 
 							uploadMaterialUniform(renderPass, crumblingMaterial);
 
