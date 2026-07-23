@@ -17,7 +17,7 @@ public abstract class CameraMixin {
 	public abstract Vector3fc forwardVector();
 
 	@Inject(method = "extractRenderState", at = @At("TAIL"))
-	private void flywheel$extendRenderState(CameraRenderState cameraState, float cameraEntityPartialTicks, CallbackInfo ci) {
+	private void flywheel$extendRenderState(CameraRenderState cameraState, net.minecraft.client.DeltaTracker deltaTracker, CallbackInfo ci) {
 		((CameraRenderStateExtension) cameraState).flywheel$getForwardVector().set(forwardVector());
 	}
 }

@@ -49,15 +49,19 @@ public class NoiseTextures {
 			);
 			RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
 
-			GlTextureUnit.T0.makeActive();
-			GlStateManager._bindTexture(((GlTexture) BLUE_NOISE).glId());
+			// Texture parameters below are GL-only; on other backends (e.g. Vulkan)
+			// Flywheel's backends are disabled anyway, so skip them gracefully.
+			if (BLUE_NOISE instanceof GlTexture glTexture) {
+				GlTextureUnit.T0.makeActive();
+				GlStateManager._bindTexture(glTexture.glId());
 
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_LINEAR);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_LINEAR);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_REPEAT);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_REPEAT);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_LINEAR);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_LINEAR);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_REPEAT);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_REPEAT);
 
-			GlStateManager._bindTexture(0);
+				GlStateManager._bindTexture(0);
+			}
 		} catch (IOException e) {
 
 		}

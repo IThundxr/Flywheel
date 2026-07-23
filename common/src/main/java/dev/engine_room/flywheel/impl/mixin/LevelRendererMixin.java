@@ -5,7 +5,6 @@ import java.util.List;
 import net.minecraft.client.renderer.GameRenderer;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -27,7 +26,6 @@ import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.impl.event.RenderContextImpl;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -57,11 +55,11 @@ abstract class LevelRendererMixin {
 	private RenderContextImpl flywheel$renderContext;
 
 	@Inject(method = "render", at = @At("HEAD"))
-	private void flywheel$beginRender(GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci) {
+	private void flywheel$beginRender(GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, boolean flywheel$extraFlag, CallbackInfo ci) {
 		ClientLevel level = Minecraft.getInstance().level;
 
-		Matrix4f projectionMatrix = RenderContextImpl.PROJECTION_MATRIX_NO_BOB.get();
-		flywheel$renderContext = RenderContextImpl.create((LevelRenderer) (Object) this, level, renderBuffers, modelViewMatrix, projectionMatrix, cameraState, levelRenderState, deltaTracker.getGameTimeDeltaPartialTick(false));
+		Matrix4f projectionMatrix = new Matrix4f(cameraState.projectionMatrix);
+		flywheel$renderContext = RenderContextImpl.create((LevelRenderer) (Object) this, level, renderBuffers, cameraState.viewRotationMatrix, projectionMatrix, cameraState, levelRenderState, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
 
 		VisualizationManager manager = VisualizationManager.get(level);
 		if (manager != null) {
@@ -75,7 +73,7 @@ abstract class LevelRendererMixin {
 	}
 
 	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;submitFeatures(Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/client/renderer/SubmitNodeCollector;Z)V"))
-	private void flywheel$copyCrumblingState(GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci, @Share("blockBreakingRenderStates") LocalRef<List<BlockBreakingRenderState>> blockBreakingRenderStates) {
+	private void flywheel$copyCrumblingState(GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, boolean flywheel$extraFlag, CallbackInfo ci, @Share("blockBreakingRenderStates") LocalRef<List<BlockBreakingRenderState>> blockBreakingRenderStates) {
 		blockBreakingRenderStates.set(List.copyOf(levelRenderState.blockBreakingRenderStates));
 	}
 
