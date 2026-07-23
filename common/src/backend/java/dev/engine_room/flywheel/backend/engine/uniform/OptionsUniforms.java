@@ -1,29 +1,81 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
+import java.nio.ByteBuffer;
+
+import org.lwjgl.system.MemoryStack;
+
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.buffers.Std140SizeCalculator;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.Options;
 
-public final class OptionsUniforms extends UniformWriter {
-	private static final int SIZE = 4 * 14;
-	static final UniformBuffer BUFFER = new UniformBuffer(Uniforms.OPTIONS_INDEX, SIZE);
+// TODO - Use GpuBuffer instead of MRB here
+public final class OptionsUniforms implements FlwUniform {
+	public static final int UBO_SIZE = new Std140SizeCalculator()
+			.putFloat() // gamma
+			.putInt()   // fov
+			.putFloat() // screenEffectScale
+			.putFloat() // glintSpeed
+			.putFloat() // glintStrength
+			.putInt()   // biomeBlendRadius
+			.putInt()   // ambientOcclusion
+			.putInt()   // bobView
+			.putInt()   // highContrast
+			.putFloat() // textBackgroundOpacity
+			.putInt()   // backgroundForChatOnly
+			.putFloat() // darknessEffectScale
+			.putFloat() // damageTiltStrength
+			.putInt()   // hideLightningFlash
+			.get();
 
-	public static void update(Options options) {
-		long ptr = BUFFER.ptr();
+	public static final OptionsUniforms INSTANCE = new OptionsUniforms();
 
-		ptr = writeFloat(ptr, options.gamma().get().floatValue());
-		ptr = writeInt(ptr, options.fov().get());
-		ptr = writeFloat(ptr, options.screenEffectScale().get().floatValue());
-		ptr = writeFloat(ptr, options.glintSpeed().get().floatValue());
-		ptr = writeFloat(ptr, options.glintStrength().get().floatValue());
-		ptr = writeInt(ptr, options.biomeBlendRadius().get());
-		ptr = writeInt(ptr, options.ambientOcclusion().get() ? 1 : 0);
-		ptr = writeInt(ptr, options.bobView().get() ? 1 : 0);
-		ptr = writeInt(ptr, options.highContrast().get() ? 1 : 0);
-		ptr = writeFloat(ptr, options.textBackgroundOpacity().get().floatValue());
-		ptr = writeInt(ptr, options.backgroundForChatOnly().get() ? 1 : 0);
-		ptr = writeFloat(ptr, options.darknessEffectScale().get().floatValue());
-		ptr = writeFloat(ptr, options.damageTiltStrength().get().floatValue());
-		ptr = writeInt(ptr, options.hideLightningFlash().get() ? 1 : 0);
+	private final GpuBuffer buffer = RenderSystem.getDevice().createBuffer(
+			() -> "Flw Options UBO",
+			GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
+			UBO_SIZE
+	);
 
-		BUFFER.markDirty();
+	private OptionsUniforms() {
+	}
+
+	@Override
+	public String getUniformName() {
+		return "_FlwOptionsUniforms";
+	}
+
+	@Override
+	public GpuBuffer getBuffer() {
+		return buffer;
+	}
+
+	@Override
+	public void close() {
+		buffer.close();
+	}
+
+	public void update(Options options) {
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			ByteBuffer byteBuffer = Std140Builder.onStack(stack, UBO_SIZE)
+					.putFloat(options.gamma().get().floatValue())
+					.putInt(options.fov().get())
+					.putFloat(options.screenEffectScale().get().floatValue())
+					.putFloat(options.glintSpeed().get().floatValue())
+					.putFloat(options.glintStrength().get().floatValue())
+					.putInt(options.biomeBlendRadius().get())
+					.putInt(options.ambientOcclusion().get() ? 1 : 0)
+					.putInt(options.bobView().get() ? 1 : 0)
+					.putInt(options.highContrast().get() ? 1 : 0)
+					.putFloat(options.textBackgroundOpacity().get().floatValue())
+					.putInt(options.backgroundForChatOnly().get() ? 1 : 0)
+					.putFloat(options.darknessEffectScale().get().floatValue())
+					.putFloat(options.damageTiltStrength().get().floatValue())
+					.putInt(options.hideLightningFlash().get() ? 1 : 0)
+					.get();
+
+			RenderSystem.getDevice().createCommandEncoder().writeToBuffer(buffer.slice(), byteBuffer);
+		}
 	}
 }

@@ -1,33 +1,40 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.system.MemoryUtil;
+import java.nio.ByteBuffer;
 
-import dev.engine_room.flywheel.backend.Samplers;
+import org.lwjgl.system.MemoryStack;
+
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
+
+import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-public class InstancedLight {
-	private final GlBuffer lut;
-	private final GlBuffer sections;
-	private final TextureBuffer lutTexture;
-	private final TextureBuffer sectionsTexture;
+public class InstancedLight implements AutoCloseable {
+	public static final String LUT_BINDING = "_flw_lightLut";
+	public static final String SECTIONS_BINDING = "_flw_lightSections";
 
+	private final DynamicGpuBuffer lut;
+	private final DynamicGpuBuffer sections;
+
+	// TODO b3d-ification: Check if the default sizes should be higher
 	public InstancedLight() {
-		lut = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
-		sections = new GlBuffer(GlBufferUsage.DYNAMIC_DRAW);
-		lutTexture = new TextureBuffer(GL32.GL_R32UI);
-		sectionsTexture = new TextureBuffer(GL32.GL_R32UI);
+		lut = new DynamicGpuBuffer(
+				"Flw Instanced Lighting LUT UTB",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				1024 * 4 // 4 KB
+		);
+		sections = new DynamicGpuBuffer(
+				"Flw Instanced Lighting Sections UTB",
+				GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_HINT_CLIENT_STORAGE | GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER,
+				1024 * 4 // 4 KB
+		);
 	}
 
-	public void bind() {
-		Samplers.LIGHT_LUT.makeActive();
-		lutTexture.bind(lut.handle());
-		Samplers.LIGHT_SECTIONS.makeActive();
-		sectionsTexture.bind(sections.handle());
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setUniform(LUT_BINDING, lut.getCurrentBuffer());
+		renderPass.setUniform(SECTIONS_BINDING, sections.getCurrentBuffer());
 	}
 
 	public void flush(LightStorage light) {
@@ -38,26 +45,20 @@ public class InstancedLight {
 		light.upload(sections);
 
 		if (light.checkNeedsLutRebuildAndClear()) {
-			var lut = light.createLut();
+			IntArrayList lut = light.createLut();
+			int[] lutData = lut.elements();
 
-			var up = MemoryBlock.malloc((long) lut.size() * Integer.BYTES);
-
-			long ptr = up.ptr();
-
-			for (int i = 0; i < lut.size(); i++) {
-				MemoryUtil.memPutInt(ptr + (long) Integer.BYTES * i, lut.getInt(i));
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				ByteBuffer buffer = stack.malloc(lut.size() * Integer.BYTES);
+				buffer.asIntBuffer().put(lutData);
+				this.lut.write(buffer);
 			}
-
-			this.lut.upload(up);
-
-			up.free();
 		}
 	}
 
-	public void delete() {
-		lut.delete();
-		sections.delete();
-		lutTexture.delete();
-		sectionsTexture.delete();
+	@Override
+	public void close() {
+		lut.close();
+		sections.close();
 	}
 }

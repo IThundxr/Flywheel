@@ -3,13 +3,11 @@ package dev.engine_room.flywheel.backend.engine;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
-import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
-import com.mojang.renderpearl.backend.opengl.GlBuffer;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
-import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 
 // TODO b3d-ification: Document this a bit
 public class DynamicGpuBuffer implements AutoCloseable {
@@ -32,18 +30,6 @@ public class DynamicGpuBuffer implements AutoCloseable {
 
 		this.capacity = this.sizeIncreaseFunc.apply(initialCapacity);
 		this.buffer = RenderSystem.getDevice().createBuffer(() -> this.label, this.usage, this.capacity);
-		FlwMemoryTracker._allocGpuMemory(this.capacity);
-	}
-
-	private static long smallestEncompassingPowerOfTwo(final long input) {
-		long result = input - 1;
-		result |= result >> 1;
-		result |= result >> 2;
-		result |= result >> 4;
-		result |= result >> 8;
-		result |= result >> 16;
-		result |= result >> 32;
-		return result + 1;
 	}
 
 	public void ensureCapacity(long neededSize) {
@@ -51,11 +37,9 @@ public class DynamicGpuBuffer implements AutoCloseable {
 			long newCapacity = sizeIncreaseFunc.apply(neededSize);
 			FlwBackend.LOGGER.info("Resizing {}, capacity limit of {} reached. New capacity will be {}.", this.label, this.capacity, newCapacity);
 
-			FlwMemoryTracker._freeGpuMemory(this.capacity);
 			this.capacity = newCapacity;
 			RenderSystem.queueFencedTask(buffer::close);
 			this.buffer = RenderSystem.getDevice().createBuffer(() -> this.label, this.usage, this.capacity);
-			FlwMemoryTracker._allocGpuMemory(this.capacity);
 		}
 	}
 
@@ -77,17 +61,23 @@ public class DynamicGpuBuffer implements AutoCloseable {
 		return buffer;
 	}
 
-	public long getCurrentCapacity() {
+	public long currentCapacity() {
 		return capacity;
-	}
-
-	public int getHandle() {
-		return ((GlBuffer) buffer).handle();
 	}
 
 	@Override
 	public void close() {
 		buffer.close();
-		FlwMemoryTracker._freeGpuMemory(this.capacity);
+	}
+
+	private static long smallestEncompassingPowerOfTwo(final long input) {
+		long result = input - 1;
+		result |= result >> 1;
+		result |= result >> 2;
+		result |= result >> 4;
+		result |= result >> 8;
+		result |= result >> 16;
+		result |= result >> 32;
+		return result + 1;
 	}
 }

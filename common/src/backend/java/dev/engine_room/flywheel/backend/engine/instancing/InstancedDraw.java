@@ -1,9 +1,16 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
+import com.mojang.blaze3d.systems.RenderPass;
+
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
+
+import com.mojang.datafixers.util.Pair;
+
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
+import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
 
 public class InstancedDraw {
 	public final GroupKey<?> groupKey;
@@ -12,6 +19,13 @@ public class InstancedDraw {
 	private final Material material;
 	private final int bias;
 	private final int indexOfMeshInModel;
+
+	// TODO - See comment on MaterialRenderState#createTextureView
+	@Deprecated(forRemoval = true)
+	private final GpuTextureView textureView;
+	// TODO - See comment on MaterialRenderState#createTextureView
+	@Deprecated(forRemoval = true)
+	private final GpuSampler textureSampler;
 
 	private boolean deleted;
 
@@ -22,6 +36,11 @@ public class InstancedDraw {
 		this.material = material;
 		this.bias = bias;
 		this.indexOfMeshInModel = indexOfMeshInModel;
+
+		// TODO - See comment on MaterialRenderState#createTextureView
+		Pair<GpuTextureView, GpuSampler> texturePair = MaterialRenderState.createTextureView(material);
+		this.textureView = texturePair.getFirst();
+		this.textureSampler = texturePair.getSecond();
 
 		mesh.acquire();
 	}
@@ -38,6 +57,18 @@ public class InstancedDraw {
 		return material;
 	}
 
+	// TODO - See comment on MaterialRenderState#createTextureView
+	@Deprecated(forRemoval = true)
+	public GpuTextureView getTextureView() {
+		return textureView;
+	}
+
+	// TODO - See comment on MaterialRenderState#createTextureView
+	@Deprecated(forRemoval = true)
+	public GpuSampler getTextureSampler() {
+		return textureSampler;
+	}
+
 	public boolean deleted() {
 		return deleted;
 	}
@@ -46,24 +77,28 @@ public class InstancedDraw {
 		return mesh;
 	}
 
-	public void render(TextureBuffer buffer) {
+	public void render(RenderPass renderPass) {
 		if (mesh.isInvalid()) {
 			return;
 		}
 
-		instancer.bind(buffer);
+		instancer.bindToRenderPass(renderPass);
 
-		mesh.draw(instancer.instanceCount());
+		mesh.submitDraw(renderPass, instancer.instanceCount(), 0);
 	}
 
-	public void renderOne(TextureBuffer buffer) {
+	public void renderOne(RenderPass renderPass) {
+		renderOne(renderPass, 0);
+	}
+
+	public void renderOne(RenderPass renderPass, int baseInstance) {
 		if (mesh.isInvalid()) {
 			return;
 		}
 
-		instancer.bind(buffer);
+		instancer.bindToRenderPass(renderPass);
 
-		mesh.draw(1);
+		mesh.submitDraw(renderPass, 1, baseInstance);
 	}
 
 	public void delete() {

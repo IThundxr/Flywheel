@@ -143,19 +143,19 @@ public final class FlwCommands {
 				.then(Commands.argument("mode", DebugModeArgument.INSTANCE)
 						.executes(context -> {
 							DebugMode mode = context.getArgument("mode", DebugMode.class);
-							FrameUniforms.debugMode(mode);
+							FrameUniforms.INSTANCE.debugMode(mode);
 							return Command.SINGLE_SUCCESS;
 						})));
 
 		debug.then(Commands.literal("frustum")
 				.then(Commands.literal("capture")
 						.executes(context -> {
-							FrameUniforms.captureFrustum();
+							FrameUniforms.INSTANCE.captureFrustum();
 							return Command.SINGLE_SUCCESS;
 						}))
 				.then(Commands.literal("unpause")
 						.executes(context -> {
-							FrameUniforms.unpauseFrustum();
+							FrameUniforms.INSTANCE.unpauseFrustum();
 							return Command.SINGLE_SUCCESS;
 						})));
 

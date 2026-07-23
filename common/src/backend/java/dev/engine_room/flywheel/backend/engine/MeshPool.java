@@ -1,22 +1,23 @@
 package dev.engine_room.flywheel.backend.engine;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.opengl.GL32;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.opengl.GlBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.backend.util.ReferenceCounted;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.VertexView;
 
 public class MeshPool implements AutoCloseable {
@@ -103,35 +104,47 @@ public class MeshPool implements AutoCloseable {
 	}
 
 	private void uploadAll() {
-		long neededSize = 0;
+		int neededSize = 0;
 		for (PooledMesh mesh : meshList) {
 			neededSize += mesh.byteSize();
 		}
 
-		final var vertexBlock = MemoryBlock.malloc(neededSize);
-		final long vertexPtr = vertexBlock.ptr();
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			ByteBuffer buffer = stack.malloc(neededSize);
+			final long vertexPtr = MemoryUtil.memAddress(buffer);
 
-		int byteIndex = 0;
-		int baseVertex = 0;
-		for (PooledMesh mesh : meshList) {
-			mesh.baseVertex = baseVertex;
+			int byteIndex = 0;
+			int baseVertex = 0;
+			for (PooledMesh mesh : meshList) {
+				mesh.baseVertex = baseVertex;
 
-			vertexView.ptr(vertexPtr + byteIndex);
-			vertexView.vertexCount(mesh.vertexCount());
-			mesh.mesh.write(vertexView);
+				vertexView.ptr(vertexPtr + byteIndex);
+				vertexView.vertexCount(mesh.vertexCount());
+				mesh.mesh.write(vertexView);
 
-			byteIndex += mesh.byteSize();
-			baseVertex += mesh.vertexCount();
+				byteIndex += mesh.byteSize();
+				baseVertex += mesh.vertexCount();
+			}
+
+			vbo.write(buffer.position(byteIndex).flip());
 		}
-
-		vbo.write(vertexBlock.asBuffer());
-		vertexBlock.free();
 	}
 
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setVertexBuffer(0, vbo.getCurrentBuffer().slice());
+		indexPool.bindToRenderPass(renderPass);
+	}
+
+	@Deprecated
 	public void bind(GlVertexArray vertexArray) {
 		indexPool.bind(vertexArray);
-		vertexArray.bindVertexBuffer(0, vbo.getHandle(), 0, FlwVertexFormats.MAIN_FORMAT.getVertexSize());
+		GlBuffer glBuffer = (GlBuffer) vbo.getCurrentBuffer();
+		vertexArray.bindVertexBuffer(0, glBuffer.handle(), 0, FlwVertexFormats.MAIN_FORMAT.getVertexSize());
 		vertexArray.bindAttributes(0, 0, FlwVertexFormats.MAIN_FORMAT);
+	}
+
+	public List<PooledMesh> pooledMeshes() {
+		return meshList;
 	}
 
 	@Override
@@ -140,10 +153,6 @@ public class MeshPool implements AutoCloseable {
 		indexPool.close();
 		meshes.clear();
 		meshList.clear();
-	}
-
-	public List<PooledMesh> pooledMeshes() {
-		return meshList;
 	}
 
 	public class PooledMesh extends ReferenceCounted {
@@ -176,20 +185,17 @@ public class MeshPool implements AutoCloseable {
 			return MeshPool.this.indexPool.firstIndex(mesh.indexSequence());
 		}
 
-		public long firstIndexByteOffset() {
-			return (long) firstIndex() * Integer.BYTES;
+		public int firstIndexByteOffset() {
+			return firstIndex() * Integer.BYTES;
 		}
 
 		public boolean isInvalid() {
 			return mesh.vertexCount() == 0 || baseVertex == INVALID_BASE_VERTEX || isDeleted();
 		}
 
-		public void draw(int instanceCount) {
-			if (instanceCount > 1) {
-				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
-			} else {
-				GL32.glDrawElementsBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
-			}
+		// TODO b3d-ification: We should probably submit RenderPass.Draw calls instead of doing these one by one
+		public void submitDraw(RenderPass renderPass, int instanceCount, int baseInstance) {
+			renderPass.drawIndexed(mesh.indexCount(), instanceCount, firstIndexByteOffset(), baseVertex(), baseInstance);
 		}
 
 		@Override

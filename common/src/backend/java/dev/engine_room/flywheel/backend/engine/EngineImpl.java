@@ -17,7 +17,6 @@ import dev.engine_room.flywheel.backend.engine.embed.EmbeddedEnvironment;
 import dev.engine_room.flywheel.backend.engine.embed.Environment;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
@@ -87,7 +86,7 @@ public class EngineImpl implements Engine {
 
 	@Override
 	public void render(RenderContext context) {
-		try (var state = GlStateTracker.getRestoreState()) {
+		try {
 			Uniforms.update(context);
 			environmentStorage.flush();
 			drawManager.render(lightStorage, environmentStorage);
@@ -99,7 +98,7 @@ public class EngineImpl implements Engine {
 
 	@Override
 	public void renderCrumbling(RenderContext context, List<CrumblingBlock> crumblingBlocks) {
-		try (var state = GlStateTracker.getRestoreState()) {
+		try {
 			drawManager.renderCrumbling(crumblingBlocks);
 		} catch (Exception e) {
 			FlwBackend.LOGGER.error("Falling back", e);

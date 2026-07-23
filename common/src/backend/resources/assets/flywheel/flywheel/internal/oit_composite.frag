@@ -6,7 +6,8 @@ out vec4 frag;
 
 uniform sampler2D _flw_accumulate;
 uniform sampler2D _flw_depthRange;
-uniform sampler2DArray _flw_coefficients;
+
+uniform sampler2D[4] _flw_coefficients;
 
 void main() {
     vec4 texel = texelFetch(_flw_accumulate, ivec2(gl_FragCoord.xy), 0);

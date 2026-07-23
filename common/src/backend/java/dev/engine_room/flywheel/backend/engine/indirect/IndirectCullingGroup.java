@@ -12,17 +12,17 @@ import com.mojang.renderpearl.backend.opengl.GlConst;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.api.material.Transparency;
 import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
-import dev.engine_room.flywheel.backend.engine.MeshPool;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectMaterialRenderState;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectMeshPool;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 
 public class IndirectCullingGroup<I extends Instance> {
@@ -110,7 +110,7 @@ public class IndirectCullingGroup<I extends Instance> {
 	}
 
 	public void dispatchCull() {
-		Uniforms.bindAll();
+		Uniforms.bindAll(cullProgram.handle());
 		cullProgram.bind();
 
 		buffers.bindForCull();
@@ -137,8 +137,7 @@ public class IndirectCullingGroup<I extends Instance> {
 
 			// if the next draw call has a different VisualType or Material, start a new MultiDraw
 			if (i == indirectDraws.size() - 1 || incompatibleDraws(draw1, indirectDraws.get(i + 1))) {
-				var dst = draw1.material()
-						.transparency() == Transparency.ORDER_INDEPENDENT ? oitDraws : multiDraws;
+				var dst = draw1.material().useOit() ? oitDraws : multiDraws;
 				dst.add(new MultiDraw(draw1.material(), draw1.isEmbedded(), start, i + 1));
 				start = i + 1;
 			}
@@ -152,7 +151,7 @@ public class IndirectCullingGroup<I extends Instance> {
 		return !MaterialRenderState.materialEquals(draw1.material(), draw2.material());
 	}
 
-	public void add(IndirectInstancer<I> instancer, InstancerKey<I> key, MeshPool meshPool) {
+	public void add(IndirectInstancer<I> instancer, InstancerKey<I> key, IndirectMeshPool meshPool) {
 		instancer.mapping = buffers.objectStorage.createMapping();
 		instancer.update(instancers.size(), -1);
 
@@ -163,7 +162,7 @@ public class IndirectCullingGroup<I extends Instance> {
         for (int i = 0; i < meshes.size(); i++) {
             var entry = meshes.get(i);
 
-            MeshPool.PooledMesh mesh = meshPool.alloc(entry.mesh());
+			IndirectMeshPool.PooledMesh mesh = meshPool.alloc(entry.mesh());
 			var draw = new IndirectDraw(instancer, entry.material(), mesh, key.bias(), i);
             indirectDraws.add(draw);
             instancer.addDraw(draw);
@@ -192,7 +191,7 @@ public class IndirectCullingGroup<I extends Instance> {
 				drawProgram.bind();
 			}
 
-			MaterialRenderState.setup(multiDraw.material);
+			IndirectMaterialRenderState.setup(multiDraw.material);
 
 			multiDraw.submit(drawProgram);
 		}
@@ -220,13 +219,13 @@ public class IndirectCullingGroup<I extends Instance> {
 				drawProgram.setFloat("_flw_blueNoiseFactor", 0.07f);
 			}
 
-			MaterialRenderState.setupOit(multiDraw.material);
+			IndirectMaterialRenderState.setupOit(multiDraw.material);
 
 			multiDraw.submit(drawProgram);
 		}
 	}
 
-	public void bindForCrumbling(Material material) {
+	public GlProgram bindForCrumbling(Material material) {
 		var program = programs.getIndirectProgram(instanceType, ContextShader.CRUMBLING, material, PipelineCompiler.OitMode.OFF);
 
 		program.bind();
@@ -236,6 +235,8 @@ public class IndirectCullingGroup<I extends Instance> {
 		drawBarrier();
 
 		program.setUInt("_flw_baseDraw", 0);
+
+		return program;
 	}
 
 	private void drawBarrier() {

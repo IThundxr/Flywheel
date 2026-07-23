@@ -50,28 +50,29 @@ public interface VisualizationManager {
 		/**
 		 * Prepare visuals for render.
 		 *
-		 * <p>Guaranteed to be called before {@link #beforeSolids} and {@link #beforeTranslucent}.
+		 * <p>Guaranteed to be called before {@link #afterEntities} and {@link #beforeCrumbling}.
 		 * <br>Guaranteed to be called after the render thread has processed all light updates.
 		 * <br>The caller is otherwise free to choose an invocation site, but it is recommended to call
 		 * this as early as possible to give the VisualizationManager time to process things off-thread.
 		 */
 		void onStartLevelRender(RenderContext ctx);
 
+		// TODO 1.21.11: update method name and doc
 		/**
 		 * Render instances.
 		 *
-		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and before {@link #beforeTranslucent}.
+		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and before {@link #beforeCrumbling}.
 		 * <br>The caller is otherwise free to choose an invocation site, but it is recommended to call
 		 * this between rendering entities and block entities.
 		 */
-		void beforeSolids(RenderContext ctx);
+		void afterEntities(RenderContext ctx);
 
 		/**
 		 * Render crumbling block entities.
 		 *
-		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and {@link #beforeSolids}
-		 * @param blockBreakingRenderStates The destruction render states list from {@link LevelRenderState levelRenderState}..
+		 * <p>Guaranteed to be called after {@link #onStartLevelRender} and {@link #afterEntities}
+		 * @param blockBreakingRenderStates The destruction render states list from {@link LevelRenderState levelRenderState}.
 		 */
-		void beforeTranslucent(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates);
+		void beforeCrumbling(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates);
 	}
 }

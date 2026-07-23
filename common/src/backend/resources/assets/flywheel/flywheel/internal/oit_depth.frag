@@ -4,7 +4,7 @@
 
 uniform sampler2D _flw_depthRange;
 
-uniform sampler2DArray _flw_coefficients;
+uniform sampler2D[4] _flw_coefficients;
 
 float eye_depth_from_normalized_transparency_depth(float tDepth) {
     vec2 depthRange = texelFetch(_flw_depthRange, ivec2(gl_FragCoord.xy), 0).rg;

@@ -1,12 +1,12 @@
 package dev.engine_room.flywheel.backend.compile;
 
-import dev.engine_room.flywheel.backend.Samplers;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
@@ -28,37 +28,38 @@ public class OitPrograms {
 
 	public static OitPrograms createFullscreenCompiler(ShaderSources sources) {
 		var harness = COMPILE.program()
-				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
+				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper($ -> "fullscreen/fullscreen")
 						.withResource(FULLSCREEN))
-				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
+				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
 						.nameMapper(id -> "fullscreen/" + IdentifierUtil.toDebugFileNameNoExtension(id))
 						.onCompile((id, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0) {
 								// Need to define FMA for the wavelet calculations
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}
 						})
 						.withResource(s -> s))
-				.postLink((key, program) -> {
-					program.bind();
-					Uniforms.setUniformBlockBindings(program);
-					program.setSamplerBinding("_flw_accumulate", GlTextureUnit.T0);
-					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
-					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
-
-					GlProgram.unbind();
-				})
 				.harness("fullscreen", sources);
 		return new OitPrograms(harness);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitCompositeProgram() {
 		return harness.get(OitPrograms.OIT_COMPOSITE);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitDepthProgram() {
 		return harness.get(OitPrograms.OIT_DEPTH);
+	}
+
+	public RenderPipeline getOitCompositePipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_COMPOSITE, OitPrograms.OIT_COMPOSITE);
+	}
+
+	public RenderPipeline getOitDepthPipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_FROM_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {
