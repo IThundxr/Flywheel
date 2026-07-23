@@ -1,6 +1,6 @@
 [versions]
 java = "25"
-minecraft = "26.3-snapshot-3"
+minecraft = "26.3-snapshot-5"
 
 # https://neoforged.net
 mdg = "2.0.+"

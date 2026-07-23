@@ -8,7 +8,6 @@
     "ClientChunkCacheMixin",
     "EntityRendererAccessor",
     "EntityTypeMixin",
-    "GameRendererMixin",
     "LevelExtractorMixin",
     "LevelMixin",
     "LevelRendererMixin",
