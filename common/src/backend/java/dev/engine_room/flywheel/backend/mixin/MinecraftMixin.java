@@ -32,7 +32,7 @@ public class MinecraftMixin {
 		}
 	}
 
-	@Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;initRenderer(Lcom/mojang/blaze3d/systems/GpuDevice;)V", shift = Shift.AFTER))
+	@Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;initRenderer(Lcom/mojang/renderpearl/api/device/GpuDevice;)V", shift = Shift.AFTER))
 	private void flywheel$updateOptionsUniforms(GameConfig gameConfig, CallbackInfo ci) {
 		OptionsUniforms.INSTANCE.update(options);
 	}

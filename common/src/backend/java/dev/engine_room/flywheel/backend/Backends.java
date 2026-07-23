@@ -38,7 +38,13 @@ public final class Backends {
 					return 1000;
 				}
 			})
-			.supported(() -> DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL") && GlCompat.SUPPORTS_INDIRECT && IndirectPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
+			.supported(() -> {
+				if (DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL")) {
+					return GlCompat.SUPPORTS_INDIRECT && IndirectPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse();
+				}
+				// TODO 26.3: Vulkan path — drawIndexedIndirect and compute are core; let the reimpl try
+				return IndirectPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse();
+			})
 			.register(IdentifierUtil.id("indirect"));
 
 	private Backends() {
