@@ -1,8 +1,8 @@
 package dev.engine_room.flywheel.lib.vertex;
 
-import com.mojang.blaze3d.GpuFormat;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 public class FlywheelVertexFormats {
 	/// Basically the same as {@link DefaultVertexFormat#BLOCK} but with the normals included

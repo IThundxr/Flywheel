@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.opengl.GlCommandEncoder;
-import com.mojang.blaze3d.opengl.GlProgram;
-import com.mojang.blaze3d.opengl.GlRenderPass;
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlCommandEncoder;
+import com.mojang.renderpearl.backend.opengl.GlProgram;
+import com.mojang.renderpearl.backend.opengl.GlRenderPass;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding;
 import dev.engine_room.flywheel.backend.extension.b3d.FlwGlVulkanRenderPassExtension;

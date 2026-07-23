@@ -1,1 +1,10 @@
-/home/ithundxr/Projects/Modding/Flywheel/common/src/main/resources/flywheel-common.classtweaker
+classTweaker  v1  official
+# Interface Injection
+inject-interface com/mojang/renderpearl/api/commands/RenderPass dev/engine_room/flywheel/backend/extension/b3d/FlwRenderPassExtension
+inject-interface com/mojang/renderpearl/backend/api/RenderPassBackend dev/engine_room/flywheel/backend/extension/b3d/FlwRenderPassExtension
+
+# Access Wideners
+accessible class com/mojang/renderpearl/backend/opengl/GlDevice
+accessible class com/mojang/renderpearl/backend/opengl/GlRenderPass
+accessible class com/mojang/renderpearl/backend/opengl/GlCommandEncoder
+accessible field net/minecraft/client/resources/model/ModelBakery BREAKING_LOCATIONS Ljava/util/List;

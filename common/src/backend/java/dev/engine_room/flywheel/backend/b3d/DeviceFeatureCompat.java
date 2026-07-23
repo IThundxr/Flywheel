@@ -3,8 +3,8 @@ package dev.engine_room.flywheel.backend.b3d;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 
-import com.mojang.blaze3d.systems.DeviceFeatures;
-import com.mojang.blaze3d.systems.DeviceInfo;
+import com.mojang.renderpearl.api.device.DeviceFeatures;
+import com.mojang.renderpearl.api.device.DeviceInfo;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;

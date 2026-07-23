@@ -15,11 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(LevelExtractor.class)
-<<<<<<<< HEAD:common/src/main/java/dev/engine_room/flywheel/impl/mixin/visualmanage/LevelExtractorMixin.java
-abstract class LevelExtractorMixin {
-========
 abstract class LevelExactorMixin {
->>>>>>>> origin/26.2/enable-indirect:common/src/main/java/dev/engine_room/flywheel/impl/mixin/visualmanage/LevelExactorMixin.java
 	@Shadow
 	private @Nullable ClientLevel level;
 

@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer;
 
-import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlConst;
 
 /**
  * Gives a hint to the driver about how you intend to use a buffer. For a detailed explanation, see

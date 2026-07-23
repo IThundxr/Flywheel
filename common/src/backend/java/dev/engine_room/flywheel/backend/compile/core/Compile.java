@@ -12,9 +12,9 @@ import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
-import com.mojang.blaze3d.shaders.ShaderSource;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
+import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.compile.FlwPrograms;
@@ -269,7 +269,7 @@ public class Compile<K> {
 				}
 			}
 
-			RenderSystem.getDevice().precompilePipeline(pipeline, shaderSource);
+			CompiledPipelines.put(pipeline, RenderSystem.getDevice().compilePipeline(pipeline, shaderSource));
 			return pipeline;
 		}
 

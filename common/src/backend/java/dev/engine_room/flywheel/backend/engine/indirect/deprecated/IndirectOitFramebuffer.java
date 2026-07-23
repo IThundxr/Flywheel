@@ -5,11 +5,11 @@ import java.util.List;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL46;
 
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.renderpearl.backend.opengl.GlDevice;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
@@ -56,8 +56,9 @@ public class IndirectOitFramebuffer {
 		GameRenderer gameRenderer = minecraft.gameRenderer;
 
 		RenderTarget renderTarget;
-		if (gameRenderer.gameRenderState().useShaderTransparency()) {
-			renderTarget = minecraft.levelRenderer.itemEntityTarget();
+		if (gameRenderer.useImprovedTransparency()) {
+			// TODO 26.3: vanilla removed the item-entity target; main target is the closest match
+			renderTarget = gameRenderer.mainRenderTarget();
 
 			renderTarget.copyDepthFrom(gameRenderer.mainRenderTarget());
 		} else {
@@ -179,8 +180,9 @@ public class IndirectOitFramebuffer {
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
-		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
-			bindRenderTarget(Minecraft.getInstance().levelRenderer.itemEntityTarget());
+		if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()) {
+			// TODO 26.3: vanilla removed the item-entity target; main target is the closest match
+			bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 		} else {
 			bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 		}

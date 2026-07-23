@@ -90,12 +90,7 @@ public final class ModelUtil {
 			return Materials.TRANSLUCENT_ITEM_ENTITY_ITEM;
 		}
 
-		if (renderType == RenderTypes.glint() || renderType == RenderTypes.glintTranslucent()) {
-			return Materials.GLINT;
-		}
-		if (renderType == RenderTypes.entityGlint()) {
-			return Materials.GLINT_ENTITY;
-		}
+		// TODO 26.3: glint render types were reworked in 26.3; port glint materials
 		return null;
 	}
 

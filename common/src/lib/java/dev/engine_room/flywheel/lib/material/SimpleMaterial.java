@@ -2,8 +2,8 @@ package dev.engine_room.flywheel.lib.material;
 
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 
 import dev.engine_room.flywheel.api.material.CardinalLightingMode;
 import dev.engine_room.flywheel.api.material.CutoutShader;

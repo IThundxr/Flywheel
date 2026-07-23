@@ -4,8 +4,8 @@ import java.nio.ByteBuffer;
 
 import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.LightStorage;

@@ -6,7 +6,7 @@ import org.joml.Matrix3fc;
 import org.joml.Matrix4fc;
 import org.lwjgl.opengl.GL33C;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 public sealed interface FlwUniformBinding {
 	String name();

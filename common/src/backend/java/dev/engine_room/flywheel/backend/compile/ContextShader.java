@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.backend.FlwBindGroupLayouts;
 import dev.engine_room.flywheel.backend.engine.indirect.deprecated.Samplers;

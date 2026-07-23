@@ -5,7 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;

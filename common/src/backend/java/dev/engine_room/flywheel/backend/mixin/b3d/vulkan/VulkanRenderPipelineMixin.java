@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.vulkan.VulkanRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.backend.vulkan.VulkanRenderPipeline;
 
 import dev.engine_room.flywheel.api.Flywheel;
 

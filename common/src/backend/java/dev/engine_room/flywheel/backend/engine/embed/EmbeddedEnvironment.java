@@ -6,7 +6,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;

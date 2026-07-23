@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.compile;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;

@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.SamplerCache;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -154,8 +154,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 		GpuSampler clampToEdgeLinear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-		renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
-		renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
+		renderPass.setUniform("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+		renderPass.setUniform("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
 		light.bindToRenderPass(renderPass);
 	}
@@ -168,7 +168,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			var environment = groupKey.environment();
 
 			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
-			renderPass.setPipeline(pipeline);
+			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(pipeline));
 
 			environment.setupDraw(renderPass);
 			uploadMaterialUniform(renderPass, material);
@@ -176,7 +176,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
 			}
 
-			renderPass.bindTexture("flw_diffuseTex", drawCall.getTextureView(), drawCall.getTextureSampler());
+			renderPass.setUniform("flw_diffuseTex", drawCall.getTextureView(), drawCall.getTextureSampler());
 
 			drawCall.render(renderPass);
 		}
@@ -253,8 +253,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			meshPool.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
-			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
-			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
+			renderPass.setUniform("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+			renderPass.setUniform("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
 			for (var groupEntry : byType.entrySet()) {
 				var byProgress = groupEntry.getValue();
@@ -269,7 +269,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 							.getTextureView();
 					GpuSampler crumblingTextureSampler = samplers.getRepeat(FilterMode.NEAREST);
 
-					renderPass.bindTexture("_flw_crumblingTex", crumblingTexture, crumblingTextureSampler);
+					renderPass.setUniform("_flw_crumblingTex", crumblingTexture, crumblingTextureSampler);
 
 					for (var instanceHandlePair : progressEntry.getValue()) {
 						InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
@@ -279,11 +279,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 							var crumblingMaterial = SimpleMaterial.builder();
 							CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
 							RenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
-							renderPass.setPipeline(pipeline);
+							renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(pipeline));
 
 							uploadMaterialUniform(renderPass, crumblingMaterial);
 
-							renderPass.bindTexture("flw_diffuseTex", draw.getTextureView(), draw.getTextureSampler());
+							renderPass.setUniform("flw_diffuseTex", draw.getTextureView(), draw.getTextureSampler());
 
 							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
 								draw.renderOne(renderPass, index);
