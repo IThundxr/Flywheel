@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.engine.embed;
 
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 

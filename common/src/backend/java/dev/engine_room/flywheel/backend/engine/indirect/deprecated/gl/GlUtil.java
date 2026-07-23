@@ -1,7 +1,7 @@
 package dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl;
 
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.systems.GpuDeviceBackend;
+import com.mojang.renderpearl.backend.opengl.GlDevice;
+import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.backend.mixin.GpuDeviceAccessor;

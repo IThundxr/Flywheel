@@ -89,10 +89,10 @@ abstract class LevelRendererMixin {
 			ClientLevel level = Minecraft.getInstance().level;
 			VisualizationManager manager = VisualizationManager.get(level);
 			if (manager != null) {
-				manager.renderDispatcher().beforeSolids(flywheel$renderContext);
+				manager.renderDispatcher().afterEntities(flywheel$renderContext);
 
 				if (!gameRenderer.useImprovedTransparency()) {
-					manager.renderDispatcher().beforeTranslucent(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
+					manager.renderDispatcher().beforeCrumbling(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
 				}
 			}
 		}
@@ -104,7 +104,7 @@ abstract class LevelRendererMixin {
 			ClientLevel level = Minecraft.getInstance().level;
 			VisualizationManager manager = VisualizationManager.get(level);
 			if (manager != null) {
-				manager.renderDispatcher().beforeTranslucent(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
+				manager.renderDispatcher().beforeCrumbling(flywheel$renderContext, FLYWHEEL$BLOCK_BREAKING_RENDER_STATES.get());
 			}
 		}
 	}

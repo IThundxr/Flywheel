@@ -7,8 +7,8 @@ import java.util.Map;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import com.mojang.blaze3d.opengl.GlRenderPass;
-import com.mojang.blaze3d.vulkan.VulkanRenderPass;
+import com.mojang.renderpearl.backend.opengl.GlRenderPass;
+import com.mojang.renderpearl.backend.vulkan.VulkanRenderPass;
 
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding;
 import dev.engine_room.flywheel.backend.extension.b3d.FlwGlVulkanRenderPassExtension;

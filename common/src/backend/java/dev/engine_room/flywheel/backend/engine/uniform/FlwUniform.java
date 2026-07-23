@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 
 import net.minecraft.core.BlockPos;

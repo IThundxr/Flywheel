@@ -4,9 +4,9 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33C;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.opengl.GlBuffer;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.backend.opengl.GlBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.engine_room.flywheel.api.backend.RenderContext;

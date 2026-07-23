@@ -4,12 +4,12 @@ import java.util.Comparator;
 
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.datafixers.util.Pair;
 
 import dev.engine_room.flywheel.api.material.Material;
@@ -33,7 +33,7 @@ public final class MaterialRenderState {
 		GpuSampler sampler = RenderSystem.getSamplerCache()
 				.getSampler(defaultSampler.getAddressModeU(), defaultSampler.getAddressModeV(), filterMode, filterMode, material.mipmap());
 
-		renderPass.bindTexture("flw_diffuseTex", texture.getTextureView(), sampler);
+		renderPass.setUniform("flw_diffuseTex", texture.getTextureView(), sampler);
 	}
 
 	// Using setupTexture is better, but currently B3D and VK don't agree as getTexture can create a memory barrier

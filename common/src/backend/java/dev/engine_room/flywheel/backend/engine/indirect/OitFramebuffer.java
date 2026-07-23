@@ -7,18 +7,18 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.GpuFormat;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderPass.RenderArea;
-import com.mojang.blaze3d.systems.RenderPassDescriptor;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass.RenderArea;
+import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.backend.compile.OitPrograms;
@@ -63,7 +63,7 @@ public class OitFramebuffer implements AutoCloseable {
 	 */
 	public RenderPass createTransmittancePass() {
 		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
-		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Transmittance")
+		RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Flw OIT Transmittance")
 				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
 				.withDepthAttachment(renderTarget.getDepthTextureView());
 
@@ -71,11 +71,11 @@ public class OitFramebuffer implements AutoCloseable {
 			descriptor.withColorAttachment(view, CLEAR_TO_ZERO);
 		}
 
-		RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor);
+		RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor.build());
 
 		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
-		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
+		renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
+		renderPass.setUniform("_flw_blueNoise", NoiseTextures.BLUE_NOISE.getTextureView(), NoiseTextures.BLUE_NOISE.getSampler());
 
 		return renderPass;
 	}
@@ -86,23 +86,23 @@ public class OitFramebuffer implements AutoCloseable {
 	 */
 	public void renderDepthFromTransmittance() {
 		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
-		RenderPassDescriptor descriptor = RenderPassDescriptor.create(() -> "Flw OIT Depth From Transmittance")
+		RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Flw OIT Depth From Transmittance")
 				.withRenderArea(new RenderArea(0, 0, renderTarget.width, renderTarget.height))
 				.withUnusedColorAttachment()
 				.withDepthAttachment(renderTarget.getDepthTextureView());
 
-		try (RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor)) {
+		try (RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptor.build())) {
 			Uniforms.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+			renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
 
-			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
-			renderPass.setPipeline(programs.getOitDepthPipeline());
+			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(programs.getOitDepthPipeline()));
 
 			drawFullscreenQuad(renderPass);
 		}
@@ -125,8 +125,9 @@ public class OitFramebuffer implements AutoCloseable {
 	 */
 	public void composite() {
 		RenderTarget renderTarget;
-		if (Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()) {
-			renderTarget = Minecraft.getInstance().levelRenderer.itemEntityTarget();
+		if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()) {
+			// TODO 26.3: vanilla removed the item-entity target; main target is the closest match
+			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		} else {
 			renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		}
@@ -139,15 +140,15 @@ public class OitFramebuffer implements AutoCloseable {
 			Uniforms.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			renderPass.bindTexture("_flw_accumulate", accumulate, clampToEdgeNearest);
-			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+			renderPass.setUniform("_flw_accumulate", accumulate, clampToEdgeNearest);
+			renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
 
-			renderPass.bindTexture("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[0]", coefficients[0], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[1]", coefficients[1], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[2]", coefficients[2], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients[3]", coefficients[3], clampToEdgeNearest);
 
-			renderPass.setPipeline(programs.getOitCompositePipeline());
+			renderPass.setPipeline(dev.engine_room.flywheel.backend.compile.core.CompiledPipelines.get(programs.getOitCompositePipeline()));
 
 			drawFullscreenQuad(renderPass);
 		}
@@ -158,8 +159,9 @@ public class OitFramebuffer implements AutoCloseable {
 		GameRenderer gameRenderer = minecraft.gameRenderer;
 
 		RenderTarget renderTarget;
-		if (gameRenderer.gameRenderState().useShaderTransparency()) {
-			renderTarget = minecraft.levelRenderer.itemEntityTarget();
+		if (gameRenderer.useImprovedTransparency()) {
+			// TODO 26.3: vanilla removed the item-entity target; main target is the closest match
+			renderTarget = gameRenderer.mainRenderTarget();
 
 			renderTarget.copyDepthFrom(gameRenderer.mainRenderTarget());
 		} else {

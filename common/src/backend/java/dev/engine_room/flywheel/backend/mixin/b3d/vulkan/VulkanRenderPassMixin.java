@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.vulkan.VulkanRenderPass;
-import com.mojang.blaze3d.vulkan.VulkanRenderPipeline;
+import com.mojang.renderpearl.backend.vulkan.VulkanRenderPass;
+import com.mojang.renderpearl.backend.vulkan.VulkanRenderPipeline;
 
 import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding;
 import dev.engine_room.flywheel.backend.extension.b3d.FlwGlVulkanRenderPassExtension;
