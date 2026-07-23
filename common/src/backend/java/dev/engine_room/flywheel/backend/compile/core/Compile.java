@@ -248,13 +248,16 @@ public class Compile<K> {
 					.withFragmentShader(fragmentShaderId)
 					.build();
 
-			ShaderSource shaderSource = (_, type) -> {
-				ShaderType flwShaderType = switch (type) {
-					case VERTEX -> ShaderType.VERTEX;
-					case FRAGMENT -> ShaderType.FRAGMENT;
-				};
+			// SPIR-V (Vulkan backend) requires explicit locations on all user in/out;
+			// process both stages together so varying locations agree.
+			String flwVertexSrc = compilers.get(ShaderType.VERTEX).getSource(key, shaderCache, loader);
+			ShaderCompiler<K> flwFragCompiler = compilers.get(ShaderType.FRAGMENT);
+			String flwFragmentSrc = flwFragCompiler == null ? null : flwFragCompiler.getSource(key, shaderCache, loader);
+			FlwSpirvLocations.Processed flwProcessed = FlwSpirvLocations.process(flwVertexSrc, flwFragmentSrc);
 
-				return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
+			ShaderSource shaderSource = (_, type) -> switch (type) {
+				case VERTEX -> flwProcessed.vertex();
+				case FRAGMENT -> flwProcessed.fragment();
 			};
 
 			if (Compilation.DUMP_SHADER_SOURCE) {

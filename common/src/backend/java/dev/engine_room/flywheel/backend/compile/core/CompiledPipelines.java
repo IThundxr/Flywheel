@@ -26,4 +26,10 @@ public final class CompiledPipelines {
 		}
 		return compiled;
 	}
+
+	// Pipelines may be requested a frame before their async compile lands; callers
+	// should skip the draw for that frame instead of crashing the whole backend.
+	public static synchronized CompiledRenderPipeline getOrNull(RenderPipeline pipeline) {
+		return CACHE.get(pipeline);
+	}
 }
