@@ -15,6 +15,11 @@ val lib = sourceSets.create("lib")
 val backend = sourceSets.create("backend")
 val main = sourceSets.getByName("main")
 
+neoForge {
+    accessTransformers.from(commonProject.file("src/main/resources/accesstransformer.cfg"))
+    interfaceInjectionData.from(commonProject.file("src/main/resources/interface_injections.json"))
+}
+
 transitiveSourceSets {
     compileClasspath = main.compileClasspath
 

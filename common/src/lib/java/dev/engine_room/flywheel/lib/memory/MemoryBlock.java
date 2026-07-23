@@ -2,6 +2,7 @@ package dev.engine_room.flywheel.lib.memory;
 
 import java.nio.ByteBuffer;
 
+// TODO b3d-ification: Maybe implement AutoClosable and use try-with-resources instead
 public sealed interface MemoryBlock permits AbstractMemoryBlockImpl {
 	long ptr();
 

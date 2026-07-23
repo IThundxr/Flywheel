@@ -152,7 +152,7 @@ public abstract class DrawManager<N extends AbstractInstancer<?>> {
 		for (Engine.CrumblingBlock block : crumblingBlocks) {
 			int progress = block.progress();
 
-			if (progress < 0 || progress >= ModelBakery.DESTROY_TYPES.size()) {
+			if (progress == 0 || progress >= ModelBakery.DESTROY_TYPES.size()) {
 				continue;
 			}
 
@@ -170,8 +170,8 @@ public abstract class DrawManager<N extends AbstractInstancer<?>> {
 					continue;
 				}
 
-				byType.computeIfAbsent(new GroupKey<>(instancer.type, instancer.environment), $ -> new Int2ObjectArrayMap<>())
-						.computeIfAbsent(progress, $ -> new ArrayList<>())
+				byType.computeIfAbsent(new GroupKey<>(instancer.type, instancer.environment), _ -> new Int2ObjectArrayMap<>())
+						.computeIfAbsent(progress, _ -> new ArrayList<>())
 						.add(Pair.of(instancer, impl));
 			}
 		}

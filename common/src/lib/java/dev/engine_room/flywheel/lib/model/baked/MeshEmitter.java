@@ -2,36 +2,23 @@ package dev.engine_room.flywheel.lib.model.baked;
 
 import java.util.Arrays;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnknownNullability;
 import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.renderpearl.api.GpuFormat;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.api.model.Model;
+import dev.engine_room.flywheel.lib.vertex.FlywheelVertexFormats;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 
-@ApiStatus.Internal
-public abstract class MeshEmitter implements VertexConsumer {
+abstract class MeshEmitter implements VertexConsumer {
 	private static final int INITIAL_CAPACITY = 1;
-
-	/// Basically the same as {@link DefaultVertexFormat#BLOCK} but with the normals included
-	private static final VertexFormat BLOCK_VERTEX_FORMAT = VertexFormat.builder(0)
-			.addAttribute("Position", GpuFormat.RGB32_FLOAT)
-			.addAttribute("Color", GpuFormat.RGBA8_UNORM)
-			.addAttribute("UV0", GpuFormat.RG32_FLOAT)
-			.addAttribute("UV2", GpuFormat.RG16_SINT)
-			.addAttribute("Normal", GpuFormat.RGBA8_SNORM)
-			.build();
 
 	private final ByteBufferBuilderStack byteBufferBuilderStack;
 	private final ChunkSectionLayer chunkSectionLayer;
@@ -105,7 +92,7 @@ public abstract class MeshEmitter implements VertexConsumer {
 		}
 
 		ByteBufferBuilder byteBufferBuilder = byteBufferBuilderStack.nextOrCreate();
-		BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, BLOCK_VERTEX_FORMAT);
+		BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, FlywheelVertexFormats.BLOCK_VERTEX_FORMAT);
 
 		// currentIndex == numBufferBuildersPopulated here.
 		materials[currentIndex] = material;

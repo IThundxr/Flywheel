@@ -45,6 +45,8 @@ import net.minecraft.client.renderer.state.level.BlockBreakingRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -364,17 +366,22 @@ public class VisualizationManagerImpl implements VisualizationManager {
 		}
 
 		@Override
-		public void beforeSolids(RenderContext ctx) {
+		public void afterEntities(RenderContext ctx) {
+			ProfilerFiller profiler = Profiler.get();
+			profiler.push("flw_render");
 			render(ctx);
+			profiler.pop();
 		}
 
 		@Override
-		public void beforeTranslucent(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates) {
+		public void beforeCrumbling(RenderContext ctx, List<BlockBreakingRenderState> blockBreakingRenderStates) {
+			ProfilerFiller profiler = Profiler.get();
+			profiler.push("flw_render_crumbling");
 			renderCrumbling(ctx, blockBreakingRenderStates);
+			profiler.pop();
 		}
 	}
 
-	private record CrumblingBlockImpl(BlockPos pos, int progress,
-	                                  List<Instance> instances) implements Engine.CrumblingBlock {
+	private record CrumblingBlockImpl(BlockPos pos, int progress, List<Instance> instances) implements Engine.CrumblingBlock {
 	}
 }

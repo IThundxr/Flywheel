@@ -2,7 +2,6 @@ package dev.engine_room.flywheel.lib.model;
 
 import org.jetbrains.annotations.UnknownNullability;
 import org.joml.Vector4fc;
-import org.lwjgl.system.MemoryUtil;
 
 import dev.engine_room.flywheel.api.material.CardinalLightingMode;
 import dev.engine_room.flywheel.api.material.Material;
@@ -129,21 +128,20 @@ public final class LineModelBuilder {
 	}
 
 	private static class LineMesh implements Mesh {
-		private static final IndexSequence INDEX_SEQUENCE = (ptr, count) -> {
+		private static final IndexSequence INDEX_SEQUENCE = (buffer, count) -> {
 			int numVertices = 2 * count / 3;
 			int baseVertex = 0;
 			while (baseVertex < numVertices) {
 				// triangle a
-				MemoryUtil.memPutInt(ptr, baseVertex);
-				MemoryUtil.memPutInt(ptr + 4, baseVertex + 1);
-				MemoryUtil.memPutInt(ptr + 8, baseVertex + 2);
+				buffer.putInt(baseVertex);
+				buffer.putInt(baseVertex + 1);
+				buffer.putInt(baseVertex + 2);
 				// triangle b
-				MemoryUtil.memPutInt(ptr + 12, baseVertex + 3);
-				MemoryUtil.memPutInt(ptr + 16, baseVertex + 2);
-				MemoryUtil.memPutInt(ptr + 20, baseVertex + 1);
+				buffer.putInt(baseVertex + 3);
+				buffer.putInt(baseVertex + 2);
+				buffer.putInt(baseVertex + 1);
 
 				baseVertex += 4;
-				ptr += 24;
 			}
 		};
 		private final VertexList vertexList;

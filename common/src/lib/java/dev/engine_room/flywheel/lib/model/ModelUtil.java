@@ -5,6 +5,7 @@ import java.util.Collection;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.system.MemoryStack;
 
 import dev.engine_room.flywheel.api.material.CardinalLightingMode;
 import dev.engine_room.flywheel.api.material.Material;
@@ -13,7 +14,6 @@ import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.api.vertex.VertexList;
 import dev.engine_room.flywheel.lib.material.Materials;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.PosVertexView;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -78,12 +78,7 @@ public final class ModelUtil {
 
 	@Nullable
 	public static Material getItemMaterial(RenderType renderType) {
-		// TODO 26.3: Port this
-		if (true) {
-			throw new UnsupportedOperationException("Not ported yet");
-		}
-
-		if (renderType == Sheets.cutoutItemSheet()) {
+		if (renderType == Sheets.cutoutBlockItemSheet()) {
 			return Materials.CUTOUT_BLOCK;
 		}
 
@@ -95,13 +90,12 @@ public final class ModelUtil {
 			return Materials.TRANSLUCENT_ITEM_ENTITY_ITEM;
 		}
 
-		// TODO 26.3: Port this
-//		if (renderType == RenderTypes.glint() || renderType == RenderTypes.glintTranslucent()) {
-//			return Materials.GLINT;
-//		}
-//		if (renderType == RenderTypes.entityGlint()) {
-//			return Materials.GLINT_ENTITY;
-//		}
+		if (renderType == RenderTypes.glint() || renderType == RenderTypes.glintTranslucent()) {
+			return Materials.GLINT;
+		}
+		if (renderType == RenderTypes.entityGlint()) {
+			return Materials.GLINT_ENTITY;
+		}
 		return null;
 	}
 
@@ -119,24 +113,22 @@ public final class ModelUtil {
 
 	public static Vector4f computeBoundingSphere(Iterable<Mesh> meshes) {
 		int vertexCount = computeTotalVertexCount(meshes);
-		var block = MemoryBlock.malloc((long) vertexCount * PosVertexView.STRIDE);
-		var vertexList = new PosVertexView();
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			final long ptr = stack.nmalloc(vertexCount * (int) PosVertexView.STRIDE);
+			var vertexList = new PosVertexView();
 
-		int baseVertex = 0;
-		for (Mesh mesh : meshes) {
-			vertexList.ptr(block.ptr() + (long) baseVertex * PosVertexView.STRIDE);
-			vertexList.vertexCount(mesh.vertexCount());
-			mesh.write(vertexList);
-			baseVertex += mesh.vertexCount();
+			int baseVertex = 0;
+			for (Mesh mesh : meshes) {
+				vertexList.ptr(ptr + (long) baseVertex * PosVertexView.STRIDE);
+				vertexList.vertexCount(mesh.vertexCount());
+				mesh.write(vertexList);
+				baseVertex += mesh.vertexCount();
+			}
+
+			vertexList.ptr(ptr);
+			vertexList.vertexCount(vertexCount);
+			return computeBoundingSphere(vertexList);
 		}
-
-		vertexList.ptr(block.ptr());
-		vertexList.vertexCount(vertexCount);
-		var sphere = computeBoundingSphere(vertexList);
-
-		block.free();
-
-		return sphere;
 	}
 
 	public static Vector4f computeBoundingSphere(VertexList vertexList) {

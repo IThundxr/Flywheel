@@ -8,12 +8,12 @@ float linearFogValue(float vertexDistance, float fogStart, float fogEnd) {
     return (vertexDistance - fogStart) / (fogEnd - fogStart);
 }
 
-float totalFogValue(float sphericalVertexDistance, float cylindricalVertexDistance, float environmentalStart, float environmantalEnd, float renderDistanceStart, float renderDistanceEnd) {
-    return max(linearFogValue(sphericalVertexDistance, environmentalStart, environmantalEnd), linearFogValue(cylindricalVertexDistance, renderDistanceStart, renderDistanceEnd));
+float totalFogValue(float sphericalVertexDistance, float cylindricalVertexDistance, float environmentalStart, float environmentalEnd, float renderDistanceStart, float renderDistanceEnd) {
+    return max(linearFogValue(sphericalVertexDistance, environmentalStart, environmentalEnd), linearFogValue(cylindricalVertexDistance, renderDistanceStart, renderDistanceEnd));
 }
 
-vec4 linearFog(vec4 color, float sphericalVertexDistance, float cylindricalVertexDistance, float environmentalStart, float environmantalEnd, float renderDistanceStart, float renderDistanceEnd, vec4 fogColor) {
-    float fogValue = totalFogValue(sphericalVertexDistance, cylindricalVertexDistance, environmentalStart, environmantalEnd, renderDistanceStart, renderDistanceEnd);
+vec4 linearFog(vec4 color, float sphericalVertexDistance, float cylindricalVertexDistance, float environmentalStart, float environmentalEnd, float renderDistanceStart, float renderDistanceEnd, vec4 fogColor) {
+    float fogValue = totalFogValue(sphericalVertexDistance, cylindricalVertexDistance, environmentalStart, environmentalEnd, renderDistanceStart, renderDistanceEnd);
     return vec4(mix(color.rgb, fogColor.rgb, fogValue * fogColor.a), color.a);
 }
 

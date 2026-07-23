@@ -3,19 +3,30 @@ package dev.engine_room.flywheel.backend.engine.instancing;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.textures.FilterMode;
-import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.blaze3d.systems.SamplerCache;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
-import dev.engine_room.flywheel.api.material.Transparency;
-import dev.engine_room.flywheel.backend.Samplers;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
+import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
+import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
 import dev.engine_room.flywheel.backend.engine.CommonCrumbling;
 import dev.engine_room.flywheel.backend.engine.DrawManager;
@@ -25,16 +36,13 @@ import dev.engine_room.flywheel.backend.engine.LightStorage;
 import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
-import dev.engine_room.flywheel.backend.engine.TextureBinder;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.indirect.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
-import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 
 public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
@@ -53,8 +61,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	 * A map of vertex types to their mesh pools.
 	 */
 	private final MeshPool meshPool;
-	private final GlVertexArray vao;
-	private final TextureBuffer instanceTexture;
 	private final InstancedLight light;
 
 	private final OitFramebuffer oitFramebuffer;
@@ -64,20 +70,16 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		this.programs = programs;
 
 		meshPool = new MeshPool();
-		vao = GlVertexArray.create();
-		instanceTexture = new TextureBuffer();
 		light = new InstancedLight();
 
 		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
-
 	}
 
 	@Override
 	public void render(LightStorage lightStorage, EnvironmentStorage environmentStorage) {
 		super.render(lightStorage, environmentStorage);
 
-		this.instancers.values()
-				.removeIf(instancer -> {
+		this.instancers.values().removeIf(instancer -> {
 			if (instancer.instanceCount() == 0) {
 				instancer.delete();
 				return true;
@@ -97,8 +99,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			oitDraws.clear();
 
 			for (var draw : allDraws) {
-				if (draw.material()
-						.transparency() == Transparency.ORDER_INDEPENDENT) {
+				if (draw.material().useOit()) {
 					oitDraws.add(draw);
 				} else {
 					draws.add(draw);
@@ -116,93 +117,74 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
-		Uniforms.bindAll();
-		vao.bindForDraw();
-		meshPool.bind(vao);
-		TextureBinder.bindLightAndOverlay();
-		light.bind();
-
-		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
-
-
-		submitDraws();
+		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
+		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+			setupPass(renderPass);
+			submitDraws(renderPass, OitMode.OFF);
+		}
 
 		if (!oitDraws.isEmpty()) {
-			oitFramebuffer.prepare();
+			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.DEPTH_RANGE);
+			}
 
-			oitFramebuffer.depthRange();
-
-			submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE);
-
-			oitFramebuffer.renderTransmittance();
-
-			submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS);
+			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
+			}
 
 			oitFramebuffer.renderDepthFromTransmittance();
 
-			// Need to bind this again because we just drew a full screen quad for OIT.
-			vao.bindForDraw();
-
-			oitFramebuffer.accumulate();
-
-			submitOitDraws(PipelineCompiler.OitMode.EVALUATE);
+			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.EVALUATE);
+			}
 
 			oitFramebuffer.composite();
 		}
 	}
 
-	private void submitDraws() {
-		for (var drawCall : draws) {
-			var material = drawCall.material();
-			var groupKey = drawCall.groupKey;
-			var environment = groupKey.environment();
+	private void setupPass(RenderPass renderPass) {
+		Uniforms.bindToRenderPass(renderPass);
+		meshPool.bindToRenderPass(renderPass);
 
-			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, PipelineCompiler.OitMode.OFF);
-			program.bind();
+		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+		GpuSampler clampToEdgeLinear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+		renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+		renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
-			environment.setupDraw(program);
-
-			uploadMaterialUniform(program, material);
-
-			program.setUInt("_flw_baseVertex", drawCall.mesh()
-					.baseVertex());
-
-			MaterialRenderState.setup(material);
-
-			Samplers.INSTANCE_BUFFER.makeActive();
-
-			drawCall.render(instanceTexture);
-		}
+		light.bindToRenderPass(renderPass);
 	}
 
-	private void submitOitDraws(PipelineCompiler.OitMode mode) {
-		for (var drawCall : oitDraws) {
+	private void submitDraws(RenderPass renderPass, PipelineCompiler.OitMode mode) {
+		var drawCalls = mode == OitMode.OFF ? draws : oitDraws;
+		for (var drawCall : drawCalls) {
 			var material = drawCall.material();
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
 
-			var program = programs.get(groupKey.instanceType(), environment.contextShader(), material, mode);
-			program.bind();
+			RenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
+			renderPass.setPipeline(pipeline);
 
-			environment.setupDraw(program);
+			environment.setupDraw(renderPass);
+			uploadMaterialUniform(renderPass, material);
+			if (!DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
+				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			}
 
-			uploadMaterialUniform(program, material);
+			renderPass.bindTexture("flw_diffuseTex", drawCall.getTextureView(), drawCall.getTextureSampler());
 
-			program.setUInt("_flw_baseVertex", drawCall.mesh()
-					.baseVertex());
-
-			MaterialRenderState.setupOit(material);
-
-			Samplers.INSTANCE_BUFFER.makeActive();
-
-			drawCall.render(instanceTexture);
+			drawCall.render(renderPass);
 		}
 	}
 
 	@Override
 	public void delete() {
-		instancers.values()
-				.forEach(InstancedInstancer::delete);
+		instancers.values().forEach(InstancedInstancer::delete);
 
 		allDraws.forEach(InstancedDraw::delete);
 		allDraws.clear();
@@ -210,13 +192,11 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		oitDraws.clear();
 
 		meshPool.close();
-		instanceTexture.delete();
 		programs.release();
-		vao.delete();
 
-		light.delete();
+		light.close();
 
-		oitFramebuffer.delete();
+		oitFramebuffer.close();
 
 		super.delete();
 	}
@@ -228,8 +208,6 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 	@Override
 	protected <I extends Instance> void initialize(InstancerKey<I> key, InstancedInstancer<?> instancer) {
-		instancer.init();
-
 		var meshes = key.model()
 				.meshes();
 		for (int i = 0; i < meshes.size(); i++) {
@@ -262,41 +240,58 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
-		var crumblingMaterial = SimpleMaterial.builder();
+		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+		SamplerCache samplers = RenderSystem.getSamplerCache();
 
-		Uniforms.bindAll();
-		vao.bindForDraw();
+		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+		RenderTarget mainRenderTarget = gameRenderer.mainRenderTarget();
 
-		TextureBinder.bindLightAndOverlay();
-		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
+		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
+		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw - Crumbling", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+			Uniforms.bindToRenderPass(renderPass);
+			meshPool.bindToRenderPass(renderPass);
 
-		for (var groupEntry : byType.entrySet()) {
-			var byProgress = groupEntry.getValue();
+			GpuSampler clampToEdgeLinear = samplers.getClampToEdge(FilterMode.LINEAR);
+			renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+			renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
-			GroupKey<?> shader = groupEntry.getKey();
+			for (var groupEntry : byType.entrySet()) {
+				var byProgress = groupEntry.getValue();
 
-			for (var progressEntry : byProgress.int2ObjectEntrySet()) {
-				// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
-				Identifier crumblingTextureId = ModelBakeryAccessor.flywheel$getBREAKING_LOCATIONS().get(progressEntry.getIntKey());
-				GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
-				TextureBinder.bind(Samplers.CRUMBLING.number, crumblingTextureId, crumblingTextureSampler);
+				GroupKey<?> shader = groupEntry.getKey();
 
-				for (var instanceHandlePair : progressEntry.getValue()) {
-					InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
-					var index = instanceHandlePair.getSecond().index;
+				for (var progressEntry : byProgress.int2ObjectEntrySet()) {
+					Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
+					GpuTextureView crumblingTexture = Minecraft.getInstance()
+							.getTextureManager()
+							.getTexture(crumblingTextureId)
+							.getTextureView();
+					GpuSampler crumblingTextureSampler = samplers.getRepeat(FilterMode.NEAREST);
 
-					for (InstancedDraw draw : instancer.draws()) {
-						CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
-						var program = programs.get(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
-						program.bind();
-						program.setInt("_flw_baseInstance", index);
-						uploadMaterialUniform(program, crumblingMaterial);
+					renderPass.bindTexture("_flw_crumblingTex", crumblingTexture, crumblingTextureSampler);
 
-						MaterialRenderState.setup(crumblingMaterial);
+					for (var instanceHandlePair : progressEntry.getValue()) {
+						InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
+						var index = instanceHandlePair.getSecond().index;
 
-						Samplers.INSTANCE_BUFFER.makeActive();
+						for (InstancedDraw draw : instancer.draws()) {
+							var crumblingMaterial = SimpleMaterial.builder();
+							CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
+							RenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, PipelineCompiler.OitMode.OFF);
+							renderPass.setPipeline(pipeline);
 
-						draw.renderOne(instanceTexture);
+							uploadMaterialUniform(renderPass, crumblingMaterial);
+
+							renderPass.bindTexture("flw_diffuseTex", draw.getTextureView(), draw.getTextureSampler());
+
+							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_PARAMETERS) {
+								draw.renderOne(renderPass, index);
+							} else {
+								new IntUniform("flw_baseInstance", index).set(renderPass);
+								draw.renderOne(renderPass);
+							}
+						}
 					}
 				}
 			}
@@ -314,9 +309,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		return meshPool;
 	}
 
-	public static void uploadMaterialUniform(GlProgram program, Material material) {
+	public static void uploadMaterialUniform(RenderPass renderPass, Material material) {
 		int packedFogAndCutout = MaterialEncoder.packUberShader(material);
 		int packedMaterialProperties = MaterialEncoder.packProperties(material);
-		program.setUVec2("_flw_packedMaterial", packedFogAndCutout, packedMaterialProperties);
+		new UVec2("_flw_packedMaterial", packedFogAndCutout, packedMaterialProperties).set(renderPass);
 	}
 }

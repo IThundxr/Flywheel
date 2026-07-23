@@ -2,6 +2,7 @@
 
 run/
 .gradle/
+.kotlin/
 build/
 gradle-app.setting
 out/

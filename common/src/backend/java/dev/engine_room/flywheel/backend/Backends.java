@@ -1,13 +1,14 @@
 package dev.engine_room.flywheel.backend;
 
 import dev.engine_room.flywheel.api.backend.Backend;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.engine.EngineImpl;
 import dev.engine_room.flywheel.backend.engine.indirect.IndirectDrawManager;
 import dev.engine_room.flywheel.backend.engine.instancing.InstancedDrawManager;
-import dev.engine_room.flywheel.backend.gl.Driver;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.Driver;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
 import dev.engine_room.flywheel.lib.backend.SimpleBackend;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import dev.engine_room.flywheel.lib.util.ShadersModHelper;
@@ -19,7 +20,7 @@ public final class Backends {
 	public static final Backend INSTANCING = SimpleBackend.builder()
 			.engineFactory(level -> new EngineImpl(level, new InstancedDrawManager(InstancingPrograms.get()), 256))
 			.priority(500)
-			.supported(() -> GlCompat.SUPPORTS_INSTANCING && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
+			.supported(() -> DeviceFeatureCompat.SUPPORTS_INSTANCING && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
 			.register(IdentifierUtil.id("instancing"));
 
 	/**
@@ -37,7 +38,7 @@ public final class Backends {
 					return 1000;
 				}
 			})
-			.supported(() -> GlCompat.SUPPORTS_INDIRECT && IndirectPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
+			.supported(() -> DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL") && GlCompat.SUPPORTS_INDIRECT && IndirectPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
 			.register(IdentifierUtil.id("indirect"));
 
 	private Backends() {

@@ -3,24 +3,29 @@ package dev.engine_room.flywheel.backend.compile.core;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import dev.engine_room.flywheel.backend.gl.shader.GlShader;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlShader;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 
 public class ShaderCache {
-	private final Map<ShaderKey, ShaderResult> inner = new HashMap<>();
+	@Deprecated(forRemoval = true)
+	private final Map<ShaderKey, ShaderResult> innerOlder = new HashMap<>();
+	private final Map<ShaderKey, String> inner = new HashMap<>();
 
 	public ShaderCache() {
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlShader compile(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
 		var key = new ShaderKey(glslVersion, shaderType, name);
-		var cached = inner.get(key);
+		var cached = innerOlder.get(key);
 		if (cached != null) {
 			return cached.unwrap();
 		}
@@ -28,22 +33,39 @@ public class ShaderCache {
 		Compilation ctx = new Compilation();
 		ctx.version(glslVersion);
 		ctx.define(shaderType.define);
+		ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 
 		callback.accept(ctx);
 
 		expand(sourceComponents, ctx::appendComponent);
 
 		ShaderResult out = ctx.compile(shaderType, name);
-		inner.put(key, out);
+		innerOlder.put(key, out);
 		return out.unwrap();
 	}
 
+	public String getSource(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
+		return inner.computeIfAbsent(new ShaderKey(glslVersion, shaderType, name), _ -> {
+			Compilation ctx = new Compilation();
+			ctx.version(glslVersion);
+			ctx.define(shaderType.define);
+			ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
+
+			callback.accept(ctx);
+
+			expand(sourceComponents, ctx::appendComponent);
+
+			return ctx.getSource();
+		});
+	}
+
 	public void delete() {
-		inner.values()
+		innerOlder.values()
 				.stream()
 				.filter(r -> r instanceof ShaderResult.Success)
 				.map(ShaderResult::unwrap)
 				.forEach(GlShader::delete);
+		innerOlder.clear();
 		inner.clear();
 	}
 

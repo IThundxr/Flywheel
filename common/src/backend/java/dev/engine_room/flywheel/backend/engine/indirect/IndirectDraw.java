@@ -4,13 +4,13 @@ import org.lwjgl.system.MemoryUtil;
 
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
-import dev.engine_room.flywheel.backend.engine.MeshPool;
 import dev.engine_room.flywheel.backend.engine.embed.EmbeddedEnvironment;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectMeshPool;
 
 public class IndirectDraw {
 	private final IndirectInstancer<?> instancer;
 	private final Material material;
-	private final MeshPool.PooledMesh mesh;
+	private final IndirectMeshPool.PooledMesh mesh;
 	private final int bias;
 	private final int indexOfMeshInModel;
 
@@ -18,7 +18,7 @@ public class IndirectDraw {
 	private final int packedMaterialProperties;
 	private boolean deleted;
 
-	public IndirectDraw(IndirectInstancer<?> instancer, Material material, MeshPool.PooledMesh mesh, int bias, int indexOfMeshInModel) {
+	public IndirectDraw(IndirectInstancer<?> instancer, Material material, IndirectMeshPool.PooledMesh mesh, int bias, int indexOfMeshInModel) {
 		this.instancer = instancer;
 		this.material = material;
 		this.mesh = mesh;
@@ -43,7 +43,7 @@ public class IndirectDraw {
 		return instancer.environment instanceof EmbeddedEnvironment;
 	}
 
-	public MeshPool.PooledMesh mesh() {
+	public IndirectMeshPool.PooledMesh mesh() {
 		return mesh;
 	}
 

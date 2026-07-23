@@ -1,10 +1,16 @@
 package dev.engine_room.flywheel.backend.engine;
 
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import java.nio.ByteBuffer;
+
+import org.lwjgl.system.MemoryStack;
+
+import com.mojang.blaze3d.IndexType;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.opengl.GlBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
 
 import dev.engine_room.flywheel.api.model.IndexSequence;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.lib.memory.MemoryBlock;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.array.GlVertexArray;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
@@ -16,7 +22,7 @@ public class IndexPool implements AutoCloseable {
 
 	private boolean dirty;
 
-	public IndexPool() {
+    public IndexPool() {
 		// TODO b3d-ification: check if we need a bigger buffer
 		ebo = new DynamicGpuBuffer(
 				"Flw IndexPool EBO",
@@ -58,33 +64,39 @@ public class IndexPool implements AutoCloseable {
 		firstIndices.clear();
 		dirty = false;
 
-		long totalIndexCount = 0;
+		int totalIndexCount = 0;
 
 		for (int count : indexCounts.values()) {
 			totalIndexCount += count;
 		}
 
-		final var indexBlock = MemoryBlock.malloc(totalIndexCount * Integer.BYTES);
-		final long indexPtr = indexBlock.ptr();
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			ByteBuffer buffer = stack.malloc(totalIndexCount * Integer.BYTES);
 
-		int firstIndex = 0;
-		for (Reference2IntMap.Entry<IndexSequence> entries : indexCounts.reference2IntEntrySet()) {
-			var indexSequence = entries.getKey();
-			var indexCount = entries.getIntValue();
+			int firstIndex = 0;
+			for (Reference2IntMap.Entry<IndexSequence> entries : indexCounts.reference2IntEntrySet()) {
+				var indexSequence = entries.getKey();
+				var indexCount = entries.getIntValue();
 
-			firstIndices.put(indexSequence, firstIndex);
+				firstIndices.put(indexSequence, firstIndex);
 
-			indexSequence.fill(indexPtr + (long) firstIndex * Integer.BYTES, indexCount);
+				indexSequence.fill(buffer, indexCount);
 
-			firstIndex += indexCount;
+				firstIndex += indexCount;
+			}
+
+			ebo.write(buffer.flip());
 		}
-
-		ebo.write(indexBlock.asBuffer());
-		indexBlock.free();
 	}
 
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setIndexBuffer(ebo.getCurrentBuffer(), IndexType.INT);
+	}
+
+	@Deprecated
 	public void bind(GlVertexArray vertexArray) {
-		vertexArray.setElementBuffer(ebo.getHandle());
+		GlBuffer glBuffer = (GlBuffer) ebo.getCurrentBuffer();
+		vertexArray.setElementBuffer(glBuffer.handle());
 	}
 
 	@Override

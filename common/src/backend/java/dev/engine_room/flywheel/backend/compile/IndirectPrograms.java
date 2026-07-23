@@ -8,13 +8,13 @@ import com.google.common.collect.ImmutableList;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
 import dev.engine_room.flywheel.backend.compile.component.SsboInstanceComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
-import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.GlCompat;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
@@ -34,8 +34,8 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 	private static final Compile<InstanceType<?>> CULL = new Compile<>();
 	private static final Compile<Identifier> UTIL = new Compile<>();
 
-	private static final List<String> EXTENSIONS = getExtensions(GlCompat.MAX_GLSL_VERSION);
-	private static final List<String> COMPUTE_EXTENSIONS = getComputeExtensions(GlCompat.MAX_GLSL_VERSION);
+	private static final List<String> EXTENSIONS = getExtensions(DeviceFeatureCompat.MAX_GLSL_VERSION);
+	private static final List<String> COMPUTE_EXTENSIONS = getComputeExtensions(DeviceFeatureCompat.MAX_GLSL_VERSION);
 
 	@Nullable
 	private static IndirectPrograms instance;
@@ -102,7 +102,7 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 	 */
 	private static CompilationHarness<InstanceType<?>> createCullingCompiler(ShaderSources sources) {
 		return CULL.program()
-				.link(CULL.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.COMPUTE)
+				.link(CULL.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.COMPUTE)
 						.nameMapper(instanceType -> "culling/" + IdentifierUtil.toDebugFileNameNoExtension(instanceType.cullShader()))
 						.requireExtensions(COMPUTE_EXTENSIONS)
 						.define("_FLW_SUBGROUP_SIZE", GlCompat.SUBGROUP_SIZE)
@@ -111,7 +111,6 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 						.withResource(InstanceType::cullShader)
 						.withComponent(SsboInstanceComponent::new)
 						.withResource(CULL_SHADER_MAIN))
-				.postLink((key, program) -> Uniforms.setUniformBlockBindings(program))
 				.harness("culling", sources);
 	}
 
@@ -120,7 +119,7 @@ public class IndirectPrograms extends AtomicReferenceCounted {
 	 */
 	private static CompilationHarness<Identifier> createUtilCompiler(ShaderSources sources) {
 		return UTIL.program()
-				.link(UTIL.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.COMPUTE)
+				.link(UTIL.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.COMPUTE)
 						.nameMapper(id -> "utilities/" + IdentifierUtil.toDebugFileNameNoExtension(id))
 						.requireExtensions(COMPUTE_EXTENSIONS)
 						.define("_FLW_SUBGROUP_SIZE", GlCompat.SUBGROUP_SIZE)

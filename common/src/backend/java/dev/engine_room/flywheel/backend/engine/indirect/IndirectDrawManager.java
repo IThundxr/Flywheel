@@ -5,19 +5,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 
+import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.textures.FilterMode;
-import com.mojang.renderpearl.api.textures.GpuSampler;
-import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;
-import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler;
 import dev.engine_room.flywheel.backend.engine.AbstractInstancer;
@@ -26,25 +26,29 @@ import dev.engine_room.flywheel.backend.engine.DrawManager;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
 import dev.engine_room.flywheel.backend.engine.LightStorage;
-import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
-import dev.engine_room.flywheel.backend.engine.TextureBinder;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectMaterialRenderState;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectMeshPool;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.IndirectOitFramebuffer;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.Samplers;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.TextureBinder;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.array.GlVertexArray;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBuffer;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferType;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferUsage;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBuffer;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferUsage;
-import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 
 public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 	private final IndirectPrograms programs;
 	private final StagingBuffer stagingBuffer;
-	private final MeshPool meshPool;
+	private final IndirectMeshPool meshPool;
 	private final GlVertexArray vertexArray;
 	private final Map<InstanceType<?>, IndirectCullingGroup<?>> cullingGroups = new HashMap<>();
 	private final GlBuffer crumblingDrawBuffer = new GlBuffer(GlBufferUsage.STREAM_DRAW);
@@ -53,7 +57,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 	private final DepthPyramid depthPyramid;
 
-	private final OitFramebuffer oitFramebuffer;
+	private final IndirectOitFramebuffer oitFramebuffer;
 
 	public IndirectDrawManager(IndirectPrograms programs) {
 		this.programs = programs;
@@ -62,14 +66,15 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		// WARN: We should avoid eagerly grabbing GlPrograms here as catching compile
 		// errors and falling back during construction is a bit more complicated.
 		stagingBuffer = new StagingBuffer(this.programs);
-		meshPool = new MeshPool();
+		meshPool = new IndirectMeshPool();
 		vertexArray = GlVertexArray.create();
+		meshPool.bind(vertexArray);
 		lightBuffers = new LightBuffers();
 		matrixBuffer = new MatrixBuffer();
 
 		depthPyramid = new DepthPyramid(programs);
 
-		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		oitFramebuffer = new IndirectOitFramebuffer(programs.oitPrograms());
 	}
 
 	@Override
@@ -145,10 +150,9 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		TextureBinder.bindLightAndOverlay();
 
 		vertexArray.bindForDraw();
-		meshPool.bind(vertexArray);
 		lightBuffers.bind();
 		matrixBuffer.bind();
-		Uniforms.bindAll();
+		Uniforms.bindAll(GL33C.glGetInteger(GL33C.GL_CURRENT_PROGRAM));
 		TextureBinder.bindRenderTarget(Minecraft.getInstance().gameRenderer.mainRenderTarget());
 
 		for (var group : cullingGroups.values()) {
@@ -204,7 +208,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 		stagingBuffer.delete();
 
-		meshPool.close();
+		meshPool.delete();
 
 		crumblingDrawBuffer.delete();
 
@@ -229,7 +233,6 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 		TextureBinder.bindLightAndOverlay();
 
 		vertexArray.bindForDraw();
-		Uniforms.bindAll();
 
 		var crumblingMaterial = SimpleMaterial.builder();
 
@@ -252,8 +255,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 			}
 
 			for (var progressEntry : byProgress.int2ObjectEntrySet()) {
-				// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
-				Identifier crumblingTextureId = ModelBakeryAccessor.flywheel$getBREAKING_LOCATIONS().get(progressEntry.getIntKey());
+				Identifier crumblingTextureId = ModelBakery.BREAKING_LOCATIONS.get(progressEntry.getIntKey());
 				GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
 				TextureBinder.bind(Samplers.CRUMBLING.number, crumblingTextureId, crumblingTextureSampler);
 
@@ -265,9 +267,10 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 						// Transform the material to be suited for crumbling.
 						CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
 
-						cullingGroup.bindForCrumbling(crumblingMaterial);
+						GlProgram program = cullingGroup.bindForCrumbling(crumblingMaterial);
+						Uniforms.bindAll(program.handle());
 
-						MaterialRenderState.setup(crumblingMaterial);
+						IndirectMaterialRenderState.setup(crumblingMaterial);
 
 						// Upload the draw command.
 						draw.writeWithOverrides(block.ptr(), instanceIndex, crumblingMaterial);
@@ -292,6 +295,6 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 	@Override
 	public MeshPool meshPool() {
-		return meshPool;
+		return new MeshPool();
 	}
 }

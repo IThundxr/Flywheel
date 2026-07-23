@@ -5,7 +5,7 @@ import org.lwjgl.opengl.GL44;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Pointer;
 
-import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
+import dev.engine_room.flywheel.backend.engine.indirect.deprecated.gl.buffer.GlBufferType;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class IndirectBuffers {
