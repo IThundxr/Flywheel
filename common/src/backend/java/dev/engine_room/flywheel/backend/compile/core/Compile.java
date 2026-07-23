@@ -253,7 +253,9 @@ public class Compile<K> {
 			String flwVertexSrc = compilers.get(ShaderType.VERTEX).getSource(key, shaderCache, loader);
 			ShaderCompiler<K> flwFragCompiler = compilers.get(ShaderType.FRAGMENT);
 			String flwFragmentSrc = flwFragCompiler == null ? null : flwFragCompiler.getSource(key, shaderCache, loader);
-			FlwSpirvLocations.Processed flwProcessed = FlwSpirvLocations.process(flwVertexSrc, flwFragmentSrc);
+			FlwSpirvLocations.Processed flwProcessed = dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL")
+					? new FlwSpirvLocations.Processed(flwVertexSrc, flwFragmentSrc)
+					: FlwSpirvLocations.process(flwVertexSrc, flwFragmentSrc);
 
 			ShaderSource shaderSource = (_, type) -> switch (type) {
 				case VERTEX -> flwProcessed.vertex();
