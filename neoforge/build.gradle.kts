@@ -50,6 +50,7 @@ transitiveSourceSets {
 
 neoForge {
     accessTransformers.from(file("src/main/resources/META-INF/accesstransformer.cfg"))
+    interfaceInjectionData.from(file("src/main/resources/META-INF/interface_injections.json"))
 
     mods.getByName(getExt("mod_id")) {
         sourceSet(api)

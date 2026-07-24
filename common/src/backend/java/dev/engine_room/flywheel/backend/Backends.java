@@ -1,6 +1,7 @@
 package dev.engine_room.flywheel.backend;
 
 import dev.engine_room.flywheel.api.backend.Backend;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.engine.EngineImpl;
@@ -19,7 +20,7 @@ public final class Backends {
 	public static final Backend INSTANCING = SimpleBackend.builder()
 			.engineFactory(level -> new EngineImpl(level, new InstancedDrawManager(InstancingPrograms.get()), 256))
 			.priority(500)
-			.supported(() -> GlCompat.SUPPORTS_INSTANCING && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
+			.supported(() -> DeviceFeatureCompat.SUPPORTS_INSTANCING && InstancingPrograms.allLoaded() && !ShadersModHelper.isShaderPackInUse())
 			.register(IdentifierUtil.id("instancing"));
 
 	/**

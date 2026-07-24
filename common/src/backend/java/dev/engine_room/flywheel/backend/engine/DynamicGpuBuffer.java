@@ -35,17 +35,6 @@ public class DynamicGpuBuffer implements AutoCloseable {
 		FlwMemoryTracker._allocGpuMemory(this.capacity);
 	}
 
-	private static long smallestEncompassingPowerOfTwo(final long input) {
-		long result = input - 1;
-		result |= result >> 1;
-		result |= result >> 2;
-		result |= result >> 4;
-		result |= result >> 8;
-		result |= result >> 16;
-		result |= result >> 32;
-		return result + 1;
-	}
-
 	public void ensureCapacity(long neededSize) {
 		if (neededSize > capacity) {
 			long newCapacity = sizeIncreaseFunc.apply(neededSize);
@@ -81,6 +70,7 @@ public class DynamicGpuBuffer implements AutoCloseable {
 		return capacity;
 	}
 
+	@Deprecated(forRemoval = true)
 	public int getHandle() {
 		return ((GlBuffer) buffer).handle();
 	}
@@ -89,5 +79,16 @@ public class DynamicGpuBuffer implements AutoCloseable {
 	public void close() {
 		buffer.close();
 		FlwMemoryTracker._freeGpuMemory(this.capacity);
+	}
+
+	private static long smallestEncompassingPowerOfTwo(final long input) {
+		long result = input - 1;
+		result |= result >> 1;
+		result |= result >> 2;
+		result |= result >> 4;
+		result |= result >> 8;
+		result |= result >> 16;
+		result |= result >> 32;
+		return result + 1;
 	}
 }

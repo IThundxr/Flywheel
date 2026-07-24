@@ -12,6 +12,7 @@ import com.mojang.renderpearl.backend.opengl.GlConst;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
 
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import net.minecraft.resources.Identifier;
@@ -49,16 +50,19 @@ public class NoiseTextures {
 			);
 			RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
 
-			GlTextureUnit.T0.makeActive();
-			GlStateManager._bindTexture(((GlTexture) BLUE_NOISE).glId());
+			// TODO - Remove, this is only for GL Compat
+			if (DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL")) {
+				GlTextureUnit.T0.makeActive();
+				GlStateManager._bindTexture(((GlTexture) BLUE_NOISE).glId());
 
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_LINEAR);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_LINEAR);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_REPEAT);
-			GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_REPEAT);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_LINEAR);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_LINEAR);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_REPEAT);
+				GlStateManager._texParameter(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_REPEAT);
 
-			GlStateManager._bindTexture(0);
-		} catch (IOException e) {
+				GlStateManager._bindTexture(0);
+			}
+		} catch (IOException _) {
 
 		}
 	}

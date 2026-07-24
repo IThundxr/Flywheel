@@ -7,7 +7,7 @@ mdg = "2.0.+"
 neoforge = "26.2.0.12-beta"
 
 # https://fabricmc.net/develop
-loom = "1.17.+"
+loom = "1.17.15"
 fabric-loader = "0.19.3"
 fabric-api = "0.154.3+26.3"
 

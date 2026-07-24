@@ -53,6 +53,10 @@ public class Compilation {
 		return ShaderResult.failure(new FailedCompilation(shaderName, files, generatedSource.toString(), source, infoLog));
 	}
 
+	public String getSource() {
+		return fullSource.toString();
+	}
+
 	public void version(GlslVersion version) {
 		fullSource.append("#version ")
 				.append(version.version)
@@ -119,7 +123,7 @@ public class Compilation {
 		}
 	}
 
-	private static void dumpSource(String source, String fileName) {
+	public static void dumpSource(String source, String fileName) {
 		if (!DUMP_SHADER_SOURCE) {
 			return;
 		}

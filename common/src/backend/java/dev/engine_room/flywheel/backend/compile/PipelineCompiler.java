@@ -6,21 +6,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.LightShader;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.MaterialShaders;
 import dev.engine_room.flywheel.backend.BackendConfig;
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
 import dev.engine_room.flywheel.backend.MaterialShaderIndices;
 import dev.engine_room.flywheel.backend.Samplers;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.component.InstanceStructComponent;
 import dev.engine_room.flywheel.backend.compile.component.UberShaderComponent;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
 import dev.engine_room.flywheel.backend.engine.uniform.FrameUniforms;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
 import dev.engine_room.flywheel.backend.glsl.GlslVersion;
@@ -50,6 +54,7 @@ public final class PipelineCompiler {
 		ALL.add(this);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram get(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
 		var light = material.light();
 		var cutout = material.cutout();
@@ -66,7 +71,27 @@ public final class PipelineCompiler {
 		MaterialShaderIndices.cutoutSources()
 				.index(cutout.source());
 
-		return harness.get(new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.debugOn(), oit));
+		return harness.get(new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
+	}
+
+	public CompiledRenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
+		var light = material.light();
+		var cutout = material.cutout();
+		var shaders = material.shaders();
+		var fog = material.fog();
+
+		// Tell fogSources to index the fog shader if we haven't seen it before.
+		// If it is new, this will trigger a deletion of all programs.
+		MaterialShaderIndices.fogSources()
+				.index(fog.source());
+
+		// Same thing for cutout.
+		// Add OFF to the index here anyway to ensure MaterialEncoder doesn't deleteAll at an inappropriate time.
+		MaterialShaderIndices.cutoutSources()
+				.index(cutout.source());
+
+		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader, oit);
+		return harness.getPipeline(pipelineSnippet, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
 	public void delete() {
@@ -83,7 +108,7 @@ public final class PipelineCompiler {
 		// We could technically compile every version of light smoothness ahead of time,
 		// but that seems unnecessary as I doubt most folks will be changing this option often.
 		var harness = PIPELINE.program()
-				.link(PIPELINE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
+				.link(PIPELINE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper(key -> {
 							var instance = IdentifierUtil.toDebugFileNameNoExtension(key.instanceType()
 									.vertexShader());
@@ -96,8 +121,9 @@ public final class PipelineCompiler {
 							return "pipeline/" + pipeline.compilerMarker() + "/" + instance + "/" + material + "_" + context + debug;
 						})
 						.requireExtensions(extensions)
+						.enableExtension("GL_ARB_shader_draw_parameters")
 						.onCompile((rl, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
 								// Only define fma if it wouldn't be declared by gpu shader 5
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}
@@ -118,11 +144,11 @@ public final class PipelineCompiler {
 						.withResource(key -> key.materialShaders()
 								.vertexSource())
 						.withComponents(vertexComponents)
-						.withResource(FlwVertexFormats.LAYOUT_SHADER)
+						.withResource(FlwVertexFormats.MAIN_FORMAT_SHADER)
 						.withComponent(key -> pipeline.assembler()
 								.assemble(key.instanceType()))
 						.withResource(pipeline.vertexMain()))
-				.link(PIPELINE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
+				.link(PIPELINE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
 						.nameMapper(key -> {
 							var context = key.contextShader()
 									.nameLowerCase();
@@ -140,7 +166,7 @@ public final class PipelineCompiler {
 						.requireExtensions(extensions)
 						.enableExtension("GL_ARB_conservative_depth")
 						.onCompile((rl, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0 && !extensions.contains("GL_ARB_gpu_shader5")) {
 								// Only define fma if it wouldn't be declared by gpu shader 5
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}
@@ -207,13 +233,12 @@ public final class PipelineCompiler {
 					program.setSamplerBinding("_flw_depthRange", Samplers.DEPTH_RANGE);
 					program.setSamplerBinding("_flw_coefficients", Samplers.COEFFICIENTS);
 					program.setSamplerBinding("_flw_blueNoise", Samplers.NOISE);
-					pipeline.onLink()
-							.accept(program);
 					key.contextShader()
 							.onLink(program);
 
 					GlProgram.unbind();
 				})
+				.snippet(pipeline.snippet())
 				.harness(pipeline.compilerMarker(), sources);
 
 		return new PipelineCompiler(harness);

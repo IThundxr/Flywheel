@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
@@ -46,6 +47,21 @@ public final class MaterialRenderState {
 		GlStateManager._colorMask(writeColor ? ColorTargetState.WRITE_ALL : ColorTargetState.WRITE_NONE);
 	}
 
+	public static Pair<AbstractTexture, GpuSampler> createTextureView(Material material) {
+		AbstractTexture texture = Minecraft.getInstance()
+				.getTextureManager()
+				.getTexture(material.texture());
+
+		// TODO 1.21.11: give the Material more control, such as using default filter mode, address modes, AF, max LOD?
+		FilterMode filterMode = material.blur() ? FilterMode.LINEAR : FilterMode.NEAREST;
+		GpuSampler defaultSampler = texture.getSampler();
+		GpuSampler sampler = RenderSystem.getSamplerCache()
+				.getSampler(defaultSampler.getAddressModeU(), defaultSampler.getAddressModeV(), filterMode, filterMode, material.mipmap());
+
+		return Pair.of(texture, sampler);
+	}
+
+	@Deprecated(forRemoval = true)
 	private static void setupTexture(Material material) {
 		AbstractTexture texture = Minecraft.getInstance()
 				.getTextureManager()

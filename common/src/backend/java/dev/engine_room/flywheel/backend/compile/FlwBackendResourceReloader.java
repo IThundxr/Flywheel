@@ -1,5 +1,6 @@
 package dev.engine_room.flywheel.backend.compile;
 
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import net.minecraft.resources.Identifier;
@@ -18,5 +19,6 @@ public final class FlwBackendResourceReloader implements ResourceManagerReloadLi
 	public void onResourceManagerReload(ResourceManager manager) {
 		FlwPrograms.reload(manager);
 		NoiseTextures.reload(manager);
+		FlwRenderPipelines.clearCache();
 	}
 }

@@ -6,17 +6,19 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceWriter;
 import dev.engine_room.flywheel.backend.engine.BaseInstancer;
 import dev.engine_room.flywheel.backend.engine.DynamicGpuBuffer;
 import dev.engine_room.flywheel.backend.engine.InstancerKey;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 
 public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
+	public static final String TEXEL_BUFFER_BINDING = "_flw_instances";
+
 	private final int instanceStride;
 
 	private final InstanceWriter<I> writer;
@@ -99,10 +101,10 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 	}
 
 	private long increaseSize(long capacity) {
-		return Math.max(capacity + (long) instanceStride * 16, (long) (capacity * 1.6));
+		return capacity + instanceStride * 16L;
 	}
 
-	public boolean needsToGrow(long capacity) {
+	public boolean needsToGrow(int capacity) {
 		if (capacity < 0) {
 			throw new IllegalArgumentException("Size " + capacity + " < 0");
 		}
@@ -184,11 +186,11 @@ public class InstancedInstancer<I extends Instance> extends BaseInstancer<I> {
 		draws.add(instancedDraw);
 	}
 
-	public void bind(TextureBuffer buffer) {
+	public void bindToRenderPass(RenderPass renderPass) {
 		if (utb == null) {
 			return;
 		}
 
-		buffer.bind(utb.getHandle());
+		renderPass.setUniform(TEXEL_BUFFER_BINDING, utb.getCurrentBuffer());
 	}
 }

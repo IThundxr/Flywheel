@@ -100,7 +100,7 @@ public interface Engine {
 		/**
 		 * The progress of the crumbling animation in the range [0, 10).
 		 */
-		@Range(from = 0, to = 9)
+		@Range(from = 0, to = 10)
 		int progress();
 
 		/**

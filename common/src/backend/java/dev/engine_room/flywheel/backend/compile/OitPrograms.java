@@ -1,10 +1,10 @@
 package dev.engine_room.flywheel.backend.compile;
 
 import dev.engine_room.flywheel.backend.Samplers;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
 import dev.engine_room.flywheel.backend.compile.core.Compile;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
-import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.ShaderType;
@@ -28,13 +28,13 @@ public class OitPrograms {
 
 	public static OitPrograms createFullscreenCompiler(ShaderSources sources) {
 		var harness = COMPILE.program()
-				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
+				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
 						.nameMapper($ -> "fullscreen/fullscreen")
 						.withResource(FULLSCREEN))
-				.link(COMPILE.shader(GlCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
+				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
 						.nameMapper(id -> "fullscreen/" + IdentifierUtil.toDebugFileNameNoExtension(id))
 						.onCompile((id, compilation) -> {
-							if (GlCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0) {
+							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0) {
 								// Need to define FMA for the wavelet calculations
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
 							}

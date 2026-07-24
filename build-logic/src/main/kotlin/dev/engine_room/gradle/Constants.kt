@@ -23,6 +23,6 @@ object Constants {
         "--width", "1280", "--height", "720",
 
         // Helpful when debugging
-        "--renderDebugLabels"
+        "--renderDebugLabels", "--vulkanValidation"
     )
 }

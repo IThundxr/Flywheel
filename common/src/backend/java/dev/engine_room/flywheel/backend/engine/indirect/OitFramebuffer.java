@@ -62,6 +62,7 @@ public class OitFramebuffer {
 		Samplers.DEPTH_RANGE.makeActive();
 		GlStateManager._bindTexture(depthBounds);
 
+		// Needs to use Linear Repeat with b3d
 		Samplers.NOISE.makeActive();
 		GlStateManager._bindTexture(((GlTexture) NoiseTextures.BLUE_NOISE).glId());
 

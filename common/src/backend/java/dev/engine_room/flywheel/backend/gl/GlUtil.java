@@ -1,57 +1,25 @@
 package dev.engine_room.flywheel.backend.gl;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.backend.opengl.DirectStateAccess;
 import com.mojang.renderpearl.backend.opengl.FrameBufferCache;
+import com.mojang.renderpearl.backend.opengl.GlDevice;
 
 import dev.engine_room.flywheel.backend.mixin.GpuDeviceAccessor;
 
 @Deprecated(forRemoval = true)
 public class GlUtil {
-	private static final MethodHandle GET_FRAMEBUFFER_CACHE;
-	private static final MethodHandle GET_DIRECT_STATE_ACCESS;
-
-	static {
-		try {
-			Class<?> glDeviceClass = Class.forName("com.mojang.renderpearl.backend.opengl.GlDevice");
-			MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(glDeviceClass, MethodHandles.lookup());
-
-			{
-				MethodType mt = MethodType.methodType(FrameBufferCache.class);
-				GET_FRAMEBUFFER_CACHE = lookup.findVirtual(glDeviceClass, "frameBufferCache", mt);
-			}
-
-			{
-				MethodType mt = MethodType.methodType(DirectStateAccess.class);
-				GET_DIRECT_STATE_ACCESS = lookup.findVirtual(glDeviceClass, "directStateAccess", mt);
-			}
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private static GpuDeviceBackend getGpuDeviceBackend() {
-		return ((GpuDeviceAccessor) RenderSystem.getDevice()).flywheel$getBackend();
+	private static GlDevice getGlDevice() {
+		GpuDeviceBackend backend = ((GpuDeviceAccessor) RenderSystem.getDevice()).flywheel$getBackend();
+		return (GlDevice) backend;
 	}
 
 	public static FrameBufferCache getFramebufferCache() {
-		try {
-			return (FrameBufferCache) GET_FRAMEBUFFER_CACHE.invoke(getGpuDeviceBackend());
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
+		return getGlDevice().frameBufferCache();
 	}
 
 	public static DirectStateAccess getDirectStateAccess() {
-		try {
-			return (DirectStateAccess) GET_DIRECT_STATE_ACCESS.invoke(getGpuDeviceBackend());
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
+		return getGlDevice().directStateAccess();
 	}
 }

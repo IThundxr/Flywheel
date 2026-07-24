@@ -1,53 +1,71 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
+import java.util.List;
+
+import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Unmodifiable;
+import org.lwjgl.opengl.GL32;
+
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.backend.opengl.GlBuffer;
+
 import dev.engine_room.flywheel.api.backend.RenderContext;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 public final class Uniforms {
-	public static final int FRAME_INDEX = 0;
-	public static final int FOG_INDEX = 1;
-	public static final int OPTIONS_INDEX = 2;
-	public static final int PLAYER_INDEX = 3;
-	public static final int LEVEL_INDEX = 4;
-
-	public static final String FRAME_BLOCK_NAME = "_FlwFrameUniforms";
-	public static final String FOG_BLOCK_NAME = "_FlwFogUniforms";
-	public static final String OPTIONS_BLOCK_NAME = "_FlwOptionsUniforms";
-	public static final String PLAYER_BLOCK_NAME = "_FlwPlayerUniforms";
-	public static final String LEVEL_BLOCK_NAME = "_FlwLevelUniforms";
-
-	private static final UniformBuffer[] ALL_BUFFERS = { FrameUniforms.BUFFER, FogUniforms.BUFFER, OptionsUniforms.BUFFER, PlayerUniforms.BUFFER, LevelUniforms.BUFFER };
+	@Unmodifiable
+	public static final List<FlwUniform> UNIFORMS = List.of(
+			FrameUniforms.INSTANCE,
+			FogUniforms.INSTANCE,
+			OptionsUniforms.INSTANCE,
+			PlayerUniforms.INSTANCE,
+			LevelUniforms.INSTANCE
+	);
 
 	private Uniforms() {
 	}
 
 	public static void update(RenderContext context) {
-		FrameUniforms.update(context);
-		PlayerUniforms.update(context);
-		LevelUniforms.update(context);
+		ProfilerFiller profiler = Profiler.get();
+		profiler.push("flw_update_uniforms");
+		FrameUniforms.INSTANCE.update(context);
+		PlayerUniforms.INSTANCE.update(context);
+		LevelUniforms.INSTANCE.update(context);
+		profiler.pop();
 	}
 
+	public static void bindToRenderPass(RenderPass renderPass) {
+		for (FlwUniform uniform : UNIFORMS) {
+			renderPass.setUniform(uniform.getUniformName(), uniform.getBuffer());
+		}
+	}
+
+	@Deprecated(forRemoval = true)
 	public static void bindAll() {
-		for (UniformBuffer buffer : ALL_BUFFERS) {
-			buffer.bind();
+		for (int i = 0; i < UNIFORMS.size(); i++) {
+			FlwUniform uniform = UNIFORMS.get(i);
+			GpuBuffer buffer = uniform.getBuffer();
+
+			GL32.glBindBufferRange(GL32.GL_UNIFORM_BUFFER, i, ((GlBuffer) buffer).handle(), 0, buffer.size());
 		}
 	}
 
-	private static void deleteAll() {
-		for (UniformBuffer buffer : ALL_BUFFERS) {
-			buffer.delete();
-		}
-	}
-
+	@Deprecated(forRemoval = true)
 	public static void setUniformBlockBindings(GlProgram program) {
-		program.setUniformBlockBinding(FRAME_BLOCK_NAME, FRAME_INDEX);
-		program.setUniformBlockBinding(FOG_BLOCK_NAME, FOG_INDEX);
-		program.setUniformBlockBinding(OPTIONS_BLOCK_NAME, OPTIONS_INDEX);
-		program.setUniformBlockBinding(PLAYER_BLOCK_NAME, PLAYER_INDEX);
-		program.setUniformBlockBinding(LEVEL_BLOCK_NAME, LEVEL_INDEX);
+		for (int i = 0; i < UNIFORMS.size(); i++) {
+			FlwUniform uniform = UNIFORMS.get(i);
+
+			program.setUniformBlockBinding(uniform.getUniformName(), i);
+		}
 	}
 
-	public static void onReloadLevelRenderer() {
-		deleteAll();
+	@Internal
+	public static void closeAll() {
+		for (FlwUniform uniform : UNIFORMS) {
+			uniform.close();
+		}
 	}
 }

@@ -16,8 +16,8 @@ abstract class LightingMixin {
 	@Inject(method = "updateBuffer", at = @At("HEAD"))
 	private static void flywheel$onHeadUpdateBuffer(Entry entry, Vector3fc light0, Vector3fc light1, CallbackInfo ci) {
 		if (entry == Entry.LEVEL) {
-			LevelUniforms.LIGHT0_DIRECTION.set(light0);
-			LevelUniforms.LIGHT1_DIRECTION.set(light1);
+			LevelUniforms.INSTANCE.light0Direction.set(light0);
+			LevelUniforms.INSTANCE.light1Direction.set(light1);
 		}
 	}
 }

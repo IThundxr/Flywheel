@@ -2,6 +2,10 @@ package dev.engine_room.flywheel.backend.engine;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 
+import com.mojang.renderpearl.api.commands.RenderPass;
+
+import com.mojang.renderpearl.api.pipeline.IndexType;
+
 import dev.engine_room.flywheel.api.model.IndexSequence;
 import dev.engine_room.flywheel.backend.gl.array.GlVertexArray;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
@@ -83,6 +87,11 @@ public class IndexPool implements AutoCloseable {
 		indexBlock.free();
 	}
 
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setIndexBuffer(ebo.getCurrentBuffer(), IndexType.INT);
+	}
+
+	@Deprecated(forRemoval = true)
 	public void bind(GlVertexArray vertexArray) {
 		vertexArray.setElementBuffer(ebo.getHandle());
 	}

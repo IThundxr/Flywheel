@@ -6,11 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.opengl.GL32;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.backend.opengl.GlConst;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import dev.engine_room.flywheel.api.model.Mesh;
 import dev.engine_room.flywheel.backend.FlwVertexFormats;
@@ -128,6 +126,12 @@ public class MeshPool implements AutoCloseable {
 		vertexBlock.free();
 	}
 
+	public void bindToRenderPass(RenderPass renderPass) {
+		renderPass.setVertexBuffer(0, vbo.getCurrentBuffer().slice());
+		indexPool.bindToRenderPass(renderPass);
+	}
+
+	@Deprecated(forRemoval = true)
 	public void bind(GlVertexArray vertexArray) {
 		indexPool.bind(vertexArray);
 		vertexArray.bindVertexBuffer(0, vbo.getHandle(), 0, FlwVertexFormats.MAIN_FORMAT.getVertexSize());
@@ -176,20 +180,16 @@ public class MeshPool implements AutoCloseable {
 			return MeshPool.this.indexPool.firstIndex(mesh.indexSequence());
 		}
 
-		public long firstIndexByteOffset() {
-			return (long) firstIndex() * Integer.BYTES;
+		public int firstIndexByteOffset() {
+			return firstIndex() * Integer.BYTES;
 		}
 
 		public boolean isInvalid() {
 			return mesh.vertexCount() == 0 || baseVertex == INVALID_BASE_VERTEX || isDeleted();
 		}
 
-		public void draw(int instanceCount) {
-			if (instanceCount > 1) {
-				GL32.glDrawElementsInstancedBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), instanceCount, baseVertex);
-			} else {
-				GL32.glDrawElementsBaseVertex(GlConst.toGl(PrimitiveTopology.TRIANGLES), mesh.indexCount(), GlConst.GL_UNSIGNED_INT, firstIndexByteOffset(), baseVertex);
-			}
+		public void submitDraw(RenderPass renderPass, int instanceCount, int baseInstance) {
+			renderPass.drawIndexed(mesh.indexCount(), instanceCount, firstIndexByteOffset(), baseVertex(), baseInstance);
 		}
 
 		@Override

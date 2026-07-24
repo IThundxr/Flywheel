@@ -1,9 +1,14 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
+import com.mojang.datafixers.util.Pair;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
+import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
-import dev.engine_room.flywheel.backend.gl.TextureBuffer;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 
 public class InstancedDraw {
 	public final GroupKey<?> groupKey;
@@ -12,6 +17,9 @@ public class InstancedDraw {
 	private final Material material;
 	private final int bias;
 	private final int indexOfMeshInModel;
+
+	private final AbstractTexture texture;
+	private final GpuSampler textureSampler;
 
 	private boolean deleted;
 
@@ -22,6 +30,10 @@ public class InstancedDraw {
 		this.material = material;
 		this.bias = bias;
 		this.indexOfMeshInModel = indexOfMeshInModel;
+
+		Pair<AbstractTexture, GpuSampler> texturePair = MaterialRenderState.createTextureView(material);
+		this.texture = texturePair.getFirst();
+		this.textureSampler = texturePair.getSecond();
 
 		mesh.acquire();
 	}
@@ -46,24 +58,36 @@ public class InstancedDraw {
 		return mesh;
 	}
 
-	public void render(TextureBuffer buffer) {
-		if (mesh.isInvalid()) {
-			return;
-		}
-
-		instancer.bind(buffer);
-
-		mesh.draw(instancer.instanceCount());
+	public AbstractTexture getTexture() {
+		return texture;
 	}
 
-	public void renderOne(TextureBuffer buffer) {
+	public GpuSampler getTextureSampler() {
+		return textureSampler;
+	}
+
+	public void render(RenderPass renderPass) {
 		if (mesh.isInvalid()) {
 			return;
 		}
 
-		instancer.bind(buffer);
+		instancer.bindToRenderPass(renderPass);
 
-		mesh.draw(1);
+		mesh.submitDraw(renderPass, instancer.instanceCount(), 0);
+	}
+
+	public void renderOne(RenderPass renderPass) {
+		renderOne(renderPass, 0);
+	}
+
+	public void renderOne(RenderPass renderPass, int baseInstance) {
+		if (mesh.isInvalid()) {
+			return;
+		}
+
+		instancer.bindToRenderPass(renderPass);
+
+		mesh.submitDraw(renderPass, 1, baseInstance);
 	}
 
 	public void delete() {

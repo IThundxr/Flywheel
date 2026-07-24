@@ -54,7 +54,7 @@ public final class FlywheelNeoForge {
 	}
 
 	private static void registerImplEventListeners(IEventBus gameEventBus, IEventBus modEventBus) {
-		gameEventBus.addListener((ClientStoppingEvent e) -> FlwTaskExecutor.get().shutdown());
+		gameEventBus.addListener((ClientStoppingEvent e) -> BackendManagerImpl.onClientStopping());
 
 		gameEventBus.addListener((ReloadLevelRendererEvent e) -> BackendManagerImpl.onReloadLevelRenderer(e.level()));
 
@@ -93,8 +93,6 @@ public final class FlywheelNeoForge {
 	}
 
 	private static void registerBackendEventListeners(IEventBus gameEventBus, IEventBus modEventBus) {
-		gameEventBus.addListener((ReloadLevelRendererEvent e) -> Uniforms.onReloadLevelRenderer());
-
 		modEventBus.addListener((AddClientReloadListenersEvent e) -> {
 			e.addListener(FlwBackendResourceReloader.ID, FlwBackendResourceReloader.INSTANCE);
 		});
