@@ -11,6 +11,14 @@ uniform uint _flw_baseVertex;
 #endif
 
 #ifdef FLW_VULKAN
+#define flw_globalInstance gl_InstanceIndex
+#define flw_localInstance  (gl_InstanceIndex - gl_BaseInstance)
+#else
+#define flw_globalInstance (_flw_baseInstance + gl_InstanceID)
+#define flw_localInstance  gl_InstanceID
+#endif
+
+#ifdef FLW_VULKAN
 layout(push_constant) uniform FlwPushConstants {
     uvec2 _flw_packedMaterial;
     #ifdef FLW_EMBEDDED
@@ -29,12 +37,12 @@ uniform mat3 _flw_normalMatrixUniform;
 void main() {
     _flw_unpackMaterialProperties(_flw_packedMaterial.y, flw_material);
 
-    FlwInstance instance = _flw_unpackInstance(_flw_baseInstance + gl_InstanceID);
+    FlwInstance instance = _flw_unpackInstance(flw_globalInstance);
 
     #ifdef FLW_EMBEDDED
     _flw_modelMatrix = _flw_modelMatrixUniform;
     _flw_normalMatrix = _flw_normalMatrixUniform;
     #endif
 
-    _flw_main(instance, uint(gl_InstanceID), _flw_baseVertex);
+    _flw_main(instance, flw_localInstance, _flw_baseVertex);
 }

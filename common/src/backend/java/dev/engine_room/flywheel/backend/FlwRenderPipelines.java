@@ -3,7 +3,6 @@ package dev.engine_room.flywheel.backend;
 import java.util.HashMap;
 import java.util.Optional;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import com.mojang.renderpearl.api.GpuFormat;
@@ -19,7 +18,6 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
-import dev.engine_room.flywheel.lib.material.LightShaders;
 
 public class FlwRenderPipelines {
 	private static final HashMap<CacheKey, RenderPipeline.Snippet> SNIPPET_CACHE = new HashMap<>();
@@ -35,11 +33,7 @@ public class FlwRenderPipelines {
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
-			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFER)
-			.buildSnippet();
-
-	private static final RenderPipeline.Snippet INSTANCED_LIGHTING = RenderPipeline.builder()
-			.withBindGroupLayout(FlwBindGroupLayouts.LIGHT_TEXEL_BUFFERS)
+			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFERS)
 			.buildSnippet();
 
 //	public static final RenderPipeline.Snippet OIT_DEPTH_RANGE = RenderPipeline.builder()
@@ -103,10 +97,6 @@ public class FlwRenderPipelines {
 //			if (oitMode.snippet != null) {
 //				snippets = ArrayUtils.add(snippets, oitMode.snippet);
 //			}
-
-			if (material.light() != LightShaders.SMOOTH_WHEN_EMBEDDED) {
-				snippets = ArrayUtils.add(snippets, INSTANCED_LIGHTING);
-			}
 
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
 			key.contextShader.onBuildPipeline(builder);

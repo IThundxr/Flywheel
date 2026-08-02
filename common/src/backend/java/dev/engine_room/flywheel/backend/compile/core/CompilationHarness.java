@@ -9,7 +9,6 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
-import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
 public class CompilationHarness<K> {
 	private final ShaderSources sources;
@@ -20,7 +19,7 @@ public class CompilationHarness<K> {
 	@Deprecated(forRemoval = true)
 	private final Map<K, GlProgram> programs = new HashMap<>();
 
-	private final Map<PipelineKey<K>, CompiledRenderPipeline> renderPipelines = new Reference2ReferenceOpenHashMap<>();
+	private final Map<PipelineKey<K>, CompiledRenderPipeline> renderPipelines = new HashMap<>();
 
 	public CompilationHarness(String marker, ShaderSources sources, KeyCompiler<K> compiler) {
 		this.sources = sources;

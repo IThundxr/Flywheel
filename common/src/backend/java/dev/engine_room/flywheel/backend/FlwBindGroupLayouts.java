@@ -40,11 +40,8 @@ public class FlwBindGroupLayouts {
 //			.withSampler("_flw_coefficients[3]")
 //			.build();
 
-	public static final BindGroupLayout INSTANCING_TEXEL_BUFFER = BindGroupLayout.builder()
+	public static final BindGroupLayout INSTANCING_TEXEL_BUFFERS = BindGroupLayout.builder()
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.RGBA32_UINT)
-			.build();
-
-	public static final BindGroupLayout LIGHT_TEXEL_BUFFERS = BindGroupLayout.builder()
 			.withUniform(InstancedLight.LUT_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.withUniform(InstancedLight.SECTIONS_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.build();
