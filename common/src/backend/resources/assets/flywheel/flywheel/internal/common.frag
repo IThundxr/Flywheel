@@ -1,8 +1,12 @@
 #include "flywheel:internal/packed_material.glsl"
 #include "flywheel:internal/diffuse.glsl"
 #include "flywheel:internal/colorizer.glsl"
-#include "flywheel:internal/wavelet.glsl"
 #include "flywheel:internal/depth.glsl"
+
+// TODO - This doesn't work, flywheel's #include doesn't check for ifdef's
+#ifdef _FLW_OIT
+#include "flywheel:internal/wavelet.glsl"
+#endif
 
 // optimize discard usage
 #if defined(GL_ARB_conservative_depth) && defined(_FLW_USE_DISCARD)
@@ -22,8 +26,6 @@ flat in uvec2 _flw_ids;
 #ifdef _FLW_OIT
 
 uniform sampler2D _flw_depthRange;
-
-uniform sampler2DArray _flw_coefficients;
 
 uniform sampler2D _flw_blueNoise;
 
@@ -196,7 +198,7 @@ void _flw_main() {
 
     #ifdef _FLW_EVALUATE
 
-    float transmittance = signal_corrected_transmittance(_flw_coefficients, our_depth, our_transmittance);
+    float transmittance = signal_corrected_transmittance(our_depth, our_transmittance);
 
     _flw_accumulate = vec4(color.rgb * color.a, color.a) * transmittance;
 

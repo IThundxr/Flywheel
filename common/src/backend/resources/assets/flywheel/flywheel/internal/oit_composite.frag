@@ -6,7 +6,6 @@ out vec4 frag;
 
 uniform sampler2D _flw_accumulate;
 uniform sampler2D _flw_depthRange;
-uniform sampler2DArray _flw_coefficients;
 
 void main() {
     vec4 texel = texelFetch(_flw_accumulate, ivec2(gl_FragCoord.xy), 0);
@@ -15,7 +14,7 @@ void main() {
         discard;
     }
 
-    float total_transmittance = total_transmittance(_flw_coefficients);
+    float total_transmittance = total_transmittance();
 
     frag = vec4(texel.rgb / texel.a, 1. - total_transmittance);
 

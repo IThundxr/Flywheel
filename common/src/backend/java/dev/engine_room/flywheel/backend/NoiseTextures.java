@@ -8,6 +8,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlConst;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
@@ -23,11 +24,17 @@ public class NoiseTextures {
 
 	@UnknownNullability
 	public static GpuTexture BLUE_NOISE;
+	@UnknownNullability
+	public static GpuTextureView BLUE_NOISE_VIEW;
 
 	public static void reload(ResourceManager manager) {
 		if (BLUE_NOISE != null) {
 			BLUE_NOISE.close();
 			BLUE_NOISE = null;
+		}
+		if (BLUE_NOISE_VIEW != null) {
+			BLUE_NOISE_VIEW.close();
+			BLUE_NOISE_VIEW = null;
 		}
 		var optional = manager.getResource(NOISE_TEXTURE);
 
@@ -48,6 +55,7 @@ public class NoiseTextures {
 					1,
 					1
 			);
+			BLUE_NOISE_VIEW = RenderSystem.getDevice().createTextureView(BLUE_NOISE);
 			RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
 
 			// TODO - Remove, this is only for GL Compat

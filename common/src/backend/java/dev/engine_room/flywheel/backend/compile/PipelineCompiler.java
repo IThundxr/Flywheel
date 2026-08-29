@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import org.jspecify.annotations.Nullable;
+
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
@@ -283,18 +285,20 @@ public final class PipelineCompiler {
 	}
 
 	public enum OitMode {
-		OFF("", ""),
-		DEPTH_RANGE("_FLW_DEPTH_RANGE", "_depth_range"),
-		GENERATE_COEFFICIENTS("_FLW_COLLECT_COEFFS", "_generate_coefficients"),
-		EVALUATE("_FLW_EVALUATE", "_resolve"),
+		OFF("", "", null),
+		DEPTH_RANGE("_FLW_DEPTH_RANGE", "_depth_range", FlwRenderPipelines.OIT_DEPTH_RANGE),
+		GENERATE_COEFFICIENTS("_FLW_COLLECT_COEFFS", "_generate_coefficients", FlwRenderPipelines.OIT_TRANSMITTANCE),
+		EVALUATE("_FLW_EVALUATE", "_resolve", FlwRenderPipelines.OIT_ACCUMULATE),
 		;
 
 		public final String define;
 		public final String name;
+		public final RenderPipeline.@Nullable Snippet snippet;
 
-		OitMode(String define, String name) {
+		OitMode(String define, String name, RenderPipeline.@Nullable Snippet snippet) {
 			this.define = define;
 			this.name = name;
+			this.snippet = snippet;
 		}
 	}
 }

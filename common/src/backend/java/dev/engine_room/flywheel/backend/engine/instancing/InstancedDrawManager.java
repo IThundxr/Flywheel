@@ -39,6 +39,7 @@ import dev.engine_room.flywheel.backend.engine.LightStorage;
 import dev.engine_room.flywheel.backend.engine.MaterialEncoder;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
+import dev.engine_room.flywheel.backend.engine.OitFramebuffer;
 import dev.engine_room.flywheel.backend.engine.embed.EnvironmentStorage;
 import dev.engine_room.flywheel.backend.engine.uniform.Uniforms;
 import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
@@ -64,7 +65,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private final MeshPool meshPool;
 	private final InstancedLight light;
 
-	//private final OitFramebuffer oitFramebuffer;
+	private final OitFramebuffer oitFramebuffer;
 
 	@UnmodifiableView
 	private final List<Pair<AbstractTexture, GpuSampler>> crumblingTexturesView;
@@ -76,7 +77,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		meshPool = new MeshPool();
 		light = new InstancedLight();
 
-		//oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 
 		// Setup crumbling textures list
 		List<Pair<AbstractTexture, GpuSampler>> crumblingTextures = new ArrayList<>();
@@ -145,28 +146,26 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			submitDraws(renderPass, OitMode.OFF);
 		}
 
-//		if (!oitDraws.isEmpty()) {
-//			oitFramebuffer.prepare();
-//
-//			oitFramebuffer.depthRange();
-//
-//			submitOitDraws(PipelineCompiler.OitMode.DEPTH_RANGE);
-//
-//			oitFramebuffer.renderTransmittance();
-//
-//			submitOitDraws(PipelineCompiler.OitMode.GENERATE_COEFFICIENTS);
-//
-//			oitFramebuffer.renderDepthFromTransmittance();
-//
-//			// Need to bind this again because we just drew a full screen quad for OIT.
-//			vao.bindForDraw();
-//
-//			oitFramebuffer.accumulate();
-//
-//			submitOitDraws(PipelineCompiler.OitMode.EVALUATE);
-//
-//			oitFramebuffer.composite();
-//		}
+		if (!oitDraws.isEmpty()) {
+			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.DEPTH_RANGE);
+			}
+
+			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
+			}
+
+			oitFramebuffer.renderDepthFromTransmittance();
+
+			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
+				setupPass(renderPass);
+				submitDraws(renderPass, OitMode.EVALUATE);
+			}
+
+			oitFramebuffer.composite();
+		}
 	}
 
 	private void setupPass(RenderPass renderPass) {
@@ -217,7 +216,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		light.close();
 
-		//oitFramebuffer.delete();
+		oitFramebuffer.close();
 
 		super.delete();
 	}

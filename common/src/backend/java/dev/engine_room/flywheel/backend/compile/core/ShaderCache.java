@@ -32,7 +32,7 @@ public class ShaderCache {
 		Compilation ctx = new Compilation();
 		ctx.version(glslVersion);
 		ctx.define(shaderType.define);
-		ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
+		ctx.define("_FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 
 		callback.accept(ctx);
 
@@ -48,7 +48,7 @@ public class ShaderCache {
 			Compilation ctx = new Compilation();
 			ctx.version(glslVersion);
 			ctx.define(shaderType.define);
-			ctx.define("FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
+			ctx.define("_FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
 
 			callback.accept(ctx);
 

@@ -10,15 +10,15 @@ uniform int _flw_baseInstance = 0;
 uniform uint _flw_baseVertex;
 #endif
 
-#ifdef FLW_VULKAN
+#ifdef _FLW_VULKAN
 #define flw_globalInstance gl_InstanceIndex
-#define flw_localInstance  (gl_InstanceIndex - gl_BaseInstance)
+#define flw_localInstance  (gl_InstanceIndex - _flw_baseInstance)
 #else
 #define flw_globalInstance (_flw_baseInstance + gl_InstanceID)
 #define flw_localInstance  gl_InstanceID
 #endif
 
-#ifdef FLW_VULKAN
+#ifdef _FLW_VULKAN
 layout(push_constant) uniform FlwPushConstants {
     uvec2 _flw_packedMaterial;
     #ifdef FLW_EMBEDDED

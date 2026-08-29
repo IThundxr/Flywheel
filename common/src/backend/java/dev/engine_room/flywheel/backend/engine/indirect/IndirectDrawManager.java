@@ -53,7 +53,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 	private final DepthPyramid depthPyramid;
 
-	private final OitFramebuffer oitFramebuffer;
+	private final OitFramebufferOld oitFramebuffer;
 
 	public IndirectDrawManager(IndirectPrograms programs) {
 		this.programs = programs;
@@ -69,7 +69,7 @@ public class IndirectDrawManager extends DrawManager<IndirectInstancer<?>> {
 
 		depthPyramid = new DepthPyramid(programs);
 
-		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
+		oitFramebuffer = new OitFramebufferOld(programs.oitPrograms());
 	}
 
 	@Override

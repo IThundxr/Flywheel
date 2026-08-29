@@ -1,3 +1,5 @@
+#include "flywheel:internal/oit_coefficients.glsl"
+
 #define TRANSPARENCY_WAVELET_RANK 3
 #define TRANSPARENCY_WAVELET_COEFFICIENT_COUNT 16
 
@@ -41,14 +43,9 @@ void add_transmittance(inout vec4[4] coefficients, float transmittance, float de
 // READING
 // -------------------------------------------------------------------------
 
-// TODO: maybe we could reduce the number of texel fetches below?
-float get_coefficients(in sampler2DArray coefficients, int index) {
-    return texelFetch(coefficients, ivec3(gl_FragCoord.xy, index >> 2), 0)[index & 3];
-}
-
 /// Compute the total absorbance, as if at infinite depth.
-float total_absorbance(in sampler2DArray coefficients) {
-    float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
+float total_absorbance() {
+    float scale_coefficient = get_coefficients(TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0.;
     }
@@ -64,7 +61,7 @@ float total_absorbance(in sampler2DArray coefficients) {
 
         int new_index_b = (index_b - 1) >> 1;
         int wavelet_sign_b = ((index_b & 1) << 1) - 1;
-        float coeff_b = get_coefficients(coefficients, new_index_b);
+        float coeff_b = get_coefficients(new_index_b);
         b -= exp2(float(power) * 0.5) * coeff_b * wavelet_sign_b;
         index_b = new_index_b;
     }
@@ -73,8 +70,8 @@ float total_absorbance(in sampler2DArray coefficients) {
 }
 
 /// Compute the absorbance at a given normalized depth.
-float absorbance(in sampler2DArray coefficients, float depth) {
-    float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
+float absorbance(float depth) {
+    float scale_coefficient = get_coefficients(TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0.;
     }
@@ -97,14 +94,14 @@ float absorbance(in sampler2DArray coefficients, float depth) {
 
         int new_index_b = (index_b - 1) >> 1;
         int wavelet_sign_b = ((index_b & 1) << 1) - 1;
-        float coeff_b = get_coefficients(coefficients, new_index_b);
+        float coeff_b = get_coefficients(new_index_b);
         b -= exp2(float(power) * 0.5) * coeff_b * wavelet_sign_b;
         index_b = new_index_b;
 
         if (sample_a) {
             int new_index_a = (index_a - 1) >> 1;
             int wavelet_sign_a = ((index_a & 1) << 1) - 1;
-            float coeff_a = (new_index_a == new_index_b) ? coeff_b : get_coefficients(coefficients, new_index_a);
+            float coeff_a = (new_index_a == new_index_b) ? coeff_b : get_coefficients(new_index_a);
             a -= exp2(float(power) * 0.5) * coeff_a * wavelet_sign_a;
             index_a = new_index_a;
         }
@@ -117,8 +114,8 @@ float absorbance(in sampler2DArray coefficients, float depth) {
 
 /// Compute the absorbance at a given normalized depth,
 /// correcting for self-occlusion by undoing the previously recorded absorbance event.
-float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, float signal) {
-    float scale_coefficient = get_coefficients(coefficients, TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
+float signal_corrected_absorbance(float depth, float signal) {
+    float scale_coefficient = get_coefficients(TRANSPARENCY_WAVELET_COEFFICIENT_COUNT - 1);
     if (scale_coefficient == 0) {
         return 0.;
     }
@@ -144,7 +141,7 @@ float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, f
 
         int new_index_b = (index_b - 1) >> 1;
         int wavelet_sign_b = ((index_b & 1) << 1) - 1;
-        float coeff_b = get_coefficients(coefficients, new_index_b);
+        float coeff_b = get_coefficients(new_index_b);
 
         float wavelet_phase_b = ((index_b + 1) & 1) * exp2(-power);
         float k = float((new_index_b + 1) & ((1 << power) - 1));
@@ -157,7 +154,7 @@ float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, f
         if (sample_a) {
             int new_index_a = (index_a - 1) >> 1;
             int wavelet_sign_a = ((index_a & 1) << 1) - 1;
-            float coeff_a = (new_index_a == new_index_b) ? coeff_b : get_coefficients(coefficients, new_index_a);// No addend here on purpose, the original signal didn't contribute to this coefficient
+            float coeff_a = (new_index_a == new_index_b) ? coeff_b : get_coefficients(new_index_a);// No addend here on purpose, the original signal didn't contribute to this coefficient
             a -= exp2(float(power) * 0.5) * coeff_a * wavelet_sign_a;
             index_a = new_index_a;
         }
@@ -172,14 +169,14 @@ float signal_corrected_absorbance(in sampler2DArray coefficients, float depth, f
 
 #define ABSORBANCE_TO_TRANSMITTANCE(a) clamp(exp(-(a)), 0., 1.)
 
-float total_transmittance(in sampler2DArray coefficients) {
-    return ABSORBANCE_TO_TRANSMITTANCE(total_absorbance(coefficients));
+float total_transmittance() {
+    return ABSORBANCE_TO_TRANSMITTANCE(total_absorbance());
 }
 
-float transmittance(in sampler2DArray coefficients, float depth) {
-    return ABSORBANCE_TO_TRANSMITTANCE(absorbance(coefficients, depth));
+float transmittance(float depth) {
+    return ABSORBANCE_TO_TRANSMITTANCE(absorbance(depth));
 }
 
-float signal_corrected_transmittance(in sampler2DArray coefficients, float depth, float signal) {
-    return ABSORBANCE_TO_TRANSMITTANCE(signal_corrected_absorbance(coefficients, depth, signal));
+float signal_corrected_transmittance(float depth, float signal) {
+    return ABSORBANCE_TO_TRANSMITTANCE(signal_corrected_absorbance(depth, signal));
 }

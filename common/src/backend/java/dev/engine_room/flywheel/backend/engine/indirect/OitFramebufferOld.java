@@ -19,7 +19,7 @@ import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.backend.gl.GlUtil;
 import net.minecraft.client.Minecraft;
 
-public class OitFramebuffer {
+public class OitFramebufferOld {
 	public static final float[] CLEAR_TO_ZERO = {0, 0, 0, 0};
 	public static final int[] DEPTH_RANGE_DRAW_BUFFERS = {GlConst.GL_COLOR_ATTACHMENT0};
 	public static final int[] RENDER_TRANSMITTANCE_DRAW_BUFFERS = {GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3, GL46.GL_COLOR_ATTACHMENT4};
@@ -37,7 +37,7 @@ public class OitFramebuffer {
 	private int lastWidth = -1;
 	private int lastHeight = -1;
 
-	public OitFramebuffer(OitPrograms programs) {
+	public OitFramebufferOld(OitPrograms programs) {
 		this.programs = programs;
 		if (GlCompat.SUPPORTS_DSA) {
 			vao = GL46.glCreateVertexArrays();

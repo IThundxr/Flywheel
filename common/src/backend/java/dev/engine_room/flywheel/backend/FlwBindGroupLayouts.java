@@ -21,24 +21,24 @@ public class FlwBindGroupLayouts {
 			.withSampler("_flw_crumblingTex")
 			.build();
 
-//	public static final BindGroupLayout OIT_ACCUMULATE = BindGroupLayout.builder()
-//			.withSampler("_flw_accumulate")
-//			.build();
-//
-//	public static final BindGroupLayout OIT_DEPTH_RANGE = BindGroupLayout.builder()
-//			.withSampler("_flw_depthRange")
-//			.build();
-//
-//	public static final BindGroupLayout OIT_BLUE_NOISE = BindGroupLayout.builder()
-//			.withSampler("_flw_blueNoise")
-//			.build();
-//
-//	public static final BindGroupLayout OIT_COEFFICIENTS = BindGroupLayout.builder()
-//			.withSampler("_flw_coefficients[0]")
-//			.withSampler("_flw_coefficients[1]")
-//			.withSampler("_flw_coefficients[2]")
-//			.withSampler("_flw_coefficients[3]")
-//			.build();
+	public static final BindGroupLayout OIT_ACCUMULATE = BindGroupLayout.builder()
+			.withSampler("_flw_accumulate")
+			.build();
+
+	public static final BindGroupLayout OIT_DEPTH_RANGE = BindGroupLayout.builder()
+			.withSampler("_flw_depthRange")
+			.build();
+
+	public static final BindGroupLayout OIT_BLUE_NOISE = BindGroupLayout.builder()
+			.withSampler("_flw_blueNoise")
+			.build();
+
+	public static final BindGroupLayout OIT_COEFFICIENTS = BindGroupLayout.builder()
+			.withSampler("_flw_coefficients0")
+			.withSampler("_flw_coefficients1")
+			.withSampler("_flw_coefficients2")
+			.withSampler("_flw_coefficients3")
+			.build();
 
 	public static final BindGroupLayout INSTANCING_TEXEL_BUFFERS = BindGroupLayout.builder()
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.RGBA32_UINT)

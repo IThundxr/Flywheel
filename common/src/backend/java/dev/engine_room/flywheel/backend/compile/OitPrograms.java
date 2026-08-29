@@ -1,5 +1,8 @@
 package dev.engine_room.flywheel.backend.compile;
 
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+
+import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.core.CompilationHarness;
@@ -53,12 +56,22 @@ public class OitPrograms {
 		return new OitPrograms(harness);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitCompositeProgram() {
 		return harness.get(OitPrograms.OIT_COMPOSITE);
 	}
 
+	@Deprecated(forRemoval = true)
 	public GlProgram getOitDepthProgram() {
 		return harness.get(OitPrograms.OIT_DEPTH);
+	}
+
+	public CompiledRenderPipeline getOitCompositePipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_COMPOSITE, OitPrograms.OIT_COMPOSITE);
+	}
+
+	public CompiledRenderPipeline getOitDepthPipeline() {
+		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_FROM_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {

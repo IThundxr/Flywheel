@@ -4,8 +4,6 @@
 
 uniform sampler2D _flw_depthRange;
 
-uniform sampler2DArray _flw_coefficients;
-
 float eye_depth_from_normalized_transparency_depth(float tDepth) {
     vec2 depthRange = texelFetch(_flw_depthRange, ivec2(gl_FragCoord.xy), 0).rg;
 
@@ -21,7 +19,7 @@ void main() {
     // If transmittance an infinite depth is above the threshold, it doesn't ever become
     // zero, so we can bail out.
     //
-    float transmittance_at_far_depth = total_transmittance(_flw_coefficients);
+    float transmittance_at_far_depth = total_transmittance();
     if (transmittance_at_far_depth > threshold) {
         discard;
     }
@@ -36,7 +34,7 @@ void main() {
     //
     int steps = 6;
     for (int i = 0; i < steps; ++i) {
-        float transmittance = transmittance(_flw_coefficients, sample_depth);
+        float transmittance = transmittance(sample_depth);
         if (transmittance <= threshold) {
             normalized_depth_at_zero_transmittance = sample_depth;
             sample_depth -= delta;

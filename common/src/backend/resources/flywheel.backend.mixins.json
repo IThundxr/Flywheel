@@ -30,5 +30,8 @@
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+    "b3d.GlslCompilerMixin"
+  ]
 }
