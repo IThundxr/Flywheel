@@ -51,7 +51,7 @@ public class OitFramebuffer implements AutoCloseable {
 		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 		GpuSampler repeatLinear = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR);
 		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
-		//renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE_VIEW, repeatLinear);
+		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE_VIEW, repeatLinear);
 
 		renderPass.bindTexture("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
 		renderPass.bindTexture("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
@@ -89,15 +89,7 @@ public class OitFramebuffer implements AutoCloseable {
 			descriptorBuilder.withColorAttachment(view, CLEAR_TO_ZERO);
 		}
 
-		RenderPass renderPass = COMMAND_ENCODER.createRenderPass(descriptorBuilder.build());
-
-		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-		GpuSampler repeatLinear = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR);
-
-		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
-		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE_VIEW, repeatLinear);
-
-		return renderPass;
+		return setupPass(COMMAND_ENCODER.createRenderPass(descriptorBuilder.build()));
 	}
 
 	/**
@@ -133,11 +125,13 @@ public class OitFramebuffer implements AutoCloseable {
 	 */
 	public RenderPass createAccumulatePass() {
 		RenderTarget renderTarget = setupTexturesAndGetRenderTarget();
-		return COMMAND_ENCODER.createRenderPass(
+		RenderPass renderPass = COMMAND_ENCODER.createRenderPass(
 				() -> "Flw OIT Accumulate",
 				accumulate, CLEAR_TO_ZERO,
 				renderTarget.getDepthTextureView(), OptionalDouble.empty()
 		);
+
+		return setupPass(renderPass);
 	}
 
 	/**

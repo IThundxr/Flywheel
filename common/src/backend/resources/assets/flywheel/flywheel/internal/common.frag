@@ -4,6 +4,7 @@
 #include "flywheel:internal/depth.glsl"
 
 // TODO - This doesn't work, flywheel's #include doesn't check for ifdef's
+// Right now there's a ifdef in both wavelet and oit_coefficients to get around this, but that's a bad fix
 #ifdef _FLW_OIT
 #include "flywheel:internal/wavelet.glsl"
 #endif

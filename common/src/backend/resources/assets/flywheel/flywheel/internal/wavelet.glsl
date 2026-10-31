@@ -1,5 +1,6 @@
 #include "flywheel:internal/oit_coefficients.glsl"
 
+#ifdef _FLW_OIT
 #define TRANSPARENCY_WAVELET_RANK 3
 #define TRANSPARENCY_WAVELET_COEFFICIENT_COUNT 16
 
@@ -180,3 +181,4 @@ float transmittance(float depth) {
 float signal_corrected_transmittance(float depth, float signal) {
     return ABSORBANCE_TO_TRANSMITTANCE(signal_corrected_absorbance(depth, signal));
 }
+#endif

@@ -48,6 +48,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private static final Comparator<InstancedDraw> DRAW_COMPARATOR = Comparator.comparingInt(InstancedDraw::bias)
@@ -137,35 +139,51 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
+		ProfilerFiller profiler = Profiler.get();
+
 		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
 		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
+		profiler.push("Flw Instanced Draw");
 		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			setupPass(renderPass);
 			submitDraws(renderPass, OitMode.OFF);
 		}
+		profiler.pop();
 
+		profiler.push("Flw OIT Draw");
 		if (!oitDraws.isEmpty()) {
+			profiler.push("Flw OIT Draw - Depth Range Pass");
 			try (RenderPass renderPass = oitFramebuffer.createDepthRangePass()) {
 				setupPass(renderPass);
 				submitDraws(renderPass, OitMode.DEPTH_RANGE);
 			}
+			profiler.pop();
 
+			profiler.push("Flw OIT Draw - Transmittance Pass");
 			try (RenderPass renderPass = oitFramebuffer.createTransmittancePass()) {
 				setupPass(renderPass);
 				submitDraws(renderPass, OitMode.GENERATE_COEFFICIENTS);
 			}
+			profiler.pop();
 
+			profiler.push("Flw OIT Draw - Render Depth from Transmittance");
 			oitFramebuffer.renderDepthFromTransmittance();
+			profiler.pop();
 
+			profiler.push("Flw OIT Draw - Accumulate");
 			try (RenderPass renderPass = oitFramebuffer.createAccumulatePass()) {
 				setupPass(renderPass);
 				submitDraws(renderPass, OitMode.EVALUATE);
 			}
+			profiler.pop();
 
+			profiler.push("Flw OIT Draw - Composite");
 			oitFramebuffer.composite();
+			profiler.pop();
 		}
+		profiler.pop();
 	}
 
 	private void setupPass(RenderPass renderPass) {

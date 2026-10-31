@@ -37,19 +37,14 @@ public class FlwRenderPipelines {
 	public static final RenderPipeline.Snippet INSTANCING_SNIPPET = RenderPipeline.builder()
 			.withBindGroupLayout(FlwBindGroupLayouts.INSTANCING_TEXEL_BUFFERS)
 			.withShaderDefine("_FLW_INSTANCING")
-			// TODO - Temp
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_ACCUMULATE)
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet OIT_DEPTH_RANGE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
 			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendOp.MAX)), GpuFormat.RG32_FLOAT, ColorTargetState.WRITE_ALL))
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
+			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
 	private static final ColorTargetState TRANSMITTANCE_STATE = new ColorTargetState(
@@ -65,6 +60,7 @@ public class FlwRenderPipelines {
 			.withColorTargetState(3, TRANSMITTANCE_STATE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
+			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet OIT_DEPTH_FROM_TRANSMITTANCE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)
@@ -76,6 +72,9 @@ public class FlwRenderPipelines {
 	public static final RenderPipeline.Snippet OIT_ACCUMULATE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
 			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)), GpuFormat.RGBA16_FLOAT, ColorTargetState.WRITE_ALL))
+			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
+			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
+			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
 	public static final RenderPipeline.Snippet OIT_COMPOSITE = RenderPipeline.builder(BASE_TOPOLOGY_AND_BIND_GROUPS)

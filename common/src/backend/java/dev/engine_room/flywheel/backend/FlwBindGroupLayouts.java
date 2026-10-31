@@ -42,6 +42,7 @@ public class FlwBindGroupLayouts {
 
 	public static final BindGroupLayout INSTANCING_TEXEL_BUFFERS = BindGroupLayout.builder()
 			.withUniform(InstancedInstancer.TEXEL_BUFFER_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.RGBA32_UINT)
+			// TODO - Technically, lighting should be split but doing so errors on vulkan at the moment
 			.withUniform(InstancedLight.LUT_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.withUniform(InstancedLight.SECTIONS_BINDING, UniformType.TEXEL_BUFFER, GpuFormat.R32_UINT)
 			.build();

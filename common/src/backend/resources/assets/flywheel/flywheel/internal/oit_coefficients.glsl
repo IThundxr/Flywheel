@@ -1,3 +1,4 @@
+#ifdef _FLW_OIT
 uniform sampler2D _flw_coefficients0;
 uniform sampler2D _flw_coefficients1;
 uniform sampler2D _flw_coefficients2;
@@ -14,3 +15,4 @@ float get_coefficients(int index) {
         default: return texelFetch(_flw_coefficients3, coord, 0)[index & 3];
     }
 }
+#endif

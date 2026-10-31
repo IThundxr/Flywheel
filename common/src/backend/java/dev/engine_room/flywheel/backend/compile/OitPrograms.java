@@ -32,11 +32,14 @@ public class OitPrograms {
 	public static OitPrograms createFullscreenCompiler(ShaderSources sources) {
 		var harness = COMPILE.program()
 				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.VERTEX)
-						.nameMapper($ -> "fullscreen/fullscreen")
+						.nameMapper(_ -> "fullscreen/fullscreen")
+						.onCompile((_, compilation) -> compilation.define("_FLW_OIT"))
 						.withResource(FULLSCREEN))
 				.link(COMPILE.shader(DeviceFeatureCompat.MAX_GLSL_VERSION, ShaderType.FRAGMENT)
 						.nameMapper(id -> "fullscreen/" + IdentifierUtil.toDebugFileNameNoExtension(id))
 						.onCompile((id, compilation) -> {
+							compilation.define("_FLW_OIT");
+
 							if (DeviceFeatureCompat.MAX_GLSL_VERSION.compareTo(GlslVersion.V400) < 0) {
 								// Need to define FMA for the wavelet calculations
 								compilation.define("fma(a, b, c) ((a) * (b) + (c))");
