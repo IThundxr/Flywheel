@@ -4,11 +4,12 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.backend.opengl.GlCommandEncoder;
@@ -26,8 +27,8 @@ public class GlCommandEncoderMixin {
 	@Unique
 	private final Map<GlProgram, Object2IntMap<String>> flywheel$uniformIdsCache = new IdentityHashMap<>();
 
-	@Inject(method = "trySetup", at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;"))
-	private void flywheel$bindPlainUniforms(GlRenderPass renderPass, Collection<String> dynamicUniforms, CallbackInfoReturnable<Boolean> cir, @Local(name = "glProgram") GlProgram glProgram) {
+	@Inject(method = "setupDraw", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lcom/mojang/renderpearl/backend/opengl/GlRenderPass;anyUniformDirty:Z"))
+	private void flywheel$bindPlainUniforms(GlRenderPass renderPass, CallbackInfo ci, @Local(name = "glProgram") GlProgram glProgram) {
 		FlwGlVulkanRenderPassExtension ext = (FlwGlVulkanRenderPassExtension) renderPass;
 
 		if (ext.flywheel$uniformsDirty()) {

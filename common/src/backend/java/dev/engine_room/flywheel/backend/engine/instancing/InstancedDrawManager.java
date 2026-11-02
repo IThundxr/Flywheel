@@ -192,8 +192,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 		GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 		GpuSampler clampToEdgeLinear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-		renderPass.bindTexture("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
-		renderPass.bindTexture("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
+		renderPass.setUniform("flw_overlayTex", gameRenderer.overlayTexture().getTextureView(), clampToEdgeLinear);
+		renderPass.setUniform("flw_lightTex", gameRenderer.lightmap(), clampToEdgeLinear);
 
 		light.bindToRenderPass(renderPass);
 	}
@@ -211,10 +211,10 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			environment.setupDraw(renderPass);
 			uploadMaterialUniform(renderPass, material);
 			if (!DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS) {
-				new UIntUniform("_flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
 			}
 
-			renderPass.bindTexture("flw_diffuseTex", drawCall.getTexture().getTextureView(), drawCall.getTextureSampler());
+			renderPass.setUniform("flw_diffuseTex", drawCall.getTexture().getTextureView(), drawCall.getTextureSampler());
 
 			drawCall.render(renderPass);
 		}
@@ -294,7 +294,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 				for (var progressEntry : byProgress.int2ObjectEntrySet()) {
 					// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
 					Pair<AbstractTexture, GpuSampler> crumblingPair = crumblingTexturesView.get(progressEntry.getIntKey());
-					renderPass.bindTexture("_flw_crumblingTex", crumblingPair.getFirst().getTextureView(), crumblingPair.getSecond());
+					renderPass.setUniform("_flw_crumblingTex", crumblingPair.getFirst().getTextureView(), crumblingPair.getSecond());
 
 					for (var instanceHandlePair : progressEntry.getValue()) {
 						InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
@@ -308,12 +308,12 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 							uploadMaterialUniform(renderPass, crumblingMaterial);
 
-							renderPass.bindTexture("flw_diffuseTex", draw.getTexture().getTextureView(), draw.getTextureSampler());
+							renderPass.setUniform("flw_diffuseTex", draw.getTexture().getTextureView(), draw.getTextureSampler());
 
 							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS) {
 								draw.renderOne(renderPass, index);
 							} else {
-								new IntUniform("_flw_baseInstance", index).set(renderPass);
+								new IntUniform("flw_baseInstance", index).set(renderPass);
 								draw.renderOne(renderPass);
 							}
 						}

@@ -1,7 +1,7 @@
 #include "flywheel:internal/fog_distance.glsl"
 
 #ifdef _FLW_CRUMBLING
-out vec2 _flw_crumblingTexCoord;
+layout(location = 8) out vec2 _flw_crumblingTexCoord;
 
 const int DOWN = 0;
 const int UP = 1;
@@ -72,11 +72,18 @@ mat3 _flw_normalMatrix;
 #endif
 
 #ifdef _FLW_DEBUG
-flat out uvec2 _flw_ids;
+layout(location = 9) flat out uvec2 _flw_ids;
+#endif
+
+// This'll be true whenever it's being compiled through a render pipeline
+#ifdef VULKAN
+#define flw_vertexIndex gl_VertexIndex
+#else
+#define flw_vertexIndex gl_VertexID
 #endif
 
 void _flw_main(in FlwInstance instance, in uint stableInstanceID, in uint baseVertex) {
-    flw_vertexId = gl_VertexID - baseVertex;
+    flw_vertexId = flw_vertexIndex - baseVertex;
 
     _flw_layoutVertex();
     flw_instanceVertex(instance);

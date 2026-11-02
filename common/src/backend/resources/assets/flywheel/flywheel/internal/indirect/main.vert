@@ -21,7 +21,7 @@ layout(std430, binding = _FLW_MATRIX_BUFFER_BINDING) restrict buffer MatrixBuffe
 
 uniform uint _flw_baseDraw;
 
-flat out uvec2 _flw_packedMaterial;
+layout(location = 10) flat out uvec2 _flw_packedMaterial;
 
 #if __VERSION__ < 460
 #define flw_baseInstance gl_BaseInstanceARB

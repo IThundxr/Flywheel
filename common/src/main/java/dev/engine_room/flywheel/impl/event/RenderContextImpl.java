@@ -15,10 +15,10 @@ public record RenderContextImpl(LevelRenderer renderer, ClientLevel level, Rende
 								LevelRenderState levelRenderState, float partialTick) implements RenderContext {
 	public static ScopedValue<Matrix4f> PROJECTION_MATRIX_NO_BOB = ScopedValue.newInstance();
 
-	public static RenderContextImpl create(LevelRenderer renderer, ClientLevel level, RenderBuffers buffers, Matrix4fc modelView, Matrix4f projection, CameraRenderState cameraRenderState, LevelRenderState levelRenderState, float partialTick) {
+	public static RenderContextImpl create(LevelRenderer renderer, ClientLevel level, RenderBuffers buffers, Matrix4fc modelView, Matrix4f projection, CameraRenderState cameraRenderState, LevelRenderState levelRenderState) {
 		Matrix4f viewProjection = new Matrix4f(projection);
 		viewProjection.mul(modelView);
 
-		return new RenderContextImpl(renderer, level, buffers, modelView, projection, viewProjection, cameraRenderState, levelRenderState, partialTick);
+		return new RenderContextImpl(renderer, level, buffers, modelView, projection, viewProjection, cameraRenderState, levelRenderState, levelRenderState.worldPartialTicks);
 	}
 }

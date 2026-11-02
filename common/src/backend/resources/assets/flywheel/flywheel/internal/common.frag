@@ -11,17 +11,17 @@
 
 // optimize discard usage
 #if defined(GL_ARB_conservative_depth) && defined(_FLW_USE_DISCARD)
-layout (depth_greater) out float gl_FragDepth;
+layout(depth_greater) out float gl_FragDepth;
 #endif
 
 #ifdef _FLW_CRUMBLING
 uniform sampler2D _flw_crumblingTex;
 
-in vec2 _flw_crumblingTexCoord;
+layout(location = 8) in vec2 _flw_crumblingTexCoord;
 #endif
 
 #ifdef _FLW_DEBUG
-flat in uvec2 _flw_ids;
+layout(location = 9) flat in uvec2 _flw_ids;
 #endif
 
 #ifdef _FLW_OIT
@@ -48,28 +48,28 @@ float linear_depth() {
 
 #ifdef _FLW_DEPTH_RANGE
 
-out vec2 _flw_depthRange_out;
+layout(location = 0) out vec2 _flw_depthRange_out;
 
 #endif
 
 #ifdef _FLW_COLLECT_COEFFS
 
-out vec4 _flw_coeffs0;
-out vec4 _flw_coeffs1;
-out vec4 _flw_coeffs2;
-out vec4 _flw_coeffs3;
+layout(location = 0) out vec4 _flw_coeffs0;
+layout(location = 1) out vec4 _flw_coeffs1;
+layout(location = 2) out vec4 _flw_coeffs2;
+layout(location = 3) out vec4 _flw_coeffs3;
 
 #endif
 
 #ifdef _FLW_EVALUATE
 
-out vec4 _flw_accumulate;
+layout(location = 0) out vec4 _flw_accumulate;
 
 #endif
 
 #else
 
-out vec4 _flw_outputColor;
+layout(location = 0) out vec4 _flw_outputColor;
 
 #endif
 

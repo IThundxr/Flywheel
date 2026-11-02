@@ -2,7 +2,7 @@
 #include "flywheel:internal/indirect/buffer_bindings.glsl"
 #include "flywheel:internal/indirect/light.glsl"
 
-flat in uvec2 _flw_packedMaterial;
+layout(location = 10) flat in uvec2 _flw_packedMaterial;
 
 void main() {
     _flw_unpackUint2x16(_flw_packedMaterial.x, _flw_uberFogIndex, _flw_uberCutoutIndex);

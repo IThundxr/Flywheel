@@ -9,18 +9,19 @@
     "CameraMixin",
     "CameraRenderStateMixin",
     "FogRendererMixin",
+    "FrontendGpuDeviceAccessor",
     "GlStateManagerAccessor",
     "GlStateManagerMixin",
-    "GpuDeviceAccessor",
     "LightingMixin",
     "MinecraftMixin",
     "ModelBakeryAccessor",
     "OptionsMixin",
     "RenderSystemMixin",
+    "b3d.FrontendRenderPassMixin",
     "b3d.GlVulkanRenderPassMixin",
-    "b3d.RenderPassBackendMixin",
     "b3d.RenderPassMixin",
     "b3d.opengl.GlCommandEncoderMixin",
+    "b3d.opengl.GlPipelineRecompilerMixin",
     "b3d.vulkan.VulkanRenderPassMixin",
     "b3d.vulkan.VulkanRenderPipelineMixin",
     "light.LayerLightSectionStorageAccessor",
@@ -30,8 +31,5 @@
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-    "b3d.GlslCompilerMixin"
-  ]
+  }
 }

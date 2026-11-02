@@ -2,7 +2,7 @@
 #include "flywheel:internal/depth.glsl"
 #include "flywheel:internal/uniforms/frame.glsl"
 
-out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 uniform sampler2D _flw_accumulate;
 uniform sampler2D _flw_depthRange;

@@ -9,7 +9,7 @@ import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.backend.opengl.DirectStateAccess;
 import com.mojang.renderpearl.backend.opengl.FrameBufferCache;
 
-import dev.engine_room.flywheel.backend.mixin.GpuDeviceAccessor;
+import dev.engine_room.flywheel.backend.mixin.FrontendGpuDeviceAccessor;
 
 @Deprecated(forRemoval = true)
 public class GlUtil {
@@ -36,7 +36,7 @@ public class GlUtil {
 	}
 
 	private static GpuDeviceBackend getGpuDeviceBackend() {
-		return ((GpuDeviceAccessor) RenderSystem.getDevice()).flywheel$getBackend();
+		return ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).flywheel$getBackend();
 	}
 
 	public static FrameBufferCache getFramebufferCache() {

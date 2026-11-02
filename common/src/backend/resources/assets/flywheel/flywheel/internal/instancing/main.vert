@@ -2,37 +2,30 @@
 #include "flywheel:internal/packed_material.glsl"
 #include "flywheel:internal/instancing/light.glsl"
 
-#ifdef GL_ARB_shader_draw_parameters
-#define _flw_baseInstance gl_BaseInstanceARB
-#define _flw_baseVertex gl_BaseVertexARB
-#else
-uniform int _flw_baseInstance = 0;
-uniform uint _flw_baseVertex;
+#ifdef RENDERPEARL_INSTANCE_INDEX_INCLUDES_BASE_INSTANCE
+#define flw_baseInstance gl_BaseInstanceARB
+#define flw_baseVertex gl_BaseVertexARB
 #endif
 
 #ifdef _FLW_VULKAN
 #define flw_globalInstance gl_InstanceIndex
-#define flw_localInstance  (gl_InstanceIndex - _flw_baseInstance)
+#define flw_localInstance  (gl_InstanceIndex - flw_baseInstance)
 #else
-#define flw_globalInstance (_flw_baseInstance + gl_InstanceID)
-#define flw_localInstance  gl_InstanceID
+#define flw_globalInstance (flw_baseInstance + gl_InstanceIndex)
+#define flw_localInstance  gl_InstanceIndex
 #endif
 
-#ifdef _FLW_VULKAN
 layout(push_constant) uniform FlwPushConstants {
     uvec2 _flw_packedMaterial;
+    #ifndef RENDERPEARL_INSTANCE_INDEX_INCLUDES_BASE_INSTANCE
+    int flw_baseInstance;
+    uint flw_baseVertex;
+    #endif
     #ifdef FLW_EMBEDDED
     mat4 _flw_modelMatrixUniform;
     mat3 _flw_normalMatrixUniform;
     #endif
 };
-#else
-uniform uvec2 _flw_packedMaterial;
-#ifdef FLW_EMBEDDED
-uniform mat4 _flw_modelMatrixUniform;
-uniform mat3 _flw_normalMatrixUniform;
-#endif
-#endif
 
 void main() {
     _flw_unpackMaterialProperties(_flw_packedMaterial.y, flw_material);
@@ -44,5 +37,5 @@ void main() {
     _flw_normalMatrix = _flw_normalMatrixUniform;
     #endif
 
-    _flw_main(instance, flw_localInstance, _flw_baseVertex);
+    _flw_main(instance, flw_localInstance, flw_baseVertex);
 }

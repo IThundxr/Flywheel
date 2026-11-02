@@ -2,15 +2,15 @@
 #include "flywheel:internal/api_impl.glsl"
 #include "flywheel:internal/uniforms/uniforms.glsl"
 
-out vec4 flw_vertexPos;
-out vec4 flw_vertexColor;
-out vec2 flw_vertexTexCoord;
-flat out ivec2 flw_vertexOverlay;
-out vec2 flw_vertexLight;
-out vec3 flw_vertexNormal;
+layout(location = 0) out vec4 flw_vertexPos;
+layout(location = 1) out vec4 flw_vertexColor;
+layout(location = 2) out vec2 flw_vertexTexCoord;
+layout(location = 3) flat out ivec2 flw_vertexOverlay;
+layout(location = 4) out vec2 flw_vertexLight;
+layout(location = 5) out vec3 flw_vertexNormal;
 
-out float flw_sphericalDistance;
-out float flw_cylindricalDistance;
+layout(location = 6) out float flw_sphericalDistance;
+layout(location = 7) out float flw_cylindricalDistance;
 
 FlwMaterial flw_material;
 

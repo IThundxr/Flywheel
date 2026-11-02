@@ -12,7 +12,7 @@ void flw_materialVertex() {
         lineOffset *= -1.0;
     }
 
-    if (gl_VertexID % 2 == 0) {
+    if (gl_VertexIndex % 2 == 0) {
         flw_vertexPos = flw_viewProjectionInverse * vec4((ndc1 + vec3(lineOffset, 0.)) * linePosStart.w, linePosStart.w);
     } else {
         flw_vertexPos = flw_viewProjectionInverse * vec4((ndc1 - vec3(lineOffset, 0.)) * linePosStart.w, linePosStart.w);

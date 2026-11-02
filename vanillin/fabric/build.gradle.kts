@@ -23,6 +23,8 @@ defaultPackageInfos {
 }
 
 dependencies {
+    implementation("com.mojang:jtracy:1.14.38")
+
     implementation(libs.fabric.loader)
     api(libs.fabric.api)
 

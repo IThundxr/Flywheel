@@ -50,13 +50,13 @@ public class OitFramebuffer implements AutoCloseable {
 	private RenderPass setupPass(RenderPass renderPass) {
 		GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 		GpuSampler repeatLinear = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR);
-		renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
-		renderPass.bindTexture("_flw_blueNoise", NoiseTextures.BLUE_NOISE_VIEW, repeatLinear);
+		renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
+		renderPass.setUniform("_flw_blueNoise", NoiseTextures.BLUE_NOISE_VIEW, repeatLinear);
 
-		renderPass.bindTexture("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
-		renderPass.bindTexture("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
-		renderPass.bindTexture("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
-		renderPass.bindTexture("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
+		renderPass.setUniform("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
+		renderPass.setUniform("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
+		renderPass.setUniform("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
+		renderPass.setUniform("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
 
 		return renderPass;
 	}
@@ -107,12 +107,12 @@ public class OitFramebuffer implements AutoCloseable {
 			Uniforms.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+			renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
 
-			renderPass.bindTexture("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
 
 			renderPass.setPipeline(programs.getOitDepthPipeline());
 
@@ -148,13 +148,13 @@ public class OitFramebuffer implements AutoCloseable {
 			Uniforms.bindToRenderPass(renderPass);
 
 			GpuSampler clampToEdgeNearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			renderPass.bindTexture("_flw_accumulate", accumulate, clampToEdgeNearest);
-			renderPass.bindTexture("_flw_depthRange", depthBounds, clampToEdgeNearest);
+			renderPass.setUniform("_flw_accumulate", accumulate, clampToEdgeNearest);
+			renderPass.setUniform("_flw_depthRange", depthBounds, clampToEdgeNearest);
 
-			renderPass.bindTexture("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
-			renderPass.bindTexture("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients0", coefficients[0], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients1", coefficients[1], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients2", coefficients[2], clampToEdgeNearest);
+			renderPass.setUniform("_flw_coefficients3", coefficients[3], clampToEdgeNearest);
 
 			renderPass.setPipeline(programs.getOitCompositePipeline());
 
