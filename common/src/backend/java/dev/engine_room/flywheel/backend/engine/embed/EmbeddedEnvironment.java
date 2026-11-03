@@ -6,7 +6,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.blaze3d.buffers.Std140Builder;
 
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceType;
@@ -14,8 +14,6 @@ import dev.engine_room.flywheel.api.instance.Instancer;
 import dev.engine_room.flywheel.api.instance.InstancerProvider;
 import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.api.visualization.VisualEmbedding;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.Mat3;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.Mat4;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.engine.EngineImpl;
 import dev.engine_room.flywheel.lib.util.ExtraMemoryOps;
@@ -85,9 +83,9 @@ public class EmbeddedEnvironment implements VisualEmbedding, Environment {
 	}
 
 	@Override
-	public void setupDraw(RenderPass renderPass) {
-		new Mat4(EmbeddingUniforms.MODEL_MATRIX, poseComposed).set(renderPass);
-		new Mat3(EmbeddingUniforms.NORMAL_MATRIX, normalComposed).set(renderPass);
+	public void setupDraw(Std140Builder pushConstantsBuilder) {
+		pushConstantsBuilder.putMat4f(poseComposed); // _flw_modelMatrixUniform
+		pushConstantsBuilder.putMat4f(new Matrix4f(normalComposed)); // _flw_normalMatrixUniform
 	}
 
 	@Override

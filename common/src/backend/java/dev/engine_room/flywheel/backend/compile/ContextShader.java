@@ -19,25 +19,39 @@ public enum ContextShader {
 			program -> program.setSamplerBinding("_flw_crumblingTex", Samplers.CRUMBLING),
 			b -> b.withBindGroupLayout(FlwBindGroupLayouts.CRUMBLING_SAMPLER)
 	),
-	EMBEDDED("FLW_EMBEDDED");
+	EMBEDDED("FLW_EMBEDDED", 128); // 2 Mat4's (64 + 64)
 
 	@Nullable
 	private final String define;
 	private final Consumer<GlProgram> onLink;
 	private final Consumer<RenderPipeline.Builder> onBuildPipeline;
+	private final int pushConstantSize;
 
 	ContextShader() {
-		this(null, _ -> {}, _ -> {});
+		this(null, _ -> {}, _ -> {}, 0);
 	}
 
 	ContextShader(@Nullable String define) {
-		this(define, _ -> {}, _ -> {});
+		this(define, _ -> {}, _ -> {}, 0);
+	}
+
+	ContextShader(@Nullable String define, int pushConstantSize) {
+		this(define, _ -> {}, _ -> {}, pushConstantSize);
 	}
 
 	ContextShader(@Nullable String define, Consumer<GlProgram> onLink, Consumer<RenderPipeline.Builder> onBuildPipeline) {
+		this(define, onLink, onBuildPipeline, 0);
+	}
+
+	ContextShader(@Nullable String define, Consumer<GlProgram> onLink, Consumer<RenderPipeline.Builder> onBuildPipeline, int pushConstantSize) {
 		this.define = define;
 		this.onLink = onLink;
 		this.onBuildPipeline = onBuildPipeline;
+		this.pushConstantSize = pushConstantSize;
+	}
+
+	public int pushConstantSize() {
+		return pushConstantSize;
 	}
 
 	public void onLink(GlProgram program) {

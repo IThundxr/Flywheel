@@ -18,6 +18,7 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
 
 import dev.engine_room.flywheel.api.material.Material;
+import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
 
@@ -110,6 +111,17 @@ public class FlwRenderPipelines {
 
 			RenderPipeline.Builder builder = RenderPipeline.builder(snippets);
 			key.contextShader.onBuildPipeline(builder);
+
+			{
+				int pushConstantsSize = key.contextShader.pushConstantSize();
+				pushConstantsSize += (4 + 4); // IVec2 _flw_packedMaterial
+
+				if (!DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS || !DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE) {
+					pushConstantsSize += 4; // Int flw_baseVertex/flw_baseInstance
+				}
+
+				builder.withPushConstantSize(pushConstantsSize);
+			}
 
 			builder.withCull(m.backfaceCulling());
 

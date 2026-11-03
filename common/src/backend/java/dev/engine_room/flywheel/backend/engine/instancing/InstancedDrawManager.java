@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 import org.jetbrains.annotations.UnmodifiableView;
+import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;
@@ -18,15 +20,13 @@ import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 import dev.engine_room.flywheel.api.backend.Engine;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.material.Transparency;
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.IntUniform;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UIntUniform;
-import dev.engine_room.flywheel.backend.b3d.FlwUniformBinding.UVec2;
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 import dev.engine_room.flywheel.backend.compile.InstancingPrograms;
 import dev.engine_room.flywheel.backend.compile.PipelineCompiler.OitMode;
@@ -208,10 +208,16 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			CompiledRenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
 			renderPass.setPipeline(pipeline);
 
-			environment.setupDraw(renderPass);
-			uploadMaterialUniform(renderPass, material);
-			if (!DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS) {
-				new UIntUniform("flw_baseVertex", drawCall.mesh().baseVertex()).set(renderPass);
+			try (MemoryStack stack = MemoryStack.stackPush()) {
+				Std140Builder pushConstantsBuilder = Std140Builder.onStack(stack, ((FrontendRenderPipeline) pipeline).pushConstantSize());
+
+				environment.setupDraw(pushConstantsBuilder);
+				uploadMaterialUniform(pushConstantsBuilder, material);
+				if (!DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS) {
+					pushConstantsBuilder.putInt(drawCall.mesh().baseVertex()); // flw_baseVertex
+				}
+
+				renderPass.pushConstants(pushConstantsBuilder.get());
 			}
 
 			renderPass.setUniform("flw_diffuseTex", drawCall.getTexture().getTextureView(), drawCall.getTextureSampler());
@@ -278,6 +284,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			return;
 		}
 
+		boolean supportsBaseInstance = DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS;
+
 		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
 		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
@@ -306,14 +314,22 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 							CompiledRenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, OitMode.OFF);
 							renderPass.setPipeline(pipeline);
 
-							uploadMaterialUniform(renderPass, crumblingMaterial);
+							try (MemoryStack stack = MemoryStack.stackPush()) {
+								Std140Builder pushConstantsBuilder = Std140Builder.onStack(stack, ((FrontendRenderPipeline) pipeline).pushConstantSize());
+
+								uploadMaterialUniform(pushConstantsBuilder, crumblingMaterial);
+								if (!supportsBaseInstance) {
+									pushConstantsBuilder.putInt(index); // flw_baseInstance
+								}
+
+								renderPass.pushConstants(pushConstantsBuilder.get());
+							}
 
 							renderPass.setUniform("flw_diffuseTex", draw.getTexture().getTextureView(), draw.getTextureSampler());
 
-							if (DeviceFeatureCompat.SUPPORTS_BASE_INSTANCE && DeviceFeatureCompat.SUPPORTS_SHADER_DRAW_PARAMETERS) {
+							if (supportsBaseInstance) {
 								draw.renderOne(renderPass, index);
 							} else {
-								new IntUniform("flw_baseInstance", index).set(renderPass);
 								draw.renderOne(renderPass);
 							}
 						}
@@ -334,9 +350,9 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		return meshPool;
 	}
 
-	public static void uploadMaterialUniform(RenderPass renderPass, Material material) {
+	public static void uploadMaterialUniform(Std140Builder pushConstantBuilder, Material material) {
 		int packedFogAndCutout = MaterialEncoder.packUberShader(material);
 		int packedMaterialProperties = MaterialEncoder.packProperties(material);
-		new UVec2("_flw_packedMaterial", packedFogAndCutout, packedMaterialProperties).set(renderPass);
+		pushConstantBuilder.putIVec2(packedFogAndCutout, packedMaterialProperties); // _flw_packedMaterial
 	}
 }

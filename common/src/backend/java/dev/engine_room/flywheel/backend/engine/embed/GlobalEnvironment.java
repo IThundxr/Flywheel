@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.engine.embed;
 
-import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.blaze3d.buffers.Std140Builder;
 
 import dev.engine_room.flywheel.backend.compile.ContextShader;
 
@@ -16,7 +16,7 @@ public class GlobalEnvironment implements Environment {
 	}
 
 	@Override
-	public void setupDraw(RenderPass renderPass) {
+	public void setupDraw(Std140Builder pushConstantsBuilder) {
 	}
 
 	@Override
