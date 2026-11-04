@@ -26,7 +26,7 @@ public interface FlwLibLink {
 
 	<T extends Entity> boolean affectedByCulling(T entity);
 
-	<T extends Entity> AABB getBoundingBoxForCulling(T entity);
+	<T extends Entity> AABB getBoundingBoxForCulling(T entity, float partialTicks);
 
 	boolean isIrisLoaded();
 

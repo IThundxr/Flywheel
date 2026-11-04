@@ -28,6 +28,7 @@ import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import dev.engine_room.flywheel.lib.util.StringUtil;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 /**
  * A typed provider for shader compiler builders.
@@ -241,13 +242,26 @@ public class Compile<K> {
 					.withFragmentShader(fragmentShaderId)
 					.build();
 
-			ShaderSource shaderSource = (_, type) -> {
-				ShaderType flwShaderType = switch (type) {
-					case VERTEX -> ShaderType.VERTEX;
-					case FRAGMENT -> ShaderType.FRAGMENT;
-				};
+			// TODO - Support #include through this instead of flywheel's system
+			ShaderSource shaderSource = new ShaderSource() {
+				@Override
+				public String getShader(Identifier id, com.mojang.renderpearl.api.pipeline.ShaderType type) {
+					ShaderType flwShaderType = switch (type) {
+						case VERTEX -> ShaderType.VERTEX;
+						case FRAGMENT -> ShaderType.FRAGMENT;
+					};
 
-				return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
+					return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
+				}
+
+				@Override
+				public @Nullable CachedIncludeSource getInclude(Identifier id) {
+					return null;
+				}
+
+				@Override
+				public void close() {
+				}
 			};
 
 			if (Compilation.DUMP_SHADER_SOURCE) {
@@ -262,7 +276,10 @@ public class Compile<K> {
 				}
 			}
 
-			CompiledRenderPipeline compiledPipeline = RenderSystem.getDevice().compilePipeline(pipeline, shaderSource);
+			CompiledRenderPipeline compiledPipeline = RenderSystem.getDevice()
+					.compilePipeline(pipeline, shaderSource, Util.backgroundExecutor())
+					.join()
+					.finishCompile();
 
 			long end = System.nanoTime();
 

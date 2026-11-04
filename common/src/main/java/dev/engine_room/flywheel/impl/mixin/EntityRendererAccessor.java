@@ -13,5 +13,5 @@ public interface EntityRendererAccessor {
 	<T extends Entity> boolean flywheel$affectedByCulling(T entity);
 
 	@Invoker("getBoundingBoxForCulling")
-	<T extends Entity> AABB flywheel$getBoundingBoxForCulling(T entity);
+	<T extends Entity> AABB flywheel$getBoundingBoxForCulling(T entity, float partialTicks);
 }

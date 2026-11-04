@@ -1,10 +1,17 @@
 package dev.engine_room.flywheel.backend;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import org.jetbrains.annotations.UnknownNullability;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.textures.GpuTexture;
@@ -18,6 +25,7 @@ import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.PngInfo;
 
 public class NoiseTextures {
 	public static final Identifier NOISE_TEXTURE = IdentifierUtil.id("textures/flywheel/noise/blue.png");
@@ -42,21 +50,44 @@ public class NoiseTextures {
 			return;
 		}
 
-		try (var is = optional.get()
-				.open()) {
-			var image = NativeImage.read(NativeImage.Format.LUMINANCE, is);
+		try (InputStream is = optional.get().open()) {
+			ByteBuffer file = null;
+			try {
+				file = TextureUtil.readResource(is);
 
-			BLUE_NOISE = RenderSystem.getDevice().createTexture(
-					() -> "Flywheel Blue Noise",
-					GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
-					GpuFormat.R8_UNORM,
-					image.getWidth(),
-					image.getHeight(),
-					1,
-					1
-			);
-			BLUE_NOISE_VIEW = RenderSystem.getDevice().createTextureView(BLUE_NOISE);
-			RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
+				if (MemoryUtil.memAddress(file) == 0L) {
+					throw new IllegalArgumentException("Invalid buffer");
+				}
+
+				PngInfo.validateHeader(file);
+
+				try (MemoryStack stack = MemoryStack.stackPush()) {
+					IntBuffer w = stack.mallocInt(1);
+					IntBuffer h = stack.mallocInt(1);
+					IntBuffer comp = stack.mallocInt(1);
+					ByteBuffer pixels = STBImage.stbi_load_from_memory(file, w, h, comp, NativeImage.Format.LUMINANCE.components());
+					if (pixels == null) {
+						throw new IOException("Could not load image: " + STBImage.stbi_failure_reason());
+					}
+
+					long address = MemoryUtil.memAddress(pixels);
+					try (NativeImage image = new NativeImage(NativeImage.Format.LUMINANCE, w.get(0), h.get(0), true, address)) {
+						BLUE_NOISE = RenderSystem.getDevice().createTexture(
+								() -> "Flywheel Blue Noise",
+								GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
+								GpuFormat.R8_UNORM,
+								image.getWidth(),
+								image.getHeight(),
+								1,
+								1
+						);
+						BLUE_NOISE_VIEW = RenderSystem.getDevice().createTextureView(BLUE_NOISE);
+						RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
+					}
+				}
+			} finally {
+				MemoryUtil.memFree(file);
+			}
 
 			// TODO - Remove, this is only for GL Compat
 			if (DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL")) {

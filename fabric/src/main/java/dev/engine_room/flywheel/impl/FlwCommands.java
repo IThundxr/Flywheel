@@ -205,7 +205,7 @@ public final class FlwCommands {
 	private static BlockPos getBlockPos(CommandContext<FabricClientCommandSource> context, String name) {
 		FabricClientCommandSource clientSource = context.getSource();
 		LocalPlayer player = clientSource.getPlayer();
-		CommandSourceStack commandSourceStack = new CommandSourceStack(CommandSource.NULL, clientSource.getPosition(), clientSource.getRotation(), null, clientSource.permissions(), player.getPlainTextName(), player.getDisplayName(), null, player);
+		CommandSourceStack commandSourceStack = new CommandSourceStack(CommandSource.NULL, clientSource.getPosition(), clientSource.getRotation(), null, clientSource.permissions(), null, player);
 		return context.getArgument(name, Coordinates.class).getBlockPos(commandSourceStack);
 	}
 }

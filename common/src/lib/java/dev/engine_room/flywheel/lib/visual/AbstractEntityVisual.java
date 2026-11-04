@@ -89,8 +89,8 @@ public abstract class AbstractEntityVisual<T extends Entity> extends AbstractVis
 				(float) (Mth.lerp(partialTick, entity.zOld, pos.z) - renderOrigin.getZ()));
 	}
 
-	public boolean isVisible(FrustumIntersection frustum) {
-		return !FlwLibLink.INSTANCE.affectedByCulling(entity) || visibilityTester.check(frustum);
+	public boolean isVisible(FrustumIntersection frustum, float partialTick) {
+		return !FlwLibLink.INSTANCE.affectedByCulling(entity) || visibilityTester.check(frustum, partialTick);
 	}
 
 	protected int computePackedLight(float partialTick) {

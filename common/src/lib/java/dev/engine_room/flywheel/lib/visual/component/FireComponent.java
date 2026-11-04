@@ -94,7 +94,7 @@ public final class FireComponent implements EntityComponent {
 		stack.setIdentity();
 		stack.translate(entityX - renderOrigin.getX(), entityY - renderOrigin.getY(), entityZ - renderOrigin.getZ());
 		stack.scale(scale, scale, scale);
-		stack.mulPose(Axis.YP.rotationDegrees(-context.cameraRenderState().yRot));
+		stack.rotateDegrees(Axis.YP, -context.cameraRenderState().yRot);
 		stack.translate(0.0F, 0.0F, -0.3F + (float) ((int) maxHeight) * 0.02F);
 
 		for (int i = 0; y < maxHeight; ++i) {

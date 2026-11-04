@@ -50,11 +50,11 @@ public class FlwLibLinkImpl implements FlwLibLink {
 	}
 
 	@Override
-	public <T extends Entity> AABB getBoundingBoxForCulling(T entity) {
+	public <T extends Entity> AABB getBoundingBoxForCulling(T entity, float partialTicks) {
 		EntityRenderer<? super T, ?> renderer = Minecraft.getInstance()
 				.getEntityRenderDispatcher()
 				.getRenderer(entity);
-		return ((EntityRendererAccessor) renderer).flywheel$getBoundingBoxForCulling(entity);
+		return ((EntityRendererAccessor) renderer).flywheel$getBoundingBoxForCulling(entity, partialTicks);
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package dev.engine_room.flywheel.backend.engine.uniform;
 
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
+import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
@@ -11,6 +13,7 @@ import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import dev.engine_room.flywheel.api.backend.RenderContext;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.client.renderer.state.level.SkyRenderState;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.Level;
@@ -76,10 +79,11 @@ public final class LevelUniforms implements FlwUniform {
 			ClientLevel level = context.level();
 			float partialTick = context.partialTick();
 			LevelRenderState levelRenderState = context.levelRenderState();
+			SkyRenderState skyRenderState = levelRenderState.skyRenderState;
 
-			int skyColor = levelRenderState.skyRenderState.skyColor;
+			Vector3fc skyColor = skyRenderState.skyColor != null ? skyRenderState.skyColor : new Vector3f(1f, 1f, 1f);
 			int cloudColor = levelRenderState.cloudColor;
-			builder.putVec4(ARGB.redFloat(skyColor), ARGB.greenFloat(skyColor), ARGB.blueFloat(skyColor), 1f);
+			builder.putVec4(new Vector4f(skyColor, 1f));
 			builder.putVec4(ARGB.redFloat(cloudColor), ARGB.greenFloat(cloudColor), ARGB.blueFloat(cloudColor), 1f);
 
 			builder.putVec3(light0Direction);

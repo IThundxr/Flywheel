@@ -42,8 +42,8 @@ public class EntityVisibilityTester {
 	 * @param frustum The frustum to test against.
 	 * @return {@code true} if the Entity is visible, {@code false} otherwise.
 	 */
-	public boolean check(FrustumIntersection frustum) {
-		AABB aabb = FlwLibLink.INSTANCE.getBoundingBoxForCulling(entity);
+	public boolean check(FrustumIntersection frustum, float partialTicks) {
+		AABB aabb = FlwLibLink.INSTANCE.getBoundingBoxForCulling(entity, partialTicks);
 
 		// If we've never seen the entity before assume its visible.
 		// Fixes entities freezing when they first spawn.
