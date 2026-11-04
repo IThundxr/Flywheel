@@ -3,7 +3,7 @@ package dev.engine_room.flywheel.backend.gl;
 import org.jetbrains.annotations.UnknownNullability;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL20C;
+import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
@@ -36,10 +36,10 @@ public final class GlCompat {
 		CAPABILITIES = caps;
 	}
 
-	public static final String GL_VENDOR_STRING = safeGetString(GL20C.GL_VENDOR);
-	public static final String GL_RENDERER_STRING = safeGetString(GL20C.GL_RENDERER);
-	public static final String GL_VERSION_STRING = safeGetString(GL20C.GL_VERSION);
-	public static final String GL_SHADING_LANGUAGE_VERSION_STRING = safeGetString(GL20C.GL_SHADING_LANGUAGE_VERSION);
+	public static final String GL_VENDOR_STRING = safeGetString(GL33C.GL_VENDOR);
+	public static final String GL_RENDERER_STRING = safeGetString(GL33C.GL_RENDERER);
+	public static final String GL_VERSION_STRING = safeGetString(GL33C.GL_VERSION);
+	public static final String GL_SHADING_LANGUAGE_VERSION_STRING = safeGetString(GL33C.GL_SHADING_LANGUAGE_VERSION);
 
 	public static final Driver DRIVER = readVendorString();
 	public static final int SUBGROUP_SIZE = subgroupSize();
@@ -65,7 +65,7 @@ public final class GlCompat {
 	 * Modified from:
 	 * <br> <a href="https://github.com/grondag/canvas/commit/820bf754092ccaf8d0c169620c2ff575722d7d96">canvas</a>
 	 *
-	 * <p>Identical in function to {@link GL20C#glShaderSource(int, CharSequence)} but
+	 * <p>Identical in function to {@link GL33C#glShaderSource(int, CharSequence)} but
 	 * passes a null pointer for string length to force the driver to rely on the null
 	 * terminator for string length.  This is a workaround for an apparent flaw with some
 	 * AMD drivers that don't receive or interpret the length correctly, resulting in
@@ -78,7 +78,7 @@ public final class GlCompat {
 			var sourceBuffer = MemoryUtil.memUTF8(source, true);
 			final PointerBuffer pointers = stack.mallocPointer(1);
 			pointers.put(sourceBuffer);
-			GL20C.nglShaderSource(glId, 1, pointers.address0(), 0);
+			GL33C.nglShaderSource(glId, 1, pointers.address0(), 0);
 			MemoryUtil.memFree(sourceBuffer);
 		}
 	}
@@ -199,7 +199,7 @@ public final class GlCompat {
 	}
 
 	private static boolean canCompileVersion(GlslVersion version) {
-		int handle = GlStateManager.glCreateShader(GlConst.GL_VERTEX_SHADER);
+		int handle = GL33C.glCreateShader(GlConst.GL_VERTEX_SHADER);
 
 		// Compile the simplest possible shader.
 		var source = """
@@ -208,11 +208,11 @@ public final class GlCompat {
 				""".formatted(version.version);
 
 		safeShaderSource(handle, source);
-		GlStateManager.glCompileShader(handle);
+		GL33C.glCompileShader(handle);
 
 		boolean success = Compilation.compiledSuccessfully(handle);
 
-		GlStateManager.glDeleteShader(handle);
+		GL33C.glDeleteShader(handle);
 
 		return success;
 	}
@@ -224,7 +224,7 @@ public final class GlCompat {
 		if (CAPABILITIES == null) {
 			return "invalid";
 		}
-		String str = GlStateManager._getString(name);
+		String str = GL33C.glGetString(name);
 		return str == null ? "null" : str;
 	}
 }

@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.gl.buffer;
 
-import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.Checks;
 
@@ -56,13 +56,13 @@ public interface Buffer {
 		@Override
 		public void data(int vbo, long size, long ptr, int glEnum) {
 			GlBufferType.COPY_WRITE_BUFFER.bind(vbo);
-			GL15.nglBufferData(GlBufferType.COPY_WRITE_BUFFER.glEnum, size, ptr, glEnum);
+			GL33C.nglBufferData(GlBufferType.COPY_WRITE_BUFFER.glEnum, size, ptr, glEnum);
 		}
 
 		@Override
 		public void subData(int vbo, long offset, long size, long ptr) {
 			GlBufferType.COPY_WRITE_BUFFER.bind(vbo);
-			GL15.nglBufferSubData(GlBufferType.COPY_WRITE_BUFFER.glEnum, offset, size, ptr);
+			GL33C.nglBufferSubData(GlBufferType.COPY_WRITE_BUFFER.glEnum, offset, size, ptr);
 		}
 	}
 }

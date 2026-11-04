@@ -1,7 +1,5 @@
 package dev.engine_room.flywheel.lib.math;
 
-import net.minecraft.util.Mth;
-
 public final class DataPacker {
 	private DataPacker() {
 	}
@@ -10,7 +8,7 @@ public final class DataPacker {
 	 * Pack a float as an unsigned, normalized byte.
 	 */
 	public static byte packNormU8(float f) {
-		return (byte) (int) (Mth.clamp(f, 0.0f, 1.0f) * 255);
+		return (byte) (int) (Math.clamp(f, 0.0f, 1.0f) * 255);
 	}
 
 	/**
@@ -24,7 +22,7 @@ public final class DataPacker {
 	 * Pack a float as a signed, normalized byte.
 	 */
 	public static byte packNormI8(float f) {
-		return (byte) (Mth.clamp(f, -1.0f, 1.0f) * 127);
+		return (byte) (Math.clamp(f, -1.0f, 1.0f) * 127);
 	}
 
 	/**
@@ -38,7 +36,7 @@ public final class DataPacker {
 	 * Pack a float as an unsigned, normalized short.
 	 */
 	public static short packNormU16(float f) {
-		return (short) (int) (Mth.clamp(f, 0.0f, 1.0f) * 65535);
+		return (short) (int) (Math.clamp(f, 0.0f, 1.0f) * 65535);
 	}
 
 	/**
@@ -52,7 +50,7 @@ public final class DataPacker {
 	 * Pack a float as a signed, normalized byte.
 	 */
 	public static short packNormI16(float f) {
-		return (short) (Mth.clamp(f, -1.0f, 1.0f) * 32767);
+		return (short) (Math.clamp(f, -1.0f, 1.0f) * 32767);
 	}
 
 	/**

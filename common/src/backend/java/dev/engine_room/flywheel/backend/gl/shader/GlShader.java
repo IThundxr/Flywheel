@@ -1,6 +1,6 @@
 package dev.engine_room.flywheel.backend.gl.shader;
 
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import org.lwjgl.opengl.GL33C;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 
@@ -19,7 +19,7 @@ public class GlShader extends GlObject {
 
 	@Override
 	protected void deleteInternal(int handle) {
-		GlStateManager.glDeleteShader(handle);
+		GL33C.glDeleteShader(handle);
 	}
 
 	@Override

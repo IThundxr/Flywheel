@@ -3,7 +3,7 @@ package dev.engine_room.flywheel.backend.engine;
 import java.util.Comparator;
 
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;
@@ -102,7 +102,7 @@ public final class MaterialRenderState {
 		}
 		case NEVER -> {
 			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GL11.GL_NEVER);
+			GlStateManager._depthFunc(GL33C.GL_NEVER);
 		}
 		case LESS -> {
 			GlStateManager._enableDepthTest();
@@ -122,7 +122,7 @@ public final class MaterialRenderState {
 		}
 		case NOTEQUAL -> {
 			GlStateManager._enableDepthTest();
-			GlStateManager._depthFunc(GL11.GL_NOTEQUAL);
+			GlStateManager._depthFunc(GL33C.GL_NOTEQUAL);
 		}
 		case GEQUAL -> {
 			GlStateManager._enableDepthTest();

@@ -3,8 +3,8 @@ package dev.engine_room.flywheel.backend.compile.core;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;

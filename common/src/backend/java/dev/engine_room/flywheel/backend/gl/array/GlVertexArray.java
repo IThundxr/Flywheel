@@ -1,17 +1,15 @@
 package dev.engine_room.flywheel.backend.gl.array;
 
-import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33C;
 
-import com.mojang.renderpearl.api.vertex.VertexFormat;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 
 @Deprecated(forRemoval = true)
 public abstract class GlVertexArray extends GlObject {
-	protected static final int MAX_ATTRIBS = GlStateManager._getInteger(GL32.GL_MAX_VERTEX_ATTRIBS);
+	protected static final int MAX_ATTRIBS = GL33C.glGetInteger(GL33C.GL_MAX_VERTEX_ATTRIBS);
 	protected static final int MAX_ATTRIB_BINDINGS = 16;
 
 	public static GlVertexArray create() {

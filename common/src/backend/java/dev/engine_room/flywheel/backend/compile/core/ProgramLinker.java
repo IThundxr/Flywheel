@@ -3,12 +3,12 @@ package dev.engine_room.flywheel.backend.compile.core;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.lwjgl.opengl.GL33C;
+
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.gl.shader.GlShader;
-import net.minecraft.client.renderer.ShaderManager;
 
 public class ProgramLinker {
 
@@ -21,17 +21,17 @@ public class ProgramLinker {
 	}
 
 	private LinkResult linkInternal(List<GlShader> shaders, Consumer<GlProgram> preLink) {
-		int handle = GlStateManager.glCreateProgram();
+		int handle = GL33C.glCreateProgram();
 		var out = new GlProgram(handle);
 
 		for (GlShader shader : shaders) {
-			GlStateManager.glAttachShader(handle, shader.handle());
+			GL33C.glAttachShader(handle, shader.handle());
 		}
 
 		preLink.accept(out);
 
-		GlStateManager.glLinkProgram(handle);
-		String log = GlStateManager.glGetProgramInfoLog(handle, ShaderManager.MAX_LOG_LENGTH);
+		GL33C.glLinkProgram(handle);
+		String log = GL33C.glGetProgramInfoLog(handle, com.mojang.renderpearl.backend.opengl.GlProgram.MAX_LOG_LENGTH);
 
 		if (linkSuccessful(handle)) {
 			return LinkResult.success(out, log);
@@ -42,7 +42,7 @@ public class ProgramLinker {
 	}
 
 	private static boolean linkSuccessful(int handle) {
-		return GlStateManager.glGetProgrami(handle, GlConst.GL_LINK_STATUS) == GlConst.GL_TRUE;
+		return GL33C.glGetProgrami(handle, GlConst.GL_LINK_STATUS) == GlConst.GL_TRUE;
 	}
 
 }

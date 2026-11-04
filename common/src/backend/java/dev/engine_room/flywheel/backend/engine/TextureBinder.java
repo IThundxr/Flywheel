@@ -46,8 +46,8 @@ public class TextureBinder {
 
 		if (sampler != null) {
 			GL33C.glBindSampler(unit, ((GlSampler) sampler).getId());
-			GlStateManager._texParameter(i, GL33C.GL_TEXTURE_BASE_LEVEL, textureView.baseMipLevel());
-			GlStateManager._texParameter(i, GL33C.GL_TEXTURE_MAX_LEVEL, textureView.baseMipLevel() + textureView.mipLevels() - 1);
+			GL33C.glTexParameteri(i, GL33C.GL_TEXTURE_BASE_LEVEL, textureView.baseMipLevel());
+			GL33C.glTexParameteri(i, GL33C.GL_TEXTURE_MAX_LEVEL, textureView.baseMipLevel() + textureView.mipLevels() - 1);
 		}
 	}
 

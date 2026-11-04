@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Unmodifiable;
-import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33C;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
@@ -49,7 +49,7 @@ public final class Uniforms {
 			FlwUniform uniform = UNIFORMS.get(i);
 			GpuBuffer buffer = uniform.getBuffer();
 
-			GL32.glBindBufferRange(GL32.GL_UNIFORM_BUFFER, i, ((GlBuffer) buffer).handle(), 0, buffer.size());
+			GL33C.glBindBufferRange(GL33C.GL_UNIFORM_BUFFER, i, ((GlBuffer) buffer).handle(), 0, buffer.size());
 		}
 	}
 

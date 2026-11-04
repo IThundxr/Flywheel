@@ -5,8 +5,10 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lwjgl.opengl.GL33C;
+
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import com.mojang.renderpearl.backend.opengl.GlProgram;
 
 import dev.engine_room.flywheel.backend.compile.FlwPrograms;
 import dev.engine_room.flywheel.backend.gl.GlCompat;
@@ -17,7 +19,6 @@ import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 import dev.engine_room.flywheel.backend.glsl.SourceFile;
 import dev.engine_room.flywheel.lib.util.StringUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderManager;
 
 /**
  * Builder style class for compiling shaders.
@@ -34,22 +35,22 @@ public class Compilation {
 	private int generatedLines = 0;
 
 	public ShaderResult compile(ShaderType shaderType, String name) {
-		int handle = GlStateManager.glCreateShader(shaderType.glEnum);
+		int handle = GL33C.glCreateShader(shaderType.glEnum);
 		var source = fullSource.toString();
 
 		GlCompat.safeShaderSource(handle, source);
-		GlStateManager.glCompileShader(handle);
+		GL33C.glCompileShader(handle);
 
 		var shaderName = name + "." + shaderType.extension;
 		dumpSource(source, shaderName);
 
-		var infoLog = GlStateManager.glGetShaderInfoLog(handle, ShaderManager.MAX_LOG_LENGTH);
+		var infoLog = GL33C.glGetShaderInfoLog(handle, GlProgram.MAX_LOG_LENGTH);
 
 		if (compiledSuccessfully(handle)) {
 			return ShaderResult.success(new GlShader(handle, shaderType, shaderName), infoLog);
 		}
 
-		GlStateManager.glDeleteShader(handle);
+		GL33C.glDeleteShader(handle);
 		return ShaderResult.failure(new FailedCompilation(shaderName, files, generatedSource.toString(), source, infoLog));
 	}
 
@@ -154,6 +155,6 @@ public class Compilation {
 	}
 
 	public static boolean compiledSuccessfully(int handle) {
-		return GlStateManager.glGetShaderi(handle, GlConst.GL_COMPILE_STATUS) == GlConst.GL_TRUE;
+		return GL33C.glGetShaderi(handle, GlConst.GL_COMPILE_STATUS) == GlConst.GL_TRUE;
 	}
 }
