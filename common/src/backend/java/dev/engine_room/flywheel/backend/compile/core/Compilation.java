@@ -97,6 +97,20 @@ public class Compilation {
 		fullSource.append(source);
 	}
 
+	public void appendComponentAsNormalInclude(SourceComponent component) {
+		if (component instanceof SourceFile file) {
+			fullSource.append("#include \"")
+					.append(file.name())
+					.append("\"\n");
+		} else {
+			fullSource.append("\n// (generated) ")
+					.append(component.name())
+					.append('\n')
+					.append(component.source())
+					.append('\n');
+		}
+	}
+
 	private void appendHeader(SourceComponent component, String source) {
 		if (component instanceof SourceFile file) {
 			int fileId = files.size() + 1;

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.Nullable;
 
 import dev.engine_room.flywheel.backend.compile.FlwPrograms;
 import dev.engine_room.flywheel.lib.util.StringUtil;
@@ -43,6 +44,16 @@ public class ShaderSources {
 	private static Identifier locationWithoutFlywheelPrefix(Identifier id) {
 		return Identifier.fromNamespaceAndPath(id.getNamespace(), id.getPath()
 				.substring(SHADER_DIR.length()));
+	}
+
+	@Nullable
+	public SourceFile peek(Identifier id) {
+		LoadResult result = cache.get(id);
+		if (result instanceof LoadResult.Success success) {
+			return success.unwrap();
+		}
+
+		return null;
 	}
 
 	public LoadResult find(Identifier id) {

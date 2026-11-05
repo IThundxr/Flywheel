@@ -18,6 +18,7 @@ public class ShaderCache {
 	@Deprecated(forRemoval = true)
 	private final Map<ShaderKey, ShaderResult> innerOld = new HashMap<>();
 	private final Map<ShaderKey, String> inner = new HashMap<>();
+	private final Map<ShaderKey, String> innerForRenderPipelines = new HashMap<>();
 
 	public ShaderCache() {
 	}
@@ -43,7 +44,7 @@ public class ShaderCache {
 		return out.unwrap();
 	}
 
-	public String getSource(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
+	public String getFullSource(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
 		return inner.computeIfAbsent(new ShaderKey(glslVersion, shaderType, name), _ -> {
 			Compilation ctx = new Compilation();
 			ctx.version(glslVersion);
@@ -58,6 +59,21 @@ public class ShaderCache {
 		});
 	}
 
+	public String getSource(GlslVersion glslVersion, ShaderType shaderType, String name, Consumer<Compilation> callback, List<SourceComponent> sourceComponents) {
+		return innerForRenderPipelines.computeIfAbsent(new ShaderKey(glslVersion, shaderType, name), _ -> {
+			Compilation ctx = new Compilation();
+			ctx.version(glslVersion);
+			ctx.define(shaderType.define);
+			ctx.define("_FLW_" + DeviceFeatureCompat.BACKEND_NAME.toUpperCase(Locale.ROOT));
+
+			callback.accept(ctx);
+
+			expand(sourceComponents, ctx::appendComponentAsNormalInclude);
+
+			return ctx.getSource();
+		});
+	}
+
 	public void delete() {
 		innerOld.values()
 				.stream()
@@ -66,6 +82,7 @@ public class ShaderCache {
 				.forEach(GlShader::delete);
 		innerOld.clear();
 		inner.clear();
+		innerForRenderPipelines.clear();
 	}
 
 	private static void expand(List<SourceComponent> rootSources, Consumer<SourceComponent> out) {

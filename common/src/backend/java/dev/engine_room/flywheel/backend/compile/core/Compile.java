@@ -149,6 +149,18 @@ public class Compile<K> {
 			return out;
 		}
 
+		private String getFullSource(K key, ShaderCache compiler, ShaderSources loader) {
+			var components = new ArrayList<SourceComponent>();
+			for (var fetcher : fetchers) {
+				components.add(fetcher.apply(key, loader));
+			}
+
+			Consumer<Compilation> cb = ctx -> compilationCallbacks.accept(key, ctx);
+			var name = nameMapper.apply(key);
+
+			return compiler.getFullSource(glslVersion, shaderType, name, cb, components);
+		}
+
 		private String getSource(K key, ShaderCache compiler, ShaderSources loader) {
 			var components = new ArrayList<SourceComponent>();
 			for (var fetcher : fetchers) {
@@ -242,44 +254,36 @@ public class Compile<K> {
 					.withFragmentShader(fragmentShaderId)
 					.build();
 
-			// TODO - Support #include through this instead of flywheel's system
-			ShaderSource shaderSource = new ShaderSource() {
-				@Override
-				public String getShader(Identifier id, com.mojang.renderpearl.api.pipeline.ShaderType type) {
-					ShaderType flwShaderType = switch (type) {
-						case VERTEX -> ShaderType.VERTEX;
-						case FRAGMENT -> ShaderType.FRAGMENT;
-					};
-
-					return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
-				}
-
-				@Override
-				public @Nullable CachedIncludeSource getInclude(Identifier id) {
-					return null;
-				}
-
-				@Override
-				public void close() {
-				}
-			};
-
 			if (Compilation.DUMP_SHADER_SOURCE) {
 				for (ShaderType shaderType : ShaderType.values()) {
 					ShaderCompiler<K> compiler = compilers.get(shaderType);
 					if (compiler != null) {
 						String source = compiler.getSource(key, shaderCache, loader);
+						String fullSource = compiler.getFullSource(key, shaderCache, loader);
 
-						String shaderName = compiler.nameMapper.apply(key) + "." + shaderType.extension;
-						Compilation.dumpSource(source, shaderName);
+						String shaderName = compiler.nameMapper.apply(key);
+						String shaderExtension = "." + shaderType.extension;
+
+						Compilation.dumpSource(source, shaderName + shaderExtension);
+						Compilation.dumpSource(fullSource, shaderName + ".full" + shaderExtension);
 					}
 				}
 			}
+
+			ShaderSource shaderSource = new FlwShaderSource((_, type) -> {
+				ShaderType flwShaderType = switch (type) {
+					case VERTEX -> ShaderType.VERTEX;
+					case FRAGMENT -> ShaderType.FRAGMENT;
+				};
+
+				return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
+			}, loader);
 
 			CompiledRenderPipeline compiledPipeline = RenderSystem.getDevice()
 					.compilePipeline(pipeline, shaderSource, Util.backgroundExecutor())
 					.join()
 					.finishCompile();
+			shaderSource.close();
 
 			long end = System.nanoTime();
 
