@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 import dev.engine_room.flywheel.impl.FlwImpl;
-import net.minecraft.util.Mth;
 
 // https://github.com/CaffeineMC/sodium-fabric/blob/5d364ed5ba63f9067fcf72a078ca310bff4db3e9/src/main/java/me/jellysquid/mods/sodium/client/render/chunk/compile/ChunkBuilder.java
 // https://stackoverflow.com/questions/29655531
@@ -55,7 +54,7 @@ public class ParallelTaskExecutor implements TaskExecutorImpl {
 
 		for (int i = 0; i < threadCount; i++) {
 			WorkerThread thread = new WorkerThread(name + " Task Executor #" + i);
-			thread.setPriority(Mth.clamp(Thread.NORM_PRIORITY - 2, Thread.MIN_PRIORITY, Thread.MAX_PRIORITY));
+			thread.setPriority(Math.clamp(Thread.NORM_PRIORITY - 2, Thread.MIN_PRIORITY, Thread.MAX_PRIORITY));
 			thread.start();
 
 			threads.add(thread);

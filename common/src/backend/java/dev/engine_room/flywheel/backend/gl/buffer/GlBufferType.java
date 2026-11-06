@@ -7,8 +7,6 @@ import org.lwjgl.opengl.GL43;
 
 import com.mojang.renderpearl.backend.opengl.GlConst;
 
-import dev.engine_room.flywheel.backend.gl.GlStateTracker;
-
 @Deprecated(forRemoval = true)
 public enum GlBufferType {
 	ARRAY_BUFFER(GlConst.GL_ARRAY_BUFFER, GL33C.GL_ARRAY_BUFFER_BINDING),
@@ -54,6 +52,6 @@ public enum GlBufferType {
 	}
 
 	public void bind(int buffer) {
-		GlStateTracker.bindBuffer(this, buffer);
+		GL33C.glBindBuffer(glEnum, buffer);
 	}
 }

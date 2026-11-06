@@ -5,11 +5,10 @@ import org.lwjgl.opengl.GL46;
 
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 
 import dev.engine_room.flywheel.backend.compile.IndirectPrograms;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
+import dev.engine_room.flywheel.backend.gl.GlUtil;
 import dev.engine_room.flywheel.lib.math.MoreMath;
 import net.minecraft.client.Minecraft;
 
@@ -36,12 +35,13 @@ public class DepthPyramid {
 		createPyramidMips(mipLevels, width, height);
 
 		GpuTexture depthTexture = mainRenderTarget.getDepthTexture();
-		int depthBufferId = depthTexture != null ? ((GlTexture) depthTexture).glId() : 0;
+
+		int depthBufferId = depthTexture != null ? GlUtil.getHandle(depthTexture) : 0;
 
 		GL46.glMemoryBarrier(GL46.GL_FRAMEBUFFER_BARRIER_BIT);
 
 		GlTextureUnit.T0.makeActive();
-		GlStateManager._bindTexture(depthBufferId);
+		GlUtil.getStateManager()._bindTexture(depthBufferId);
 
 		var downsampleFirstProgram = programs.getDownsampleFirstProgram();
 		downsampleFirstProgram.bind();
@@ -70,7 +70,7 @@ public class DepthPyramid {
 
 	public void bindForCull() {
 		GlTextureUnit.T0.makeActive();
-		GlStateManager._bindTexture(pyramidTextureId);
+		GlUtil.getStateManager()._bindTexture(pyramidTextureId);
 	}
 
 	public void delete() {

@@ -10,8 +10,6 @@
     "CameraRenderStateMixin",
     "FogRendererMixin",
     "FrontendGpuDeviceAccessor",
-    "GlStateManagerAccessor",
-    "GlStateManagerMixin",
     "LightingMixin",
     "MinecraftMixin",
     "ModelBakeryAccessor",

@@ -18,6 +18,8 @@ import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.debug.DebugColumn.Side;
+import net.minecraft.client.gui.components.debug.DebugGroup;
 import net.minecraft.client.gui.components.debug.DebugScreenDisplayer;
 import net.minecraft.client.gui.components.debug.DebugScreenEntry;
 import net.minecraft.core.Vec3i;
@@ -257,7 +259,14 @@ public final class FlwDebugInfo {
 
 	public static class FlwDebugEntry implements DebugScreenEntry {
 		public static final Identifier ID = IdentifierUtil.id("flw_debug_info");
-		private static final Identifier GROUP = IdentifierUtil.id("flywheel");
+		public static final FlwDebugEntry INSTANCE = new FlwDebugEntry();
+
+		private static final DebugGroup DEBUG_GROUP = DebugGroup.Builder.titleless()
+				.withPreferredColumn(Side.RIGHT)
+				.build();
+
+		private FlwDebugEntry() {
+		}
 
 		@Override
 		public void display(DebugScreenDisplayer displayer, @Nullable Level serverOrClientLevel, @Nullable LevelChunk clientChunk, @Nullable LevelChunk serverChunk) {
@@ -294,7 +303,7 @@ public final class FlwDebugInfo {
 		}
 
 		private static void add(DebugScreenDisplayer displayer, String input, Object... args) {
-			displayer.addToGroup(GROUP, String.format(Locale.ROOT, input, args));
+			displayer.addToGroup(DEBUG_GROUP, String.format(Locale.ROOT, input, args));
 		}
 	}
 }

@@ -8,9 +8,9 @@ import org.lwjgl.opengl.GL33C;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.backend.opengl.GlBuffer;
 
 import dev.engine_room.flywheel.api.backend.RenderContext;
+import dev.engine_room.flywheel.backend.gl.GlUtil;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -49,7 +49,7 @@ public final class Uniforms {
 			FlwUniform uniform = UNIFORMS.get(i);
 			GpuBuffer buffer = uniform.getBuffer();
 
-			GL33C.glBindBufferRange(GL33C.GL_UNIFORM_BUFFER, i, ((GlBuffer) buffer).handle(), 0, buffer.size());
+			GL33C.glBindBufferRange(GL33C.GL_UNIFORM_BUFFER, i, GlUtil.getHandle(buffer), 0, buffer.size());
 		}
 	}
 

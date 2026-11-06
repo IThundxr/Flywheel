@@ -6,7 +6,6 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 
 public class TntMinecartVisual<T extends MinecartTNT> extends MinecartVisual<T> {
@@ -21,7 +20,7 @@ public class TntMinecartVisual<T extends MinecartTNT> extends MinecartVisual<T> 
 		int fuseTime = entity.getFuse();
 		if (fuseTime > -1 && (float) fuseTime - partialTick + 1.0F < 10.0F) {
 			float f = 1.0F - ((float) fuseTime - partialTick + 1.0F) / 10.0F;
-			f = Mth.clamp(f, 0.0F, 1.0F);
+			f = Math.clamp(f, 0.0F, 1.0F);
 			f *= f;
 			f *= f;
 			float scale = 1.0F + f * 0.3F;

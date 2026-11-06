@@ -1,6 +1,7 @@
 package dev.engine_room.flywheel.backend.compile;
 
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPassLayout;
 
 import dev.engine_room.flywheel.backend.FlwRenderPipelines;
 import dev.engine_room.flywheel.backend.Samplers;
@@ -69,12 +70,12 @@ public class OitPrograms {
 		return harness.get(OitPrograms.OIT_DEPTH);
 	}
 
-	public CompiledRenderPipeline getOitCompositePipeline() {
-		return harness.getPipeline(FlwRenderPipelines.OIT_COMPOSITE, OitPrograms.OIT_COMPOSITE);
+	public CompiledRenderPipeline getOitCompositePipeline(RenderPassLayout.Subpass subpass) {
+		return harness.getPipeline(FlwRenderPipelines.OIT_COMPOSITE, subpass, OitPrograms.OIT_COMPOSITE);
 	}
 
-	public CompiledRenderPipeline getOitDepthPipeline() {
-		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_FROM_TRANSMITTANCE, OitPrograms.OIT_DEPTH);
+	public CompiledRenderPipeline getOitDepthPipeline(RenderPassLayout.Subpass subpass) {
+		return harness.getPipeline(FlwRenderPipelines.OIT_DEPTH_FROM_TRANSMITTANCE, subpass, OitPrograms.OIT_DEPTH);
 	}
 
 	public void delete() {

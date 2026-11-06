@@ -7,9 +7,10 @@ import org.lwjgl.opengl.GL46;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.backend.opengl.GlConst;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.renderpearl.backend.opengl.GlTextureView;
 
 import dev.engine_room.flywheel.backend.NoiseTextures;
 import dev.engine_room.flywheel.backend.Samplers;
@@ -50,36 +51,40 @@ public class OitFramebufferOld {
 	 * Set up the framebuffer.
 	 */
 	public void prepare() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		RenderTarget renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 
 		maybeResizeFBO(renderTarget.width, renderTarget.height);
 
 		Samplers.COEFFICIENTS.makeActive();
 		// Bind zero to state manager to make sure we clear its internal state
-		GlStateManager._bindTexture(0);
+		stateManager._bindTexture(0);
 		GL33C.glBindTexture(GL33C.GL_TEXTURE_2D_ARRAY, coefficients);
 
 		Samplers.DEPTH_RANGE.makeActive();
-		GlStateManager._bindTexture(depthBounds);
+		stateManager._bindTexture(depthBounds);
 
 		// Needs to use Linear Repeat with b3d
 		Samplers.NOISE.makeActive();
-		GlStateManager._bindTexture(((GlTexture) NoiseTextures.BLUE_NOISE).glId());
+		stateManager._bindTexture(GlUtil.getHandle(NoiseTextures.BLUE_NOISE));
 
-		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
-		GlTexture depthTexture = (GlTexture) renderTarget.getDepthTexture();
-		GL33C.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_DEPTH_ATTACHMENT, depthTexture != null ? depthTexture.glId() : 0, 0);
+		stateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
+		GpuTexture depthTexture = renderTarget.getDepthTexture();
+		GL33C.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_DEPTH_ATTACHMENT, depthTexture != null ? GlUtil.getHandle(depthTexture) : 0, 0);
 	}
 
 	/**
 	 * Render out the min and max depth per fragment.
 	 */
 	public void depthRange() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		// No depth writes, but we'll still use the depth test.
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
+		stateManager._depthMask(false);
+		stateManager._colorMask(ColorTargetState.WRITE_ALL);
+		stateManager._enableBlend(0);
+		stateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL33C.glBlendEquation(GlConst.GL_MAX);
 
 		float far = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState.depthFar;
@@ -98,11 +103,13 @@ public class OitFramebufferOld {
 	 * Generate the coefficients to the transmittance function.
 	 */
 	public void renderTransmittance() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		// No depth writes, but we'll still use the depth test
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
+		stateManager._depthMask(false);
+		stateManager._colorMask(ColorTargetState.WRITE_ALL);
+		stateManager._enableBlend(0);
+		stateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL33C.glBlendEquation(GlConst.GL_FUNC_ADD);
 
 		if (GlCompat.SUPPORTS_DSA) {
@@ -124,11 +131,13 @@ public class OitFramebufferOld {
 	 * function to determine at what depth that occurs and write out to the depth buffer.
 	 */
 	public void renderDepthFromTransmittance() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		// Only write to depth, not color.
-		GlStateManager._depthMask(true);
-		GlStateManager._colorMask(ColorTargetState.WRITE_NONE);
-		GlStateManager._disableBlend(0);
-		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
+		stateManager._depthMask(true);
+		stateManager._colorMask(ColorTargetState.WRITE_NONE);
+		stateManager._disableBlend(0);
+		stateManager._depthFunc(GlConst.GL_ALWAYS);
 
 		if (GlCompat.SUPPORTS_DSA) {
 			GL46.glNamedFramebufferDrawBuffers(fbo, DEPTH_ONLY_DRAW_BUFFERS);
@@ -136,8 +145,7 @@ public class OitFramebufferOld {
 			GL33C.glDrawBuffers(DEPTH_ONLY_DRAW_BUFFERS);
 		}
 
-		programs.getOitDepthProgram()
-				.bind();
+		programs.getOitDepthProgram().bind();
 
 		drawFullscreenQuad();
 	}
@@ -146,11 +154,13 @@ public class OitFramebufferOld {
 	 * Sample the transmittance function and accumulate.
 	 */
 	public void accumulate() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		// No depth writes, but we'll still use the depth test
-		GlStateManager._depthMask(false);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
-		GlStateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
+		stateManager._depthMask(false);
+		stateManager._colorMask(ColorTargetState.WRITE_ALL);
+		stateManager._enableBlend(0);
+		stateManager._blendFuncSeparate(GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE, GlConst.GL_ONE);
 		GL33C.glBlendEquation(GlConst.GL_FUNC_ADD);
 
 		if (GlCompat.SUPPORTS_DSA) {
@@ -168,6 +178,8 @@ public class OitFramebufferOld {
 	 * Composite the accumulated luminance onto the main framebuffer.
 	 */
 	public void composite() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		bindRenderTarget(mainRenderTarget);
 
@@ -175,9 +187,9 @@ public class OitFramebufferOld {
 		// depthMask = true: OIT stuff renders on top of other transparent stuff.
 		// depthMask = false: other transparent stuff renders on top of OIT stuff.
 		// If Neo gets wavelet OIT we can use their hooks to be correct with everything.
-		GlStateManager._depthMask(true);
-		GlStateManager._colorMask(ColorTargetState.WRITE_ALL);
-		GlStateManager._enableBlend(0);
+		stateManager._depthMask(true);
+		stateManager._colorMask(ColorTargetState.WRITE_ALL);
+		stateManager._enableBlend(0);
 
 		// We rely on the blend func to achieve:
 		// final color = (1 - transmittance_total) * sum(color_f * alpha_f * transmittance_f) / sum(alpha_f * transmittance_f)
@@ -185,15 +197,14 @@ public class OitFramebufferOld {
 		//
 		// Though note that the alpha value we emit in the fragment shader is actually (1. - transmittance_total).
 		// The extra inversion step is so we can have a sane alpha value written out for the fabulous blit shader to consume.
-		GlStateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
+		stateManager._blendFuncSeparate(GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_ONE, GlConst.GL_ONE_MINUS_SRC_ALPHA);
 		GL33C.glBlendEquation(GlConst.GL_FUNC_ADD);
-		GlStateManager._depthFunc(GlConst.GL_ALWAYS);
+		stateManager._depthFunc(GlConst.GL_ALWAYS);
 
 		GlTextureUnit.T0.makeActive();
-		GlStateManager._bindTexture(accumulate);
+		stateManager._bindTexture(accumulate);
 
-		programs.getOitCompositeProgram()
-				.bind();
+		programs.getOitCompositeProgram().bind();
 
 		drawFullscreenQuad();
 
@@ -201,15 +212,17 @@ public class OitFramebufferOld {
 	}
 
 	private static void bindRenderTarget(RenderTarget target) {
-		GlTexture colorTexture = (GlTexture) target.getColorTexture();
-		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
+		GlStateManager stateManager = GlUtil.getStateManager();
+
+		GpuTexture colorTexture = target.getColorTexture();
+		GpuTexture depthTexture = target.getDepthTexture();
 		int i = GlUtil.getFramebufferCache().getFbo(
 				GlUtil.getDirectStateAccess(),
-				Collections.singletonList(colorTexture),
-				depthTexture
+				Collections.singletonList((GlTextureView) colorTexture),
+				(GlTextureView) depthTexture
 		);
-		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
-		GlStateManager._viewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));
+		stateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
+		GL33C.glViewport(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0));
 	}
 
 	public void delete() {
@@ -219,31 +232,33 @@ public class OitFramebufferOld {
 
 	private void drawFullscreenQuad() {
 		// Empty VAO, the actual full screen triangle is generated in the vertex shader
-		GlStateManager._glBindVertexArray(vao);
+		GL33C.glBindVertexArray(vao);
 
-		GlStateManager._drawArrays(GlConst.GL_TRIANGLES, 0, 3);
+		GL33C.glDrawArrays(GlConst.GL_TRIANGLES, 0, 3);
 	}
 
 	private void deleteTextures() {
+		GlStateManager stateManager = GlUtil.getStateManager();
+
 		if (depthBounds != -1) {
-			GlStateManager._deleteTexture(depthBounds);
+			stateManager._deleteTexture(depthBounds);
 		}
 		if (coefficients != -1) {
-			GlStateManager._deleteTexture(coefficients);
+			stateManager._deleteTexture(coefficients);
 		}
 		if (accumulate != -1) {
-			GlStateManager._deleteTexture(accumulate);
+			stateManager._deleteTexture(accumulate);
 		}
 		if (fbo != -1) {
-			GlStateManager._glDeleteFramebuffers(fbo);
+			stateManager._glDeleteFramebuffers(fbo);
 		}
 
 		// We sometimes get the same texture ID back when creating new textures,
 		// so bind zero to clear the GlStateManager
 		Samplers.COEFFICIENTS.makeActive();
-		GlStateManager._bindTexture(0);
+		stateManager._bindTexture(0);
 		Samplers.DEPTH_RANGE.makeActive();
-		GlStateManager._bindTexture(0);
+		stateManager._bindTexture(0);
 	}
 
 	private void maybeResizeFBO(int width, int height) {
@@ -274,16 +289,18 @@ public class OitFramebufferOld {
 			GL46.glNamedFramebufferTextureLayer(fbo, GL33C.GL_COLOR_ATTACHMENT4, coefficients, 0, 3);
 			GL46.glNamedFramebufferTexture(fbo, GL33C.GL_COLOR_ATTACHMENT5, accumulate, 0);
 		} else {
+			GlStateManager stateManager = GlUtil.getStateManager();
+
 			fbo = GL46.glGenFramebuffers();
 
-			depthBounds = GlStateManager._genTexture();
-			coefficients = GlStateManager._genTexture();
-			accumulate = GlStateManager._genTexture();
+			depthBounds = stateManager._genTexture();
+			coefficients = stateManager._genTexture();
+			accumulate = stateManager._genTexture();
 
 			GlTextureUnit.T0.makeActive();
-			GlStateManager._bindTexture(0);
+			stateManager._bindTexture(0);
 
-			GlStateManager._bindTexture(depthBounds);
+			stateManager._bindTexture(depthBounds);
 			GL33C.glTexImage2D(GlConst.GL_TEXTURE_2D, 0, GL33C.GL_RG32F, width, height, 0, GL46.GL_RGBA, GL46.GL_BYTE, 0);
 
 			GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_NEAREST);
@@ -299,7 +316,7 @@ public class OitFramebufferOld {
 			GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_CLAMP_TO_EDGE);
 			GL33C.glTexParameteri(GL33C.GL_TEXTURE_2D_ARRAY, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_CLAMP_TO_EDGE);
 
-			GlStateManager._bindTexture(accumulate);
+			stateManager._bindTexture(accumulate);
 			GL33C.glTexImage2D(GlConst.GL_TEXTURE_2D, 0, GL33C.GL_RGBA16F, width, height, 0, GL46.GL_RGBA, GL46.GL_BYTE, 0);
 
 			GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_NEAREST);
@@ -307,7 +324,7 @@ public class OitFramebufferOld {
 			GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_CLAMP_TO_EDGE);
 			GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_CLAMP_TO_EDGE);
 
-			GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
+			stateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fbo);
 
 			GL46.glFramebufferTexture(GlConst.GL_FRAMEBUFFER, GlConst.GL_COLOR_ATTACHMENT0, depthBounds, 0);
 			GL46.glFramebufferTextureLayer(GlConst.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT1, coefficients, 0, 0);

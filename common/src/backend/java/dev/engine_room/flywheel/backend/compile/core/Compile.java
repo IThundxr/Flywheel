@@ -17,6 +17,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
 import com.mojang.blaze3d.pipeline.ShaderSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPassLayout;
 
 import dev.engine_room.flywheel.backend.compile.FlwPrograms;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
@@ -28,7 +29,6 @@ import dev.engine_room.flywheel.backend.glsl.SourceComponent;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import dev.engine_room.flywheel.lib.util.StringUtil;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
 
 /**
  * A typed provider for shader compiler builders.
@@ -235,12 +235,10 @@ public class Compile<K> {
 		}
 
 		@Override
-		public CompiledRenderPipeline compileRenderPipeline(Snippet snippet, K key, ShaderSources loader, ShaderCache shaderCache) {
+		public CompiledRenderPipeline compileRenderPipeline(Snippet snippet, RenderPassLayout.Subpass subpass, K key, ShaderSources loader, ShaderCache shaderCache) {
 			if (compilers.isEmpty()) {
 				throw new IllegalStateException("No shader compilers were added!");
 			}
-
-			long start = System.nanoTime();
 
 			Snippet[] snippets = programSnippet == null
 					? new Snippet[] { snippet }
@@ -279,19 +277,14 @@ public class Compile<K> {
 				return compilers.get(flwShaderType).getSource(key, shaderCache, loader);
 			}, loader);
 
-			CompiledRenderPipeline compiledPipeline = RenderSystem.getDevice()
-					.compilePipeline(pipeline, shaderSource, Util.backgroundExecutor())
-					.join()
+			CompiledRenderPipeline compiledPipeline = RenderSystem.getPipelineBuilder()
+					.compilePipeline(pipeline, subpass, shaderSource)
 					.finishCompile();
 			shaderSource.close();
-
-			long end = System.nanoTime();
 
 			if (compiledPipeline == null) {
 				throw new IllegalStateException("Failed to load pipeline " + pipeline.getLocation());
 			}
-
-			FlwPrograms.LOGGER.debug("Linked {} in {}", key, StringUtil.formatTime(end - start));
 
 			return compiledPipeline;
 		}

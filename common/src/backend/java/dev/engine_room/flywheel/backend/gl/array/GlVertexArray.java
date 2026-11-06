@@ -5,7 +5,6 @@ import org.lwjgl.opengl.GL33C;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
-import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 
 @Deprecated(forRemoval = true)
 public abstract class GlVertexArray extends GlObject {
@@ -27,7 +26,7 @@ public abstract class GlVertexArray extends GlObject {
 	}
 
 	public void bindForDraw() {
-		GlStateTracker.bindVao(handle());
+		GL33C.glBindVertexArray(handle());
 	}
 
 	public abstract void bindVertexBuffer(int bindingIndex, int vbo, long offset, int stride);

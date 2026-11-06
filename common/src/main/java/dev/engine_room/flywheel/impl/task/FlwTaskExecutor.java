@@ -3,7 +3,6 @@ package dev.engine_room.flywheel.impl.task;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dev.engine_room.flywheel.impl.FlwConfig;
-import net.minecraft.util.Mth;
 
 public final class FlwTaskExecutor {
 	private static final AtomicLazy INSTANCE = new AtomicLazy();
@@ -23,7 +22,7 @@ public final class FlwTaskExecutor {
 	 * Returns the "optimal" number of threads to be used for tasks. This will always return at least one thread.
 	 */
 	private static int getOptimalThreadCount() {
-		return Mth.clamp(Math.max(getMaxThreadCount() / 3, getMaxThreadCount() - 6), 1, 10);
+		return Math.clamp(Math.max(getMaxThreadCount() / 3, getMaxThreadCount() - 6), 1, 10);
 	}
 
 	private static int getMaxThreadCount() {
@@ -60,7 +59,7 @@ public final class FlwTaskExecutor {
 			} else if (threadCount < 0) {
 				threadCount = getOptimalThreadCount();
 			} else {
-				threadCount = Mth.clamp(threadCount, 1, getMaxThreadCount());
+				threadCount = Math.clamp(threadCount, 1, getMaxThreadCount());
 			}
 
 			ParallelTaskExecutor executor = new ParallelTaskExecutor("Flywheel", threadCount);

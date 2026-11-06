@@ -6,9 +6,9 @@ import java.util.function.Function;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
-import com.mojang.renderpearl.backend.opengl.GlBuffer;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
+import dev.engine_room.flywheel.backend.gl.GlUtil;
 import dev.engine_room.flywheel.lib.memory.FlwMemoryTracker;
 
 // TODO b3d-ification: Document this a bit
@@ -72,7 +72,7 @@ public class DynamicGpuBuffer implements AutoCloseable {
 
 	@Deprecated(forRemoval = true)
 	public int getHandle() {
-		return ((GlBuffer) buffer).handle();
+		return GlUtil.getHandle(buffer);
 	}
 
 	@Override

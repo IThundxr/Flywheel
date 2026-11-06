@@ -26,8 +26,8 @@ layout(location = 9) flat in uvec2 _flw_ids;
 
 #ifdef _FLW_OIT
 
+#ifndef _FLW_DEPTH_RANGE
 uniform sampler2D _flw_depthRange;
-
 uniform sampler2D _flw_blueNoise;
 
 float tented_blue_noise(float normalizedDepth) {
@@ -41,6 +41,7 @@ float tented_blue_noise(float normalizedDepth) {
 
     return b * tent;
 }
+#endif
 
 float linear_depth() {
     return linearize_depth(gl_FragCoord.z, _flw_cullData.znear, _flw_cullData.zfar);

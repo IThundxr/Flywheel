@@ -1,9 +1,6 @@
 package dev.engine_room.flywheel.backend.gl;
 
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
-
-import dev.engine_room.flywheel.backend.mixin.GlStateManagerAccessor;
 
 @Deprecated(forRemoval = true)
 public enum GlTextureUnit {
@@ -53,11 +50,7 @@ public enum GlTextureUnit {
 	}
 
 	public void makeActive() {
-		GlStateManager._activeTexture(glEnum);
-	}
-
-	public static GlTextureUnit getActive() {
-		return fromIndex(GlStateManagerAccessor.flywheel$getActiveTexture());
+		GlUtil.getStateManager()._activeTexture(glEnum);
 	}
 
 	public static GlTextureUnit fromGlEnum(int glEnum) {

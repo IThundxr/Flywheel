@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPassLayout;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.LightShader;
@@ -76,7 +77,7 @@ public final class PipelineCompiler {
 		return harness.get(new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
-	public CompiledRenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
+	public CompiledRenderPipeline getPipeline(RenderPassLayout.Subpass subpass, InstanceType<?> instanceType, ContextShader contextShader, Material material, OitMode oit) {
 		var light = material.light();
 		var cutout = material.cutout();
 		var shaders = material.shaders();
@@ -93,7 +94,7 @@ public final class PipelineCompiler {
 				.index(cutout.source());
 
 		RenderPipeline.Snippet pipelineSnippet = FlwRenderPipelines.getSnippet(material, contextShader, oit);
-		return harness.getPipeline(pipelineSnippet, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
+		return harness.getPipeline(pipelineSnippet, subpass, new PipelineProgramKey(instanceType, contextShader, light, shaders, cutout != CutoutShaders.OFF, FrameUniforms.INSTANCE.debugOn(), oit));
 	}
 
 	public void delete() {

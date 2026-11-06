@@ -10,7 +10,6 @@ import org.lwjgl.system.Checks;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
@@ -30,7 +29,7 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 	private int boundElementBuffer = 0;
 
 	public GlVertexArrayGL3() {
-		handle(GlStateManager._glGenVertexArrays());
+		handle(GL33C.glGenVertexArrays());
 	}
 
 	@Override
@@ -107,7 +106,7 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 		}
 
 		GlBufferType.ARRAY_BUFFER.bind(bindingBuffers[bindingIndex]);
-		GlStateManager._enableVertexAttribArray(attribIndex);
+		GL33C.glEnableVertexAttribArray(attribIndex);
 
 		long offset = bindingOffsets[bindingIndex] + attributeOffsets[attribIndex];
 		int stride = bindingStrides[bindingIndex];
@@ -119,9 +118,9 @@ public abstract class GlVertexArrayGL3 extends GlVertexArray {
 		int channelCount = GlConst.glFormatChannelCount(glExternalId);
 
 		if (isIntegerFormat) {
-			GlStateManager._vertexAttribIPointer(attribIndex, channelCount, glType, stride, offset);
+			GL33C.glVertexAttribIPointer(attribIndex, channelCount, glType, stride, offset);
 		} else {
-			GlStateManager._vertexAttribPointer(attribIndex, channelCount, glType, isNormalizedFormat, stride, offset);
+			GL33C.glVertexAttribPointer(attribIndex, channelCount, glType, isNormalizedFormat, stride, offset);
 		}
 
 		int divisor = bindingDivisors[bindingIndex];

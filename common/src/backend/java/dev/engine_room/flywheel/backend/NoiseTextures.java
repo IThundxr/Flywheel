@@ -19,10 +19,10 @@ import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlConst;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
 
 import dev.engine_room.flywheel.backend.b3d.DeviceFeatureCompat;
 import dev.engine_room.flywheel.backend.gl.GlTextureUnit;
+import dev.engine_room.flywheel.backend.gl.GlUtil;
 import dev.engine_room.flywheel.lib.util.IdentifierUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -83,7 +83,7 @@ public class NoiseTextures {
 								1
 						);
 						BLUE_NOISE_VIEW = RenderSystem.getDevice().createTextureView(BLUE_NOISE);
-						RenderSystem.getDevice().createCommandEncoder().writeToTexture(BLUE_NOISE, image);
+						image.writeToGpuTexture(RenderSystem.getDevice().createCommandEncoder(), BLUE_NOISE);
 					}
 				}
 			} finally {
@@ -92,15 +92,17 @@ public class NoiseTextures {
 
 			// TODO - Remove, this is only for GL Compat
 			if (DeviceFeatureCompat.BACKEND_NAME.equals("OpenGL")) {
+				GlStateManager stateManager = GlUtil.getStateManager();
+
 				GlTextureUnit.T0.makeActive();
-				GlStateManager._bindTexture(((GlTexture) BLUE_NOISE).glId());
+				stateManager._bindTexture(GlUtil.getHandle(BLUE_NOISE));
 
 				GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MIN_FILTER, GlConst.GL_LINEAR);
 				GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_MAG_FILTER, GlConst.GL_LINEAR);
 				GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_S, GlConst.GL_REPEAT);
 				GL33C.glTexParameteri(GlConst.GL_TEXTURE_2D, GlConst.GL_TEXTURE_WRAP_T, GlConst.GL_REPEAT);
 
-				GlStateManager._bindTexture(0);
+				stateManager._bindTexture(0);
 			}
 		} catch (IOException _) {
 

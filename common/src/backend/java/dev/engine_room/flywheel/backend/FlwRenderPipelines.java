@@ -7,7 +7,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BlendFactor;
 import com.mojang.renderpearl.api.pipeline.BlendFunction;
 import com.mojang.renderpearl.api.pipeline.BlendOp;
@@ -41,17 +40,12 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet OIT_DEPTH_RANGE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE, BlendOp.MAX)), GpuFormat.RG32_FLOAT, ColorTargetState.WRITE_ALL))
-			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
+			.withColorTargetState(new ColorTargetState(BlendFunction.MAX))
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
 			.buildSnippet();
 
-	private static final ColorTargetState TRANSMITTANCE_STATE = new ColorTargetState(
-			Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)),
-			GpuFormat.RGBA16_FLOAT,
-			ColorTargetState.WRITE_ALL
-	);
+	private static final ColorTargetState TRANSMITTANCE_STATE = new ColorTargetState(BlendFunction.ADDITIVE);
 	public static final RenderPipeline.Snippet OIT_TRANSMITTANCE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
 			.withColorTargetState(0, TRANSMITTANCE_STATE)
@@ -71,7 +65,7 @@ public class FlwRenderPipelines {
 
 	public static final RenderPipeline.Snippet OIT_ACCUMULATE = RenderPipeline.builder()
 			.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-			.withColorTargetState(new ColorTargetState(Optional.of(new BlendFunction(BlendFactor.ONE, BlendFactor.ONE)), GpuFormat.RGBA16_FLOAT, ColorTargetState.WRITE_ALL))
+			.withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_DEPTH_RANGE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_BLUE_NOISE)
 			.withBindGroupLayout(FlwBindGroupLayouts.OIT_COEFFICIENTS)
@@ -102,7 +96,7 @@ public class FlwRenderPipelines {
 
 			boolean isOitDraw = oitMode != OitMode.OFF;
 
-			Snippet[] snippets = new Snippet[] { BASE_VERTEX_BINDING, BASE_TOPOLOGY_AND_BIND_GROUPS };
+			RenderPipeline.Snippet[] snippets = new RenderPipeline.Snippet[] { BASE_VERTEX_BINDING, BASE_TOPOLOGY_AND_BIND_GROUPS };
 			if (oitMode.snippet != null) {
 				//noinspection NullableProblems
 				snippets = ArrayUtils.add(snippets, oitMode.snippet);
@@ -167,7 +161,6 @@ public class FlwRenderPipelines {
 
 					builder.withColorTargetState(new ColorTargetState(
 							Optional.ofNullable(blendFunction),
-							GpuFormat.RGBA8_UNORM,
 							m.writeMask().color() ? ColorTargetState.WRITE_ALL : ColorTargetState.WRITE_NONE
 					));
 				}

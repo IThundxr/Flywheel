@@ -3,13 +3,13 @@ package dev.engine_room.flywheel.impl.mixin;
 import java.util.List;
 
 import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -54,7 +54,7 @@ abstract class LevelRendererMixin {
 	private RenderContextImpl flywheel$renderContext;
 
 	@Inject(method = "render", at = @At("HEAD"))
-	private void flywheel$beginRender(GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, boolean consistentDepthRequired, CallbackInfo ci) {
+	private void flywheel$beginRender(GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice fogBuffer, boolean consistentDepthRequired, CallbackInfo ci) {
 		ClientLevel level = Minecraft.getInstance().level;
 
 		Matrix4f projectionMatrix = RenderContextImpl.PROJECTION_MATRIX_NO_BOB.get();
@@ -72,7 +72,7 @@ abstract class LevelRendererMixin {
 	}
 
 	@Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;submitFeatures(Lnet/minecraft/client/renderer/state/level/LevelRenderState;Lnet/minecraft/client/renderer/SubmitNodeCollector;Z)V"))
-	private void flywheel$copyCrumblingState(GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, boolean consistentDepthRequired, CallbackInfo ci, @Share("blockBreakingRenderStates") LocalRef<List<BlockBreakingRenderState>> blockBreakingRenderStates) {
+	private void flywheel$copyCrumblingState(CallbackInfo ci, @Share("blockBreakingRenderStates") LocalRef<List<BlockBreakingRenderState>> blockBreakingRenderStates) {
 		blockBreakingRenderStates.set(List.copyOf(levelRenderState.blockBreakingRenderStates));
 	}
 
@@ -82,7 +82,7 @@ abstract class LevelRendererMixin {
 				.run(() -> original.call(instance, resourceAllocator, inspector));
 	}
 
-	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/resource/ResourceHandle;get()Ljava/lang/Object;"))
+	@Inject(method = "lambda$addMainPass$0", at = @At(value = "INVOKE", shift = Shift.AFTER, target = "Lcom/mojang/renderpearl/api/commands/RenderPass;close()V"))
 	private void flywheel$beforeSolids(CallbackInfo ci) {
 		if (flywheel$renderContext != null) {
 			ClientLevel level = Minecraft.getInstance().level;

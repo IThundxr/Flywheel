@@ -20,7 +20,6 @@ import dev.engine_room.flywheel.backend.compile.LightSmoothness;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.IdentifierException;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
 
 public class FabricFlwConfig implements FlwConfig {
 	public static final Path PATH = FabricLoader.getInstance()
@@ -163,7 +162,7 @@ public class FabricFlwConfig implements FlwConfig {
 
 		if (workerThreadsJson instanceof JsonPrimitive primitive && primitive.isNumber()) {
 			int value = primitive.getAsInt();
-			int clamped = Mth.clamp(value, WORKER_THREADS_DEFAULT, WORKER_THREADS_MAX);
+			int clamped = Math.clamp(value, WORKER_THREADS_DEFAULT, WORKER_THREADS_MAX);
 
 			if (clamped != value) {
 				FlwImpl.CONFIG_LOGGER.warn("'workerThreads' value of {} is out of range, clamping to {}", value, clamped);

@@ -12,9 +12,8 @@ import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlSampler;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.renderpearl.backend.opengl.GlTextureView;
 
 import dev.engine_room.flywheel.backend.Samplers;
 import dev.engine_room.flywheel.backend.gl.GlUtil;
@@ -26,26 +25,29 @@ public class TextureBinder {
 		GpuTextureView texture = Minecraft.getInstance()
 				.getTextureManager()
 				.getTexture(textureId)
-				.getTextureView();
+				.textureView();
 
 		bind(unit, texture, sampler);
 	}
 
 	// Taken from GlCommandEncoder.trySetup
 	public static void bind(int unit, GpuTextureView textureView, @Nullable GpuSampler sampler) {
-		GlStateManager._activeTexture(GlConst.GL_TEXTURE0 + unit);
-		GlTexture texture = (GlTexture) textureView.texture();
+		GlStateManager stateManager = GlUtil.getStateManager();
+
+		stateManager._activeTexture(GlConst.GL_TEXTURE0 + unit);
+		GpuTexture texture = textureView.texture();
+		int textureId = GlUtil.getHandle(texture);
 		int i;
 		if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
 			i = GL33C.GL_TEXTURE_CUBE_MAP;
-			GL33C.glBindTexture(i, texture.glId());
+			GL33C.glBindTexture(i, textureId);
 		} else {
 			i = GlConst.GL_TEXTURE_2D;
-			GlStateManager._bindTexture(texture.glId());
+			stateManager._bindTexture(textureId);
 		}
 
 		if (sampler != null) {
-			GL33C.glBindSampler(unit, ((GlSampler) sampler).getId());
+			GL33C.glBindSampler(unit, GlUtil.getHandle(sampler));
 			GL33C.glTexParameteri(i, GL33C.GL_TEXTURE_BASE_LEVEL, textureView.baseMipLevel());
 			GL33C.glTexParameteri(i, GL33C.GL_TEXTURE_MAX_LEVEL, textureView.baseMipLevel() + textureView.mipLevels() - 1);
 		}
@@ -59,13 +61,13 @@ public class TextureBinder {
 	}
 
 	public static void bindRenderTarget(RenderTarget target) {
-		GlTexture colorTexture = (GlTexture) target.getColorTexture();
-		GlTexture depthTexture = (GlTexture) target.getDepthTexture();
+		GpuTexture colorTexture = target.getColorTexture();
+		GpuTexture depthTexture = target.getDepthTexture();
 		int i = GlUtil.getFramebufferCache().getFbo(
 				GlUtil.getDirectStateAccess(),
-				Collections.singletonList(colorTexture),
-				depthTexture
+				Collections.singletonList((GlTextureView) colorTexture),
+				(GlTextureView) depthTexture
 		);
-		GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
+		GlUtil.getStateManager()._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, i);
 	}
 }

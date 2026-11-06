@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPassLayout;
 
 import dev.engine_room.flywheel.api.instance.InstanceType;
 import dev.engine_room.flywheel.api.material.Material;
@@ -73,8 +74,8 @@ public class InstancingPrograms extends AtomicReferenceCounted {
 		setInstance(null);
 	}
 
-	public CompiledRenderPipeline getPipeline(InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode) {
-		return pipeline.getPipeline(instanceType, contextShader, material, mode);
+	public CompiledRenderPipeline getPipeline(RenderPassLayout.Subpass subpass, InstanceType<?> instanceType, ContextShader contextShader, Material material, PipelineCompiler.OitMode mode) {
+		return pipeline.getPipeline(subpass, instanceType, contextShader, material, mode);
 	}
 
 	public OitPrograms oitPrograms() {

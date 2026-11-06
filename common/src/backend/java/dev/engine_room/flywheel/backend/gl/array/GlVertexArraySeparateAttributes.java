@@ -3,16 +3,15 @@ package dev.engine_room.flywheel.backend.gl.array;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.Checks;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.gl.GlCompat;
-import dev.engine_room.flywheel.backend.gl.GlStateTracker;
 import dev.engine_room.flywheel.backend.gl.buffer.GlBufferType;
 import net.minecraft.util.Util;
 
@@ -30,13 +29,13 @@ public class GlVertexArraySeparateAttributes extends GlVertexArray {
 	private int elementBufferBinding = 0;
 
 	public GlVertexArraySeparateAttributes() {
-		handle(GlStateManager._glGenVertexArrays());
+		handle(GL33C.glGenVertexArrays());
 	}
 
 	@Override
 	public void bindVertexBuffer(final int bindingIndex, final int vbo, final long offset, final int stride) {
 		if (bindingBuffers[bindingIndex] != vbo || bindingOffsets[bindingIndex] != offset || bindingStrides[bindingIndex] != stride) {
-			GlStateTracker.bindVao(handle());
+			GL33C.glBindVertexArray(handle());
 			GL43C.glBindVertexBuffer(bindingIndex, vbo, offset, stride);
 			bindingBuffers[bindingIndex] = vbo;
 			bindingOffsets[bindingIndex] = offset;
@@ -54,12 +53,12 @@ public class GlVertexArraySeparateAttributes extends GlVertexArray {
 
 	@Override
 	public void bindAttributes(final int bindingIndex, final int startAttribIndex, VertexFormat vertexFormat) {
-		GlStateTracker.bindVao(handle());
+		GL33C.glBindVertexArray(handle());
 		int attribIndex = startAttribIndex;
 
 		for (VertexFormatElement element : vertexFormat.getElements()) {
 			if (!attributeEnabled.get(attribIndex)) {
-				GlStateManager._enableVertexAttribArray(attribIndex);
+				GL33C.glEnableVertexAttribArray(attribIndex);
 				attributeEnabled.set(attribIndex);
 			}
 
@@ -91,7 +90,7 @@ public class GlVertexArraySeparateAttributes extends GlVertexArray {
 	@Override
 	public void setElementBuffer(int ebo) {
 		if (elementBufferBinding != ebo) {
-			GlStateTracker.bindVao(handle());
+			GL33C.glBindVertexArray(handle());
 			GlBufferType.ELEMENT_ARRAY_BUFFER.bind(ebo);
 			elementBufferBinding = ebo;
 		}

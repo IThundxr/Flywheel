@@ -23,6 +23,6 @@ public class BandedPrimeLimiter implements DistanceUpdateLimiterImpl {
 
 		int i = (dSq / 2048);
 
-		return DIVISOR_SEQUENCE[Mth.clamp(i, 0, DIVISOR_SEQUENCE.length - 1)];
+		return DIVISOR_SEQUENCE[Math.clamp(i, 0, DIVISOR_SEQUENCE.length - 1)];
 	}
 }

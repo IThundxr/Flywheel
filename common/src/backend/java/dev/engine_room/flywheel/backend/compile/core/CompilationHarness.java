@@ -5,10 +5,13 @@ import java.util.Map;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPassLayout;
 
 import dev.engine_room.flywheel.backend.gl.GlObject;
 import dev.engine_room.flywheel.backend.gl.shader.GlProgram;
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 
 public class CompilationHarness<K> {
 	private final ShaderSources sources;
@@ -19,7 +22,7 @@ public class CompilationHarness<K> {
 	@Deprecated(forRemoval = true)
 	private final Map<K, GlProgram> programs = new HashMap<>();
 
-	private final Map<PipelineKey<K>, CompiledRenderPipeline> renderPipelines = new HashMap<>();
+	private final Object2ReferenceMap<PipelineKey<K>, CompiledRenderPipeline> renderPipelines = new Object2ReferenceOpenHashMap<>();
 
 	public CompilationHarness(String marker, ShaderSources sources, KeyCompiler<K> compiler) {
 		this.sources = sources;
@@ -36,12 +39,12 @@ public class CompilationHarness<K> {
 		return compiler.compile(key, sources, shaderCache, programLinker);
 	}
 
-	public CompiledRenderPipeline getPipeline(RenderPipeline.Snippet pipelineSnippet, K key) {
-		return renderPipelines.computeIfAbsent(new PipelineKey<>(pipelineSnippet, key), this::compileRenderPipeline);
+	public CompiledRenderPipeline getPipeline(RenderPipeline.Snippet pipelineSnippet, RenderPassLayout.Subpass subpass, K key) {
+		return renderPipelines.computeIfAbsent(new PipelineKey<>(pipelineSnippet, subpass, key), this::compileRenderPipeline);
 	}
 
 	private CompiledRenderPipeline compileRenderPipeline(PipelineKey<K> key) {
-		return compiler.compileRenderPipeline(key.snippet, key.key, sources, shaderCache);
+		return compiler.compileRenderPipeline(key.snippet, key.subpass, key.key, sources, shaderCache);
 	}
 
 	public void delete() {
@@ -59,9 +62,9 @@ public class CompilationHarness<K> {
 	public interface KeyCompiler<K> {
 		GlProgram compile(K key, ShaderSources loader, ShaderCache shaderCache, ProgramLinker programLinker);
 
-		CompiledRenderPipeline compileRenderPipeline(RenderPipeline.Snippet snippet, K key, ShaderSources loader, ShaderCache shaderCache);
+		CompiledRenderPipeline compileRenderPipeline(RenderPipeline.Snippet snippet, RenderPassLayout.Subpass subpass, K key, ShaderSources loader, ShaderCache shaderCache);
 	}
 
-	private record PipelineKey<K>(RenderPipeline.Snippet snippet, K key) {
+	private record PipelineKey<K>(RenderPipeline.Snippet snippet, RenderPassLayout.Subpass subpass, K key) {
 	}
 }

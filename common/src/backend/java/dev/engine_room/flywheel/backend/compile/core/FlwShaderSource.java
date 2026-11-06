@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.renderpearl.api.pipeline.ShaderSource;
+import com.mojang.blaze3d.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 
 import dev.engine_room.flywheel.backend.glsl.ShaderSources;

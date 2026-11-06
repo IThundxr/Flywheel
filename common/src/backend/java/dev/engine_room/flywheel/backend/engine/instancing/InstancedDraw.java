@@ -1,14 +1,12 @@
 package dev.engine_room.flywheel.backend.engine.instancing;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.api.textures.GpuSampler;
 
 import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.backend.engine.GroupKey;
 import dev.engine_room.flywheel.backend.engine.MaterialRenderState;
 import dev.engine_room.flywheel.backend.engine.MeshPool;
-import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureHandle;
 
 public class InstancedDraw {
 	public final GroupKey<?> groupKey;
@@ -18,8 +16,9 @@ public class InstancedDraw {
 	private final int bias;
 	private final int indexOfMeshInModel;
 
-	private final AbstractTexture texture;
-	private final GpuSampler textureSampler;
+	// TODO - Check if your allowed to create/upload textures inside of a pass, was previously bugged hence why the
+	//  texture is stored in the InstancedDraw object
+	private final TextureHandle textureHandle;
 
 	private boolean deleted;
 
@@ -31,9 +30,7 @@ public class InstancedDraw {
 		this.bias = bias;
 		this.indexOfMeshInModel = indexOfMeshInModel;
 
-		Pair<AbstractTexture, GpuSampler> texturePair = MaterialRenderState.createTextureView(material);
-		this.texture = texturePair.getFirst();
-		this.textureSampler = texturePair.getSecond();
+		this.textureHandle = MaterialRenderState.createTextureHandle(material);
 
 		mesh.acquire();
 	}
@@ -58,12 +55,8 @@ public class InstancedDraw {
 		return mesh;
 	}
 
-	public AbstractTexture getTexture() {
-		return texture;
-	}
-
-	public GpuSampler getTextureSampler() {
-		return textureSampler;
+	public TextureHandle getTextureHandle() {
+		return textureHandle;
 	}
 
 	public void render(RenderPass renderPass) {

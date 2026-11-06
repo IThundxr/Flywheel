@@ -13,7 +13,6 @@ import org.lwjgl.system.MemoryStack;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.datafixers.util.Pair;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -46,7 +45,9 @@ import dev.engine_room.flywheel.backend.mixin.ModelBakeryAccessor;
 import dev.engine_room.flywheel.lib.material.SimpleMaterial;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.RenderPassLayouts;
+import net.minecraft.client.renderer.texture.TextureHandle;
+import net.minecraft.client.renderer.texture.TextureResources;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -70,7 +71,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 	private final OitFramebuffer oitFramebuffer;
 
 	@UnmodifiableView
-	private final List<Pair<AbstractTexture, GpuSampler>> crumblingTexturesView;
+	private final List<TextureHandle> crumblingTextureHandles;
 
 	public InstancedDrawManager(InstancingPrograms programs) {
 		programs.acquire();
@@ -82,17 +83,18 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		oitFramebuffer = new OitFramebuffer(programs.oitPrograms());
 
 		// Setup crumbling textures list
-		List<Pair<AbstractTexture, GpuSampler>> crumblingTextures = new ArrayList<>();
+		List<TextureHandle> crumblingTextures = new ArrayList<>();
 		for (Identifier textureId : ModelBakeryAccessor.flywheel$getBREAKING_LOCATIONS()) {
-			AbstractTexture crumblingTexture = Minecraft.getInstance()
+			GpuTextureView crumblingTextureView = Minecraft.getInstance()
 					.getTextureManager()
-					.getTexture(textureId);
+					.getTexture(textureId)
+					.textureView();
 			GpuSampler crumblingTextureSampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.NEAREST);
 
-			crumblingTextures.add(Pair.of(crumblingTexture, crumblingTextureSampler));
+			crumblingTextures.add(new TextureResources(crumblingTextureView.texture(), crumblingTextureView, crumblingTextureSampler));
 		}
 
-		crumblingTexturesView = Collections.unmodifiableList(crumblingTextures);
+		crumblingTextureHandles = Collections.unmodifiableList(crumblingTextures);
 	}
 
 	@Override
@@ -146,7 +148,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
 		profiler.push("Flw Instanced Draw");
-		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw", RenderPassLayouts.COLOR_DEPTH, colorTextureView, depthTextureView)) {
 			setupPass(renderPass);
 			submitDraws(renderPass, OitMode.OFF);
 		}
@@ -205,7 +207,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 			var groupKey = drawCall.groupKey;
 			var environment = groupKey.environment();
 
-			CompiledRenderPipeline pipeline = programs.getPipeline(groupKey.instanceType(), environment.contextShader(), material, mode);
+			CompiledRenderPipeline pipeline = programs.getPipeline(renderPass.activeSubpass(), groupKey.instanceType(), environment.contextShader(), material, mode);
 			renderPass.setPipeline(pipeline);
 
 			try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -220,7 +222,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 				renderPass.pushConstants(pushConstantsBuilder.get());
 			}
 
-			renderPass.setUniform("flw_diffuseTex", drawCall.getTexture().getTextureView(), drawCall.getTextureSampler());
+			renderPass.setUniform("flw_diffuseTex", drawCall.getTextureHandle().textureView(), drawCall.getTextureHandle().sampler());
 
 			drawCall.render(renderPass);
 		}
@@ -290,7 +292,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 		RenderTarget mainRenderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
 		GpuTextureView colorTextureView = mainRenderTarget.getColorTextureView();
 		GpuTextureView depthTextureView = mainRenderTarget.getDepthTextureView();
-		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw - Crumbling", colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
+		try (RenderPass renderPass = encoder.createRenderPass(() -> "Flw Instanced Draw - Crumbling", RenderPassLayouts.COLOR_DEPTH, colorTextureView, Optional.empty(), depthTextureView, OptionalDouble.empty())) {
 			setupPass(renderPass);
 
 			var crumblingMaterial = SimpleMaterial.builder();
@@ -301,8 +303,8 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 
 				for (var progressEntry : byProgress.int2ObjectEntrySet()) {
 					// TODO 26.3: Make sure this is correct since there's also separate textures for OIT now
-					Pair<AbstractTexture, GpuSampler> crumblingPair = crumblingTexturesView.get(progressEntry.getIntKey());
-					renderPass.setUniform("_flw_crumblingTex", crumblingPair.getFirst().getTextureView(), crumblingPair.getSecond());
+					TextureHandle crumblingTextureHandle = crumblingTextureHandles.get(progressEntry.getIntKey());
+					renderPass.setUniform("_flw_crumblingTex", crumblingTextureHandle.textureView(), crumblingTextureHandle.sampler());
 
 					for (var instanceHandlePair : progressEntry.getValue()) {
 						InstancedInstancer<?> instancer = instanceHandlePair.getFirst();
@@ -311,7 +313,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 						for (InstancedDraw draw : instancer.draws()) {
 							CommonCrumbling.applyCrumblingProperties(crumblingMaterial, draw.material());
 
-							CompiledRenderPipeline pipeline = programs.getPipeline(shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, OitMode.OFF);
+							CompiledRenderPipeline pipeline = programs.getPipeline(renderPass.activeSubpass(), shader.instanceType(), ContextShader.CRUMBLING, crumblingMaterial, OitMode.OFF);
 							renderPass.setPipeline(pipeline);
 
 							try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -325,7 +327,7 @@ public class InstancedDrawManager extends DrawManager<InstancedInstancer<?>> {
 								renderPass.pushConstants(pushConstantsBuilder.get());
 							}
 
-							renderPass.setUniform("flw_diffuseTex", draw.getTexture().getTextureView(), draw.getTextureSampler());
+							renderPass.setUniform("flw_diffuseTex", draw.getTextureHandle().textureView(), draw.getTextureHandle().sampler());
 
 							if (supportsBaseInstance) {
 								draw.renderOne(renderPass, index);

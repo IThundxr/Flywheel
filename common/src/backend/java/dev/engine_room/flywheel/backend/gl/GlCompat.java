@@ -12,7 +12,6 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import dev.engine_room.flywheel.backend.FlwBackend;
 import dev.engine_room.flywheel.backend.compile.core.Compilation;
@@ -129,7 +128,7 @@ public final class GlCompat {
 			return 32;
 		}
 		if (CAPABILITIES.GL_KHR_shader_subgroup) {
-			return GlStateManager._getInteger(KHRShaderSubgroup.GL_SUBGROUP_SIZE_KHR);
+			return GL33C.glGetInteger(KHRShaderSubgroup.GL_SUBGROUP_SIZE_KHR);
 		}
 
 		// Try to guess.
